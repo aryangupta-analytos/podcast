@@ -120,6 +120,11 @@ are different claims.
 
 ## Deploying
 
+**[docs/DEPLOY.md](docs/DEPLOY.md) is the step-by-step guide** — Neon for the
+database, Cloudflare R2 for media, then Vercel. About 20 minutes end to end.
+
+The rest of this section is the reasoning behind those choices.
+
 The app targets Vercel (`@astrojs/vercel` is already configured). Two things
 must be set up before going live.
 
