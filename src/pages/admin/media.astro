@@ -1,0 +1,186 @@
+---
+import MediaUploader from '../../components/admin/MediaUploader';
+import SmartImage from '../../components/SmartImage.astro';
+import Icon from '../../components/admin/Icon.astro';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { formatBytes, formatDuration } from '../../lib/format';
+import { getMediaById, getMediaStats, listMedia, updateMediaAlt } from '../../server/repo/media';
+import { deleteAsset } from '../../server/storage';
+import { env } from '../../server/env';
+
+const user = Astro.locals.user!;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = String(form.get('id') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  if (id) {
+    const asset = await getMediaById(id);
+    if (asset) {
+      if (action === 'delete') await deleteAsset(asset);
+      else if (action === 'alt') await updateMediaAlt(id, String(form.get('alt') ?? ''));
+    }
+  }
+
+  const query = new URLSearchParams(Astro.url.search);
+  query.set('saved', 'Media updated.');
+  return Astro.redirect(`/admin/media?${query}`, 303);
+}
+
+const kindParam = Astro.url.searchParams.get('kind');
+const kind = kindParam === 'audio' || kindParam === 'image' ? kindParam : undefined;
+const page = Math.max(
+  1,
+  Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10) || 1
+);
+
+const [media, stats] = await Promise.all([
+  listMedia({ kind, page, perPage: 36 }),
+  getMediaStats()
+]);
+
+const pageUrl = (next: number) => {
+  const query = new URLSearchParams(Astro.url.search);
+  query.set('page', String(next));
+  query.delete('saved');
+  return `/admin/media?${query}`;
+};
+---
+
+<AdminLayout title="Images & Audio" user={user} wide>
+  <div class="admin-card">
+    <h2>Upload</h2>
+    <p class="hint">
+      Drag files in, or click to browse. Images are optimized automatically;
+      audio is stored as uploaded.
+    </p>
+    <MediaUploader client:load />
+  </div>
+
+  <div class="admin-grid" style="margin:18px 0">
+    <div class="admin-stat">
+      <span class="value">{stats.image.count}</span>
+      <span class="label">Images · {formatBytes(stats.image.bytes)}</span>
+    </div>
+    <div class="admin-stat">
+      <span class="value">{stats.audio.count}</span>
+      <span class="label">Audio files · {formatBytes(stats.audio.bytes)}</span>
+    </div>
+    <div class="admin-stat">
+      <span class="value" style="font-size:18px; padding-top:8px">
+        {env.storageDriver === 's3' ? 'Object storage' : 'Local disk'}
+      </span>
+      <span class="label">Where files are stored</span>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:8px; margin-bottom:16px">
+    <a class:list={['btn-admin is-small', !kind && 'is-primary']} href="/admin/media">All</a>
+    <a class:list={['btn-admin is-small', kind === 'image' && 'is-primary']} href="/admin/media?kind=image">
+      Images
+    </a>
+    <a class:list={['btn-admin is-small', kind === 'audio' && 'is-primary']} href="/admin/media?kind=audio">
+      Audio
+    </a>
+  </div>
+
+  {
+    media.items.length === 0 ? (
+      <div class="admin-card">
+        <p class="admin-empty">No files yet. Upload one above.</p>
+      </div>
+    ) : (
+      <div class="media-grid">
+        {media.items.map((asset) => (
+          <figure class="media-item" style="margin:0">
+            {asset.kind === 'image' ? (
+              <SmartImage
+                src={asset.url}
+                alt={asset.alt ?? ''}
+                width={200}
+                height={200}
+                sizes="(min-width: 900px) 200px, 45vw"
+              />
+            ) : (
+              <div class="media-audio-tile" aria-hidden="true">
+                <Icon name="audio" size={34} />
+              </div>
+            )}
+
+            <figcaption class="media-body">
+              <span class="media-name" title={asset.originalFilename}>
+                {asset.originalFilename}
+              </span>
+              <span class="media-meta">
+                {formatBytes(asset.bytes)}
+                {asset.width && ` · ${asset.width}×${asset.height}`}
+                {asset.durationSeconds ? ` · ${formatDuration(asset.durationSeconds)}` : ''}
+              </span>
+
+              <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap">
+                <a class="btn-admin is-small" href={asset.url} target="_blank" rel="noopener">
+                  <Icon name="external" size={13} />
+                  Open
+                </a>
+                <form method="POST" onsubmit="return confirm('Delete this file permanently? Anything using it will show a broken image.')">
+                  <input type="hidden" name="action" value="delete" />
+                  <input type="hidden" name="id" value={asset.id} />
+                  <button class="btn-admin is-small is-danger" type="submit">
+                    <Icon name="trash" size={13} />
+                    Delete
+                  </button>
+                </form>
+              </div>
+
+              {asset.kind === 'image' && (
+                <form method="POST" style="margin-top:8px">
+                  <input type="hidden" name="action" value="alt" />
+                  <input type="hidden" name="id" value={asset.id} />
+                  <label
+                    for={`alt-${asset.id}`}
+                    style="display:block; font-size:11px; color:var(--ad-muted)"
+                  >
+                    Alt text
+                  </label>
+                  <input
+                    id={`alt-${asset.id}`}
+                    name="alt"
+                    type="text"
+                    value={asset.alt ?? ''}
+                    placeholder="Describe the image"
+                    style="width:100%; padding:5px 7px; font-size:12px; border:1px solid var(--ad-border); border-radius:6px; background:var(--ad-surface); color:inherit"
+                  />
+                </form>
+              )}
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    )
+  }
+
+  {
+    media.totalPages > 1 && (
+      <nav class="admin-pagination" aria-label="Pages">
+        {page > 1 ? (
+          <a class="btn-admin is-small" href={pageUrl(page - 1)}>
+            ← Previous
+          </a>
+        ) : (
+          <span />
+        )}
+        <span>
+          Page {page} of {media.totalPages}
+        </span>
+        {page < media.totalPages ? (
+          <a class="btn-admin is-small" href={pageUrl(page + 1)}>
+            Next →
+          </a>
+        ) : (
+          <span />
+        )}
+      </nav>
+    )
+  }
+</AdminLayout>

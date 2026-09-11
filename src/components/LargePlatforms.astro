@@ -1,0 +1,63 @@
+---
+import type { LinkRow } from '../server/db/schema';
+
+import AppleIcon from '../svgs/apple.svg?raw';
+import OvercastIcon from '../svgs/overcast.svg?raw';
+import PocketCastsIcon from '../svgs/pocket-casts.svg?raw';
+import SpotifyIcon from '../svgs/spotify.svg?raw';
+import YouTubeIcon from '../svgs/youtube.svg?raw';
+
+export interface Props {
+  platforms: LinkRow[];
+  /** Public RSS feed for podcast apps. */
+  rssFeed?: string | null;
+}
+
+const { platforms, rssFeed } = Astro.props;
+
+const ICONS: Record<string, string> = {
+  apple: AppleIcon,
+  spotify: SpotifyIcon,
+  overcast: OvercastIcon,
+  'pocket-casts': PocketCastsIcon,
+  youtube: YouTubeIcon
+};
+
+const iconKey = (platform: string) =>
+  platform.toLowerCase().replace(/[^a-z]/g, '-').replace(/-+/g, '-');
+---
+
+<div class="mt-7 grid grid-cols-2 gap-6 lg:mt-11 lg:grid-cols-3 lg:justify-start">
+  {
+    platforms.map((link) => {
+      const icon = ICONS[iconKey(link.platform)];
+      return (
+        <a
+          class="animated-bottom-border text-light-text-heading font-bold after:mt-4 dark:text-white"
+          href={link.url}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <span class="flex items-center">
+            {link.label}
+            {icon && (
+              <span class="ml-3 flex h-4 w-4 items-center">
+                <Fragment set:html={icon} />
+              </span>
+            )}
+          </span>
+        </a>
+      );
+    })
+  }
+  {
+    rssFeed && (
+      <a
+        class="animated-bottom-border text-light-text-heading font-bold after:mt-4 dark:text-white"
+        href={rssFeed}
+      >
+        <span class="flex items-center">RSS Feed</span>
+      </a>
+    )
+  }
+</div>

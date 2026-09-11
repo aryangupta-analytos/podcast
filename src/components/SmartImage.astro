@@ -1,0 +1,119 @@
+---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+
+import { srcsetWidths } from '../lib/image-sizes.mjs';
+
+export interface Props {
+  /**
+   * A CMS image URL (ours or remote), or an imported asset for the bundled
+   * placeholder avatars.
+   */
+  src: string | ImageMetadata | null | undefined;
+  /** Displayed size in CSS pixels. Drives the srcset, not just the attribute. */
+  width: number;
+  height: number;
+  alt: string;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  fetchpriority?: 'high' | 'low' | 'auto';
+  /** Used when `src` is empty — e.g. a person with no photo yet. */
+  fallback?: ImageMetadata;
+  /** Override the `sizes` attribute for images that are not a fixed size. */
+  sizes?: string;
+}
+
+const {
+  src,
+  width,
+  height,
+  alt,
+  class: className,
+  loading = 'lazy',
+  fetchpriority,
+  fallback,
+  sizes
+} = Astro.props;
+
+/**
+ * Runs every CMS image through Astro's image service instead of serving the
+ * stored original.
+ *
+ * Without this a 146 KB piece of cover art is downloaded to paint a 48×48
+ * avatar. With it the browser gets a 712-byte crop of the same image. In
+ * production the resizing happens on Vercel's image CDN and is cached at the
+ * edge, so it costs nothing per request.
+ *
+ * Widths come from the shared ladder in `src/lib/image-sizes.mjs`, so they
+ * always match the widths that CDN is configured to serve.
+ */
+const widths = srcsetWidths(width);
+const resolvedSizes = sizes ?? `${width}px`;
+
+/**
+ * Uploads are already stored as WebP at quality 82, so re-encoding at Astro's
+ * default of 100 would inflate the file without recovering any detail the
+ * first encode discarded.
+ */
+const QUALITY = 78;
+
+// `<Image>` types a string src and an imported asset as separate overloads, so
+// the two cases are rendered separately rather than through a union.
+const resolved = src || fallback || null;
+const asset = typeof resolved === 'string' ? null : resolved;
+const url = typeof resolved === 'string' ? resolved : null;
+
+// A data: URI has nothing to optimize and must not be handed to the image
+// service; an absent image should render nothing rather than a broken request.
+const isOptimizableUrl = !!url && !url.startsWith('data:');
+
+/*
+  The image service fetches the source itself, and a bare "/media/..." path is
+  not fetchable from a standalone server process — it has no origin to resolve
+  against, so every locally-stored image 500s. (Vite's dev server happens to
+  resolve it, which is why this only shows up once the site is built.)
+
+  Absolute URLs — an S3/CDN host in production — pass through untouched.
+*/
+/*
+  Resolved against the origin actually serving this request, not the configured
+  `site`. The image service fetches the file from whichever server is running —
+  so using the canonical site URL breaks the moment the two differ (a dev server
+  on another port, a preview deployment, a container behind a proxy).
+*/
+const absoluteSrc =
+  isOptimizableUrl && url!.startsWith('/')
+    ? new URL(url!, Astro.url.origin).toString()
+    : url;
+
+const shared = {
+  width,
+  height,
+  widths,
+  quality: QUALITY,
+  sizes: resolvedSizes,
+  alt,
+  class: className,
+  loading,
+  decoding: 'async' as const,
+  ...(fetchpriority ? { fetchpriority } : {})
+};
+---
+
+{asset && <Image src={asset} {...shared} />}
+
+{isOptimizableUrl && <Image src={absoluteSrc!} {...shared} />}
+
+{
+  url && !isOptimizableUrl && (
+    <img
+      src={url}
+      width={width}
+      height={height}
+      alt={alt}
+      class={className}
+      loading={loading}
+      decoding="async"
+    />
+  )
+}

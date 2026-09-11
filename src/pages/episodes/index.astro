@@ -1,0 +1,93 @@
+---
+import EpisodeList from '../../components/EpisodeList.astro';
+import Layout from '../../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { getPublishedEpisodes } from '../../server/repo/episodes';
+import { getSettings, getShowInfo } from '../../server/repo/settings';
+
+const PER_PAGE = 12;
+
+// Pagination keeps the archive at a constant cost no matter how long the show
+// runs: page 40 loads exactly as many rows as page 1.
+const requested = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);
+const page = Number.isFinite(requested) && requested > 0 ? requested : 1;
+
+const [settings, show, episodes] = await Promise.all([
+  getSettings(),
+  getShowInfo(),
+  getPublishedEpisodes({ page, perPage: PER_PAGE })
+]);
+
+// A page past the end is a 404, not an empty list — otherwise crawlers index
+// endless blank pages.
+if (page > episodes.totalPages && episodes.total > 0) {
+  return Astro.redirect('/episodes', 302);
+}
+
+const title = `Episodes — ${show.title}`;
+const canonicalURL = new URL(
+  page > 1 ? `/episodes?page=${page}` : '/episodes',
+  Astro.site
+);
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout
+  title={title}
+  description={`Every episode of ${show.title}. ${settings.description}`.slice(0, 300)}
+  canonicalURL={canonicalURL}
+>
+  <Fragment slot="head">
+    {page > 1 && <link rel="prev" href={page === 2 ? '/episodes' : `/episodes?page=${page - 1}`} />}
+    {page < episodes.totalPages && <link rel="next" href={`/episodes?page=${page + 1}`} />}
+  </Fragment>
+
+  <div class="relative z-10 px-8 lg:px-18">
+    <h1
+      class="text-light-text-heading text-2xl font-bold lg:text-5xl dark:text-white"
+    >
+      Episodes
+    </h1>
+
+    <p class="mt-3">
+      {episodes.total} episode{episodes.total === 1 ? '' : 's'}
+      {episodes.totalPages > 1 && ` · page ${page} of ${episodes.totalPages}`}
+    </p>
+
+    <EpisodeList episodes={episodes.items} show={show} />
+
+    {
+      episodes.totalPages > 1 && (
+        <nav
+          class="flex items-center justify-between gap-4 py-12"
+          aria-label="Episode pages"
+        >
+          {page > 1 ? (
+            <a
+              class="text-light-text-heading font-bold underline hover:no-underline dark:text-white"
+              href={page === 2 ? '/episodes' : `/episodes?page=${page - 1}`}
+              rel="prev"
+            >
+              ← Newer episodes
+            </a>
+          ) : (
+            <span />
+          )}
+
+          {page < episodes.totalPages ? (
+            <a
+              class="text-light-text-heading font-bold underline hover:no-underline dark:text-white"
+              href={`/episodes?page=${page + 1}`}
+              rel="next"
+            >
+              Older episodes →
+            </a>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )
+    }
+  </div>
+</Layout>

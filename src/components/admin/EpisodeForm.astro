@@ -1,0 +1,314 @@
+---
+import type { Episode } from '../../lib/types';
+import { toDateTimeInputValue } from '../../lib/format';
+import type { Person } from '../../server/db/schema';
+import FileUpload from './FileUpload';
+import GuestPicker from './GuestPicker';
+import Icon from './Icon.astro';
+import RichText from './RichText';
+
+export interface Props {
+  episode?: Episode;
+  /** Every existing guest, for the picker's autocomplete. */
+  guestOptions: Person[];
+  errors?: string[];
+}
+
+const { episode, guestOptions, errors = [] } = Astro.props;
+const isNew = !episode;
+
+const options = guestOptions.map((person) => ({
+  id: person.id,
+  name: person.name,
+  title: person.title,
+  imageUrl: person.imageUrl
+}));
+
+const selected = (episode?.guests ?? []).map((guest) => ({
+  id: guest.id,
+  name: guest.name,
+  title: guest.title,
+  imageUrl: guest.imageUrl
+}));
+
+const publishDate = episode
+  ? toDateTimeInputValue(new Date(episode.published))
+  : toDateTimeInputValue(new Date());
+---
+
+<form method="POST" enctype="multipart/form-data">
+  {
+    errors.length > 0 && (
+      <div class="admin-flash is-error" role="alert">
+        <Icon name="close" size={16} />
+        <span>
+          <strong>Please fix the following:</strong>
+          <ul>
+            {errors.map((message) => (
+              <li>{message}</li>
+            ))}
+          </ul>
+        </span>
+      </div>
+    )
+  }
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="document" size={17} />
+      The basics
+    </h2>
+    <p class="hint">Everything a listener sees first.</p>
+
+    <div class="admin-field">
+      <label for="title">Episode title</label>
+      <input
+        id="title"
+        name="title"
+        type="text"
+        value={episode?.title ?? ''}
+        maxlength="300"
+        placeholder="e.g. Interview of Prem Jain, CEO at Pensando Systems"
+        required
+      />
+    </div>
+
+    <div class="admin-field">
+      <label for="description">Short description</label>
+      <textarea
+        id="description"
+        name="description"
+        maxlength="1000"
+        style="min-height:92px"
+        placeholder="One or two sentences. This is what appears in episode lists and in Google results.">{episode?.description ?? ''}</textarea
+      >
+    </div>
+
+    <div class="admin-row">
+      <div class="admin-field">
+        <label for="episodeNumber">Episode number</label>
+        <input
+          id="episodeNumber"
+          name="episodeNumber"
+          type="number"
+          min="0"
+          max="100000"
+          value={episode?.episodeNumber ?? ''}
+          placeholder="13"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="season">Season</label>
+        <input
+          id="season"
+          name="season"
+          type="number"
+          min="0"
+          max="1000"
+          value={episode?.season ?? ''}
+          placeholder="Optional"
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="publishDate">Publish date</label>
+        <input
+          id="publishDate"
+          name="publishDate"
+          type="datetime-local"
+          value={publishDate}
+          required
+        />
+        <p class="help">A future date schedules the episode.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="audio" size={17} />
+      Audio and artwork
+    </h2>
+    <p class="hint">
+      Drag a file in, or click to browse. Audio is stored outside the database
+      and streamed straight to listeners.
+    </p>
+
+    <div class="admin-row-2">
+      <FileUpload
+        client:load
+        name="audioUrl"
+        kind="audio"
+        label="Episode audio"
+        help="MP3, M4A, WAV, OGG or FLAC. Up to 500 MB."
+        value={episode?.audio.src ?? ''}
+        durationName="durationSeconds"
+        bytesName="audioBytes"
+        mimeName="audioMimeType"
+      />
+
+      <FileUpload
+        client:load
+        name="thumbnailUrl"
+        kind="image"
+        label="Episode thumbnail"
+        help="Square works best. Optimized and converted to WebP automatically."
+        value={episode?.episodeThumbnail ?? ''}
+      />
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="users" size={17} />
+      Guests
+    </h2>
+    <p class="hint">Who was on this episode.</p>
+    <GuestPicker client:load options={options} selected={selected} />
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="edit" size={17} />
+      Show notes
+    </h2>
+    <p class="hint">
+      The long description on the episode page. Use the buttons to format — you
+      never need to write HTML.
+    </p>
+
+    <RichText
+      client:load
+      name="showNotes"
+      value={episode?.content ?? ''}
+      placeholder="What was this episode about? Add links to anything you mentioned."
+    />
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="link" size={17} />
+      Listen elsewhere
+    </h2>
+    <p class="hint">Optional links shown as buttons on the episode page.</p>
+
+    <div class="admin-row">
+      <div class="admin-field">
+        <label for="spotifyUrl">Spotify</label>
+        <input
+          id="spotifyUrl"
+          name="spotifyUrl"
+          type="url"
+          value={episode?.links.spotify ?? ''}
+          placeholder="https://open.spotify.com/…"
+        />
+      </div>
+      <div class="admin-field">
+        <label for="youtubeUrl">YouTube</label>
+        <input
+          id="youtubeUrl"
+          name="youtubeUrl"
+          type="url"
+          value={episode?.links.youtube ?? ''}
+          placeholder="https://youtube.com/…"
+        />
+      </div>
+      <div class="admin-field">
+        <label for="appleUrl">Apple Podcasts</label>
+        <input
+          id="appleUrl"
+          name="appleUrl"
+          type="url"
+          value={episode?.links.apple ?? ''}
+          placeholder="https://podcasts.apple.com/…"
+        />
+      </div>
+      <div class="admin-field">
+        <label for="otherUrl">Other</label>
+        <input
+          id="otherUrl"
+          name="otherUrl"
+          type="url"
+          value={episode?.links.other ?? ''}
+          placeholder="https://…"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="rocket" size={17} />
+      Publishing
+    </h2>
+    <p class="hint">Where this episode stands right now.</p>
+
+    <div class="admin-row-2">
+      <div class="admin-field">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="draft" selected={(episode?.status ?? 'draft') === 'draft'}>
+            Draft — only you can see it
+          </option>
+          <option value="published" selected={episode?.status === 'published'}>
+            Published — live on the website
+          </option>
+          <option value="unpublished" selected={episode?.status === 'unpublished'}>
+            Unpublished — hidden, but kept
+          </option>
+        </select>
+      </div>
+
+      {
+        episode && (
+          <div class="admin-field">
+            <label for="slug">Web address</label>
+            <input id="slug" name="slug" type="text" value={episode.episodeSlug} />
+            <p class="help">
+              Lives at <code>/episodes/{episode.episodeSlug}</code>. Changing it
+              breaks links already shared.
+            </p>
+          </div>
+        )
+      }
+    </div>
+
+    <label class="admin-check">
+      <input type="checkbox" name="isFeatured" checked={episode?.isFeatured} />
+      <span>
+        <strong>Feature on the homepage</strong>
+        <span class="sub">Replaces whichever episode is currently featured.</span>
+      </span>
+    </label>
+  </div>
+
+  <div class="admin-actions is-sticky">
+    <button class="btn-admin is-primary" type="submit" name="intent" value="save">
+      <Icon name="check" size={16} />
+      {isNew ? 'Save episode' : 'Save changes'}
+    </button>
+
+    <button class="btn-admin" type="submit" name="intent" value="publish">
+      <Icon name="rocket" size={16} />
+      {episode?.status === 'published' ? 'Save and keep live' : 'Save and publish'}
+    </button>
+
+    <a class="btn-admin is-ghost" href="/admin/episodes">Cancel</a>
+
+    {
+      episode && (
+        <a
+          class="btn-admin is-ghost"
+          href={`/episodes/${episode.episodeSlug}`}
+          target="_blank"
+          rel="noopener"
+          style="margin-left:auto"
+        >
+          <Icon name="external" size={15} />
+          View on site
+        </a>
+      )
+    }
+  </div>
+</form>

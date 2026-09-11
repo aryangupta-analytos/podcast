@@ -1,0 +1,171 @@
+---
+import Avatar from '../../../components/Avatar.astro';
+import Icon from '../../../components/admin/Icon.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import {
+  deletePerson,
+  getPersonEpisodeCounts,
+  listPeople,
+  reorderPerson,
+  updatePerson
+} from '../../../server/repo/people';
+
+const user = Astro.locals.user!;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = String(form.get('id') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  if (id) {
+    if (action === 'up' || action === 'down') await reorderPerson(id, action);
+    else if (action === 'hide') await updatePerson(id, { isVisible: false });
+    else if (action === 'show') await updatePerson(id, { isVisible: true });
+    else if (action === 'delete') await deletePerson(id);
+  }
+
+  return Astro.redirect(
+    `/admin/people?saved=${encodeURIComponent('Updated.')}`,
+    303
+  );
+}
+
+const [hosts, team, guests, counts] = await Promise.all([
+  listPeople('host', { includeHidden: true }),
+  listPeople('team', { includeHidden: true }),
+  listPeople('guest', { includeHidden: true }),
+  getPersonEpisodeCounts()
+]);
+
+const GROUPS = [
+  {
+    key: 'host',
+    title: 'Hosts',
+    hint: 'Shown in the sidebar on every page and on the About page.',
+    people: hosts,
+    reorderable: true
+  },
+  {
+    key: 'team',
+    title: 'Team',
+    hint: 'Producers and advisors, shown on the homepage and About page.',
+    people: team,
+    reorderable: true
+  },
+  {
+    key: 'guest',
+    title: 'Guests',
+    hint: 'Created automatically when you add them to an episode.',
+    people: guests,
+    reorderable: false
+  }
+];
+---
+
+<AdminLayout title="Hosts & Guests" user={user} wide>
+  <a class="btn-admin is-primary" href="/admin/people/new" slot="actions">
+    <Icon name="plus" size={16} />
+    Add person
+  </a>
+
+  {
+    GROUPS.map((group) => (
+      <div class="admin-card">
+        <h2>
+          {group.title} <span style="color:var(--ad-muted); font-weight:400">({group.people.length})</span>
+        </h2>
+        <p class="hint">{group.hint}</p>
+
+        {group.people.length === 0 ? (
+          <p class="admin-empty">
+            No {group.title.toLowerCase()} yet.{' '}
+            <a href={`/admin/people/new?kind=${group.key}`}>Add one</a>.
+          </p>
+        ) : (
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th />
+                  <th>Name</th>
+                  <th>Episodes</th>
+                  <th>Visible</th>
+                  {group.reorderable && <th>Order</th>}
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {group.people.map((person) => (
+                  <tr>
+                    <td>
+                      <Avatar
+                        class="thumb"
+                        name={person.name}
+                        imageUrl={person.imageUrl}
+                        size={42}
+                        placeholder={person.placeholder as 'monogram'}
+                      />
+                    </td>
+
+                    <td class="title-cell">
+                      <a href={`/admin/people/${person.id}`}>{person.name}</a>
+                      {person.title && <span class="meta">{person.title}</span>}
+                    </td>
+
+                    <td style="font-size:13px">{counts.get(person.id) ?? 0}</td>
+
+                    <td>
+                      <span class:list={['badge', person.isVisible ? 'published' : 'draft']}>
+                        {person.isVisible ? 'visible' : 'hidden'}
+                      </span>
+                    </td>
+
+                    {group.reorderable && (
+                      <td>
+                        <div style="display:flex; gap:4px">
+                          <form method="POST">
+                            <input type="hidden" name="id" value={person.id} />
+                            <input type="hidden" name="action" value="up" />
+                            <button class="btn-admin is-small is-icon" type="submit" aria-label="Move up">
+                              <Icon name="chevron-up" size={14} />
+                            </button>
+                          </form>
+                          <form method="POST">
+                            <input type="hidden" name="id" value={person.id} />
+                            <input type="hidden" name="action" value="down" />
+                            <button class="btn-admin is-small is-icon" type="submit" aria-label="Move down">
+                              <Icon name="chevron-down" size={14} />
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    )}
+
+                    <td class="row-actions">
+                      <a class="btn-admin is-small" href={`/admin/people/${person.id}`}>
+                        <Icon name="edit" size={14} />
+                        Edit
+                      </a>
+                      <form method="POST">
+                        <input type="hidden" name="id" value={person.id} />
+                        <input
+                          type="hidden"
+                          name="action"
+                          value={person.isVisible ? 'hide' : 'show'}
+                        />
+                        <button class="btn-admin is-small" type="submit">
+                          <Icon name={person.isVisible ? 'eye-off' : 'eye'} size={14} />
+                          {person.isVisible ? 'Hide' : 'Show'}
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    ))
+  }
+</AdminLayout>

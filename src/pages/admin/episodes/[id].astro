@@ -1,0 +1,94 @@
+---
+import EpisodeForm from '../../../components/admin/EpisodeForm.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { parseEpisodeForm } from '../../../server/forms/episode';
+import {
+  deleteEpisode,
+  getEpisodeById,
+  updateEpisode
+} from '../../../server/repo/episodes';
+import { listPeople } from '../../../server/repo/people';
+
+const user = Astro.locals.user!;
+const { id } = Astro.params;
+
+// A malformed id must 404, not throw a database error.
+const isUuid =
+  !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+let episode = isUuid ? await getEpisodeById(id) : null;
+if (!episode) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+let errors: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const intent = String(form.get('intent') ?? 'save');
+
+  if (intent === 'delete') {
+    await deleteEpisode(episode.id);
+    return Astro.redirect(
+      `/admin/episodes?saved=${encodeURIComponent('Episode deleted.')}`,
+      303
+    );
+  }
+
+  const parsed = await parseEpisodeForm(form);
+
+  if (intent === 'publish') {
+    parsed.input.status = 'published';
+    if (!parsed.input.audioUrl) {
+      parsed.errors = parsed.errors.filter(
+        (message) => !message.startsWith('An episode needs an audio file')
+      );
+      parsed.errors.push('Add an audio file before publishing this episode.');
+    }
+  }
+
+  if (parsed.errors.length === 0) {
+    const updated = await updateEpisode(episode.id, parsed.input);
+    const message =
+      updated?.status === 'published'
+        ? 'Saved — the changes are live on the website.'
+        : 'Saved.';
+
+    return Astro.redirect(
+      `/admin/episodes/${episode.id}?saved=${encodeURIComponent(message)}`,
+      303
+    );
+  }
+
+  errors = parsed.errors;
+  // Re-read so the form shows what was actually stored alongside the errors.
+  episode = (await getEpisodeById(episode.id)) ?? episode;
+}
+
+const guestOptions = await listPeople('guest', { includeHidden: true });
+---
+
+<AdminLayout
+  title={episode.title}
+  user={user}
+  back={{ label: 'All episodes', href: '/admin/episodes' }}
+>
+  <EpisodeForm episode={episode} guestOptions={guestOptions} errors={errors} />
+
+  <div class="admin-card" style="border-color: var(--ad-danger)">
+    <h2>Delete this episode</h2>
+    <p class="hint">
+      This removes the episode and its page permanently. The audio and image
+      files stay in your media library.
+    </p>
+
+    <form
+      method="POST"
+      onsubmit="return confirm('Delete this episode permanently? This cannot be undone.')"
+    >
+      <button class="btn-admin is-danger" type="submit" name="intent" value="delete">
+        Delete episode
+      </button>
+    </form>
+  </div>
+</AdminLayout>

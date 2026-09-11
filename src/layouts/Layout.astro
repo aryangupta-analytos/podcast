@@ -1,0 +1,539 @@
+---
+import { Font } from 'astro:assets';
+import { ClientRouter } from 'astro:transitions';
+import { Schema } from 'astro-seo-schema';
+import SpeedInsights from '@vercel/speed-insights/astro';
+
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import Dots from '../components/Dots.astro';
+import Hosts from '../components/Hosts.astro';
+import InfoCard from '../components/InfoCard.astro';
+import Platforms from '../components/Platforms.astro';
+import Player from '../components/Player';
+import SearchButton from '../components/SearchButton';
+import SearchDialog from '../components/SearchDialog';
+import ShowArtwork from '../components/ShowArtwork.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+
+import { getLayoutData } from '../server/repo/layout';
+
+import '../styles/global.css';
+
+export interface Props {
+  /** Overrides the canonical URL when a page is reachable at several paths. */
+  canonicalURL?: URL;
+  description?: string;
+  imageUrl?: string;
+  title: string;
+  /** Hides the breadcrumb bar (the homepage sets this). */
+  hideBreadcrumbs?: boolean;
+  /** Adds `noindex` — used by pages that must never be in search results. */
+  noindex?: boolean;
+}
+
+const {
+  imageUrl,
+  title,
+  hideBreadcrumbs = false,
+  noindex = false
+} = Astro.props;
+
+// One round trip for everything the shell needs, shared by every page.
+const { settings, show, hosts, platforms, socials, navLinks } =
+  await getLayoutData();
+
+const canonicalURL =
+  Astro.props.canonicalURL ?? new URL(Astro.url.pathname, Astro.site);
+const description =
+  Astro.props.description || settings.metaDescription || settings.description;
+const ogImage = imageUrl ?? settings.ogImageUrl ?? show.image;
+const absoluteOgImage = ogImage?.startsWith('http')
+  ? ogImage
+  : new URL(ogImage ?? '/artwork-placeholder.svg', Astro.site).toString();
+const rssFeed = new URL('/rss.xml', Astro.site).toString();
+const isHome = Astro.url.pathname === '/';
+
+// Speed Insights is served by Vercel's own edge; anywhere else its script 404s
+// and the browser logs a MIME-type error on every page. Only render it where it
+// can actually work.
+const onVercel = Boolean(
+  typeof process !== 'undefined' && process.env?.VERCEL
+);
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+
+    <link rel="canonical" href={canonicalURL} />
+    <link rel="sitemap" href="/sitemap.xml" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={`${show.title} podcast feed`}
+      href={rssFeed}
+    />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta
+      name="theme-color"
+      content="#ffffff"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1a1a1a"
+      media="(prefers-color-scheme: dark)"
+    />
+
+    <title>{title}</title>
+    <meta content={description} name="description" />
+
+    <!-- Open Graph -->
+    <meta content={canonicalURL} property="og:url" />
+    <meta content="website" property="og:type" />
+    <meta content={title} property="og:title" />
+    <meta content={description} property="og:description" />
+    <meta content={absoluteOgImage} property="og:image" />
+    <meta content={show.title} property="og:site_name" />
+
+    <!-- Twitter/X -->
+    <meta content="summary_large_image" name="twitter:card" />
+    <meta content={title} name="twitter:title" />
+    <meta content={description} name="twitter:description" />
+    <meta content={absoluteOgImage} name="twitter:image" />
+
+    {show.image && <link rel="preload" as="image" href={show.image} />}
+
+    <Font cssVariable="--astro-font-inter" preload />
+
+    <Schema
+      slot="head"
+      item={{
+        '@context': 'https://schema.org',
+        '@type': 'PodcastSeries',
+        name: show.title,
+        about: settings.tagline,
+        description: show.description,
+        url: canonicalURL.toString(),
+        webFeed: rssFeed,
+        author: {
+          '@type': 'Organization',
+          name: show.title,
+          url: canonicalURL.origin
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: show.title,
+          url: canonicalURL.origin
+        },
+        image: absoluteOgImage
+      }}
+    />
+
+    <slot name="head" />
+    <ClientRouter />
+  </head>
+  <body
+    class="font-inter text-light-text-body dark:bg-dark-background dark:text-dark-text-body antialiased"
+  >
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <header
+      class="custom-scrollbar lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-112 lg:items-start lg:overflow-y-auto xl:w-120"
+      transition:persist="sidenav"
+    >
+      <div class="relative z-10 mx-auto lg:min-h-full lg:flex-auto">
+        <div
+          class="bg-light-card dark:bg-dark-card m-2 rounded-lg pt-10 pb-4 lg:pt-16 lg:pb-12"
+        >
+          <ShowArtwork image={show.image} title={show.title} />
+
+          <div class="px-4 sm:px-6 md:px-4 lg:px-16">
+            <p
+              class="text-light-text-heading mt-8 text-center text-2xl font-bold lg:text-left dark:text-white"
+            >
+              {show.title}
+            </p>
+
+            {
+              settings.tagline && (
+                <p class="mt-2 text-center text-lg lg:text-left">
+                  {settings.tagline}
+                </p>
+              )
+            }
+          </div>
+
+          <div class="px-4 sm:px-6 md:px-4 lg:px-16">
+            <Platforms platforms={platforms} showTitle={show.title} />
+
+            {
+              socials.length > 0 && (
+                <>
+                  <h3 class="section-heading hidden pt-10 pb-4 lg:block">
+                    Follow
+                  </h3>
+                  <SocialLinks
+                    links={socials}
+                    class="mt-8 justify-center lg:mt-0 lg:justify-start"
+                  />
+                </>
+              )
+            }
+          </div>
+
+          <div class="hidden lg:block">
+            <Hosts hosts={hosts} />
+          </div>
+        </div>
+
+        <div class="hidden lg:block">
+          <InfoCard navLinks={navLinks} />
+        </div>
+      </div>
+    </header>
+
+    <main
+      id="main-content"
+      class="bg-light-card dark:bg-dark-card mx-2 mb-2 rounded-lg lg:relative lg:ml-112 lg:min-h-screen xl:ml-120"
+    >
+      <div class="absolute top-4 right-4 z-30">
+        <SearchButton client:load />
+      </div>
+
+      <div class="relative mt-2 pt-16">
+        <div
+          class="bg-gradient-light dark:bg-gradient-dark absolute top-0 right-0 left-0 z-0 h-80 w-full opacity-30"
+        >
+        </div>
+
+        <Dots />
+
+        <div class="max-w-4xl">
+          {
+            !isHome && !hideBreadcrumbs && (
+              <div class="dark:border-dark-border relative z-20 mb-12 border-b pb-6 lg:mb-16 lg:pb-10">
+                <div class="ml-8 lg:ml-18">
+                  <Breadcrumbs title={title} />
+                </div>
+              </div>
+            )
+          }
+
+          <slot />
+
+          <div class="relative z-10 px-8 pt-16 pb-20 lg:px-18">
+            <div
+              class="dark:border-dark-border flex flex-col gap-4 border-t pt-8 text-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p>
+                {settings.footerText ||
+                  `© ${new Date().getFullYear()} ${show.title}`}
+              </p>
+              <SocialLinks links={socials} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="block lg:hidden">
+      <Hosts hosts={hosts} />
+      <InfoCard navLinks={navLinks} />
+    </footer>
+
+    <div id="audio-player">
+      <Player client:only="preact" transition:persist="player" />
+    </div>
+
+    <SearchDialog client:load transition:persist="search-dialog" />
+    {onVercel && <SpeedInsights />}
+
+    <!--
+      Sidebar state. `is:inline` for the same reason as the fallback below: it
+      must work even when a module fails to load.
+    -->
+    <script is:inline>
+      (function () {
+        var SCROLL_KEY = 'sidebar-scroll';
+
+        function sidebar() {
+          return document.querySelector('header.custom-scrollbar');
+        }
+
+        /*
+          The sidebar carries transition:persist, so on a client-side navigation
+          its DOM is reused verbatim — including the active link's styling,
+          which then describes whichever page happened to load first. Recompute
+          it from the current URL instead of trusting the markup.
+        */
+        function syncActiveLink() {
+          var path = location.pathname.replace(/\/+$/, '') || '/';
+
+          document.querySelectorAll('.site-nav-link').forEach(function (link) {
+            var href = link.getAttribute('href') || '';
+            // Same rule as the server: exact match, or a section parent.
+            var active =
+              href.indexOf('http') !== 0 &&
+              href !== '/' &&
+              (path === href || path.indexOf(href + '/') === 0);
+
+            link.classList.toggle('is-active', active);
+            if (active) link.setAttribute('aria-current', 'page');
+            else link.removeAttribute('aria-current');
+          });
+        }
+
+        /*
+          On a full page load the sidebar scrolls back to the top, which throws
+          the reader away from the links they were just using — they sit near
+          the bottom of a tall sidebar. Put it back where it was.
+        */
+        function saveScroll() {
+          var el = sidebar();
+          if (!el) return;
+          try {
+            sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
+          } catch (error) {
+            /* storage unavailable */
+          }
+        }
+
+        function restoreScroll() {
+          var el = sidebar();
+          if (!el) return;
+          var saved;
+          try {
+            saved = sessionStorage.getItem(SCROLL_KEY);
+          } catch (error) {
+            return;
+          }
+          if (saved === null) return;
+          var top = Number(saved);
+          if (!isFinite(top) || top <= 0) return;
+
+          /*
+            The sidebar is not scrollable until its images have laid out, so a
+            single frame is too early — the assignment silently does nothing.
+            Retry briefly until it takes, then stop.
+          */
+          var attempts = 0;
+          (function apply() {
+            attempts++;
+            if (el.scrollHeight > el.clientHeight) {
+              el.scrollTop = top;
+              if (Math.abs(el.scrollTop - top) < 2) return;
+            }
+            if (attempts < 30) requestAnimationFrame(apply);
+          })();
+        }
+
+        document.addEventListener('click', function (event) {
+          var link = event.target && event.target.closest && event.target.closest('a');
+          if (link && sidebar() && sidebar().contains(link)) saveScroll();
+        }, true);
+
+        window.addEventListener('pagehide', saveScroll);
+        window.addEventListener('beforeunload', saveScroll);
+
+        function init() {
+          syncActiveLink();
+          restoreScroll();
+        }
+
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', init);
+        } else {
+          init();
+        }
+
+        // Client-side navigations reuse the DOM, so re-run after each swap.
+        document.addEventListener('astro:page-load', syncActiveLink);
+      })();
+    </script>
+
+    <!--
+      Navigation fallback. `is:inline` on purpose: Astro would otherwise bundle
+      this into astro:scripts/page.js, and the whole point is to survive the
+      case where a module fails to load.
+    -->
+    <script is:inline>
+      /*
+        <ClientRouter /> cancels a link's default action and then dynamically
+        imports its router module to perform the navigation itself. If that
+        import fails — a chunk that 404s, a dropped connection, a dev server
+        that has just re-optimised its dependencies — the default is already
+        cancelled and nothing replaces it, so the link silently does nothing.
+
+        This watches for that and completes the navigation the browser would
+        have done. It reacts to evidence rather than waiting out a fixed timer,
+        because a timer long enough to be safe is long enough to feel broken:
+        the page itself renders in under 200ms, so a 1.2s wait was almost all
+        of the perceived load time.
+
+          · the router announces itself within ~120ms, or it is not there —
+            go immediately
+          · it announced itself but its import then rejected — go immediately
+          · it announced itself and simply never finished — go at the backstop
+
+        Any of these is cancelled the moment a swap actually begins.
+      */
+      (function () {
+        /*
+          A healthy navigation fires, in order: before-preparation (the router
+          takes the click), after-preparation (it has fetched the next page),
+          before-swap, page-load. A stalled one fires only the first and then
+          goes quiet — so each stage gets its own short deadline rather than one
+          long catch-all, which is what made a failed click feel like a 2.5s
+          page load.
+        */
+        var TAKES_CLICK_MS = 120;
+        var FETCHES_PAGE_MS = 500;
+        var BACKSTOP_MS = 2500;
+
+        var pending = null;
+
+        /*
+          Once the router has demonstrably stalled, stop paying the detection
+          cost on every subsequent click: for the rest of the session the
+          browser is allowed to handle links natively, which is instant. A
+          healthy router never sets this, so a working site keeps its view
+          transitions and its uninterrupted audio.
+        */
+        var BROKEN_KEY = 'astro-router-stalled';
+        var routerStalled = false;
+        try {
+          routerStalled = sessionStorage.getItem(BROKEN_KEY) === '1';
+        } catch (error) {
+          // Private mode or blocked storage: just do the detection each time.
+        }
+
+        function markStalled() {
+          routerStalled = true;
+          try {
+            sessionStorage.setItem(BROKEN_KEY, '1');
+          } catch (error) {
+            /* nothing to do */
+          }
+        }
+
+        function clear() {
+          if (!pending) return;
+          clearTimeout(pending.probe);
+          clearTimeout(pending.backstop);
+          pending = null;
+        }
+
+        function go() {
+          if (!pending) return;
+          var url = pending.url;
+          var from = pending.from;
+          clear();
+          markStalled();
+          if (location.href === from) location.assign(url);
+        }
+
+        // The router took the click. It now has a short window to actually
+        // fetch the page; announcing intent is not progress.
+        document.addEventListener('astro:before-preparation', function () {
+          if (!pending) return;
+          clearTimeout(pending.probe);
+          pending.routerAlive = true;
+          pending.probe = setTimeout(function () {
+            if (pending && !pending.fetchedPage) go();
+          }, FETCHES_PAGE_MS);
+        });
+
+        // Real progress: the next page is in hand.
+        document.addEventListener('astro:after-preparation', function () {
+          if (!pending) return;
+          pending.fetchedPage = true;
+          clearTimeout(pending.probe);
+        });
+
+        // A swap is underway, or the page has loaded: the navigation is real.
+        document.addEventListener('astro:before-swap', clear);
+        document.addEventListener('astro:page-load', clear);
+
+        // The router's own dynamic import failing lands here.
+        window.addEventListener('unhandledrejection', function () {
+          if (pending) go();
+        });
+
+        document.addEventListener(
+          'click',
+          function (event) {
+            if (event.defaultPrevented) return;
+            if (
+              event.button !== 0 ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            ) {
+              return;
+            }
+
+            var link = event.target && event.target.closest && event.target.closest('a');
+            if (!link || !link.href) return;
+            if (link.target && link.target !== '_self') return;
+            if (link.hasAttribute('download')) return;
+
+            var target;
+            try {
+              target = new URL(link.href, location.href);
+            } catch (error) {
+              return;
+            }
+
+            if (target.origin !== location.origin) return;
+            // A hash on the current page is not a navigation.
+            if (
+              target.pathname === location.pathname &&
+              target.search === location.search &&
+              target.hash
+            ) {
+              return;
+            }
+
+            if (routerStalled) {
+              /*
+                Keep the click away from the router entirely and let the browser
+                navigate as it normally would. Stopping propagation here, in the
+                capture phase, means the router's own document-level handler
+                never runs and so never cancels the default.
+              */
+              event.stopPropagation();
+              return;
+            }
+
+            clear();
+            pending = {
+              url: target.href,
+              from: location.href,
+              routerAlive: false,
+              fetchedPage: false,
+              probe: setTimeout(function () {
+                // Nothing from the router by now — it is not going to handle
+                // this click.
+                if (pending && !pending.routerAlive) go();
+              }, TAKES_CLICK_MS),
+              backstop: setTimeout(go, BACKSTOP_MS)
+            };
+          },
+          // Capture, so this runs before the router's handler and is not
+          // skipped if the router stops propagation.
+          true
+        );
+      })();
+    </script>
+  </body>
+</html>

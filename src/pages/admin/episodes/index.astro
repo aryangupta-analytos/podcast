@@ -1,0 +1,235 @@
+---
+import Avatar from '../../../components/Avatar.astro';
+import Icon from '../../../components/admin/Icon.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { formatDuration } from '../../../lib/format';
+import {
+  listEpisodesForAdmin,
+  reorderEpisode,
+  setEpisodeStatus,
+  setFeaturedEpisode
+} from '../../../server/repo/episodes';
+
+const user = Astro.locals.user!;
+
+// Quick actions from the list: status changes, featuring and reordering all
+// post back here so the list is the one place episodes are managed.
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = String(form.get('id') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  if (id) {
+    if (action === 'publish') await setEpisodeStatus(id, 'published');
+    else if (action === 'unpublish') await setEpisodeStatus(id, 'unpublished');
+    else if (action === 'draft') await setEpisodeStatus(id, 'draft');
+    else if (action === 'feature') await setFeaturedEpisode(id);
+    else if (action === 'unfeature') await setFeaturedEpisode(null);
+    else if (action === 'up') await reorderEpisode(id, 'up');
+    else if (action === 'down') await reorderEpisode(id, 'down');
+  }
+
+  const query = new URLSearchParams(Astro.url.search);
+  query.set('saved', 'Updated.');
+  return Astro.redirect(`/admin/episodes?${query}`, 303);
+}
+
+const page = Math.max(
+  1,
+  Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10) || 1
+);
+const statusParam = Astro.url.searchParams.get('status') ?? '';
+const status =
+  statusParam === 'draft' || statusParam === 'published' || statusParam === 'unpublished'
+    ? statusParam
+    : undefined;
+const search = Astro.url.searchParams.get('q') ?? '';
+
+const episodes = await listEpisodesForAdmin({ page, perPage: 20, status, search });
+
+const pageUrl = (next: number) => {
+  const query = new URLSearchParams(Astro.url.search);
+  query.set('page', String(next));
+  query.delete('saved');
+  return `/admin/episodes?${query}`;
+};
+---
+
+<AdminLayout title="Manage Episodes" user={user} wide>
+  <a class="btn-admin is-primary" href="/admin/episodes/new" slot="actions">
+    <Icon name="plus" size={16} />
+    Add Episode
+  </a>
+
+  <form
+    method="GET"
+    style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:18px"
+  >
+    <div class="admin-field" style="margin:0; flex:1 1 240px">
+      <label for="q">Search</label>
+      <input id="q" name="q" type="search" value={search} placeholder="Episode title" />
+    </div>
+
+    <div class="admin-field" style="margin:0; width:180px">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">All</option>
+        <option value="published" selected={status === 'published'}>Published</option>
+        <option value="draft" selected={status === 'draft'}>Drafts</option>
+        <option value="unpublished" selected={status === 'unpublished'}>Unpublished</option>
+      </select>
+    </div>
+
+    <button class="btn-admin" type="submit">Filter</button>
+    {(search || status) && <a class="btn-admin" href="/admin/episodes">Clear</a>}
+  </form>
+
+  {
+    episodes.items.length === 0 ? (
+      <div class="admin-card">
+        <p class="admin-empty">
+          {search || status ? (
+            'No episodes match that filter.'
+          ) : (
+            <>
+              No episodes yet. <a href="/admin/episodes/new">Add your first one</a>.
+            </>
+          )}
+        </p>
+      </div>
+    ) : (
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th />
+              <th>Episode</th>
+              <th>Guests</th>
+              <th>Status</th>
+              <th>Order</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {episodes.items.map((episode) => (
+              <tr>
+                <td>
+                  <Avatar
+                    class="thumb"
+                    name={episode.title}
+                    imageUrl={episode.episodeThumbnail}
+                    size={42}
+                    placeholder="monogram"
+                  />
+                </td>
+
+                <td class="title-cell">
+                  <a href={`/admin/episodes/${episode.id}`}>
+                    {episode.episodeNumber && `${episode.episodeNumber}. `}
+                    {episode.title}
+                  </a>
+                  <span class="meta">
+                    {new Date(episode.published).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                    {episode.duration > 0 && ` · ${formatDuration(episode.duration)}`}
+                    {!episode.audio.src && ' · no audio'}
+                  </span>
+                </td>
+
+                <td style="font-size:13px">
+                  {episode.guests.map((guest) => guest.name).join(', ') || '—'}
+                </td>
+
+                <td>
+                  <span class="status-cell">
+                    <span class:list={['badge', episode.status]}>{episode.status}</span>
+                    {episode.isFeatured && <span class="badge featured">Featured</span>}
+                  </span>
+                </td>
+
+                <td>
+                  <div style="display:flex; gap:4px">
+                    <form method="POST">
+                      <input type="hidden" name="id" value={episode.id} />
+                      <input type="hidden" name="action" value="up" />
+                      <button class="btn-admin is-small is-icon" type="submit" aria-label="Move up">
+                        <Icon name="chevron-up" size={14} />
+                      </button>
+                    </form>
+                    <form method="POST">
+                      <input type="hidden" name="id" value={episode.id} />
+                      <input type="hidden" name="action" value="down" />
+                      <button class="btn-admin is-small is-icon" type="submit" aria-label="Move down">
+                        <Icon name="chevron-down" size={14} />
+                      </button>
+                    </form>
+                  </div>
+                </td>
+
+                <td class="row-actions">
+                  <a class="btn-admin is-small" href={`/admin/episodes/${episode.id}`}>
+                    <Icon name="edit" size={14} />
+                    Edit
+                  </a>
+
+                  <form method="POST">
+                    <input type="hidden" name="id" value={episode.id} />
+                    <input
+                      type="hidden"
+                      name="action"
+                      value={episode.status === 'published' ? 'unpublish' : 'publish'}
+                    />
+                    <button class="btn-admin is-small" type="submit">
+                      <Icon name={episode.status === 'published' ? 'eye-off' : 'eye'} size={14} />
+                      {episode.status === 'published' ? 'Unpublish' : 'Publish'}
+                    </button>
+                  </form>
+
+                  <form method="POST">
+                    <input type="hidden" name="id" value={episode.id} />
+                    <input
+                      type="hidden"
+                      name="action"
+                      value={episode.isFeatured ? 'unfeature' : 'feature'}
+                    />
+                    <button class="btn-admin is-small" type="submit">
+                      <Icon name="star" size={14} />
+                      {episode.isFeatured ? 'Unfeature' : 'Feature'}
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  {
+    episodes.totalPages > 1 && (
+      <nav class="admin-pagination" aria-label="Pages">
+        {page > 1 ? (
+          <a class="btn-admin is-small" href={pageUrl(page - 1)}>
+            ← Previous
+          </a>
+        ) : (
+          <span />
+        )}
+        <span>
+          Page {page} of {episodes.totalPages} · {episodes.total} episodes
+        </span>
+        {page < episodes.totalPages ? (
+          <a class="btn-admin is-small" href={pageUrl(page + 1)}>
+            Next →
+          </a>
+        ) : (
+          <span />
+        )}
+      </nav>
+    )
+  }
+</AdminLayout>

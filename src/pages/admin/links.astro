@@ -1,0 +1,311 @@
+---
+import Icon from '../../components/admin/Icon.astro';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import {
+  createLink,
+  deleteLink,
+  listAllLinks,
+  updateLink
+} from '../../server/repo/settings';
+
+const user = Astro.locals.user!;
+let error = '';
+
+/**
+ * Services the site can draw an icon for.
+ *
+ * These are suggestions, not a whitelist — the Service field is a free-text
+ * input with these as autocomplete options, so a platform we have never heard
+ * of can still be added. Anything without a matching icon renders as a text
+ * link, which is why an unknown value is safe.
+ */
+const PLATFORM_SUGGESTIONS = [
+  { value: 'apple', label: 'Apple Podcasts' },
+  { value: 'spotify', label: 'Spotify' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'overcast', label: 'Overcast' },
+  { value: 'pocket-casts', label: 'Pocket Casts' },
+  { value: 'podbean', label: 'Podbean' },
+  { value: 'amazon', label: 'Amazon Music' },
+  { value: 'iheart', label: 'iHeartRadio' },
+  { value: 'castbox', label: 'Castbox' },
+  { value: 'deezer', label: 'Deezer' }
+];
+
+const SOCIAL_SUGGESTIONS = [
+  { value: 'linkedin', label: 'LinkedIn' },
+  { value: 'twitter', label: 'X / Twitter' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'threads', label: 'Threads' },
+  { value: 'bluesky', label: 'Bluesky' },
+  { value: 'mastodon', label: 'Mastodon' },
+  { value: 'discord', label: 'Discord' }
+];
+
+/** Icons the site can actually draw, so the form can say so honestly. */
+const HAS_ICON = new Set([
+  'apple',
+  'spotify',
+  'youtube',
+  'overcast',
+  'pocket-casts',
+  'podbean',
+  'linkedin',
+  'twitter',
+  'x',
+  'facebook',
+  'instagram'
+]);
+
+function validUrl(value: string): string | null {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
+/** "Apple Podcasts" → "apple-podcasts". Keeps a typed service usable as a key. */
+function toKey(value: string): string {
+  return (
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'other'
+  );
+}
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = String(form.get('action') ?? '');
+  const id = String(form.get('id') ?? '');
+
+  if (action === 'delete' && id) {
+    await deleteLink(id);
+  } else if (action === 'toggle' && id) {
+    await updateLink(id, { isVisible: form.get('isVisible') === 'true' });
+  } else if (action === 'create') {
+    const group = String(form.get('group') ?? '');
+    const url = validUrl(String(form.get('url') ?? '').trim());
+    const rawService = String(form.get('platform') ?? '').trim();
+    // The label falls back to the service name, so one field is enough for a
+    // quick add and the second is genuinely optional.
+    const label = String(form.get('label') ?? '').trim() || rawService;
+
+    if (!['platform', 'social', 'nav'].includes(group)) {
+      error = 'Choose where the link should appear.';
+    } else if (!url) {
+      error = 'Enter a full web address starting with https://';
+    } else if (!label) {
+      error = 'Give the link a name.';
+    } else {
+      const existing = await listAllLinks();
+      await createLink({
+        group: group as 'platform' | 'social' | 'nav',
+        platform: toKey(rawService || label),
+        label,
+        url,
+        sortOrder: existing.filter((link) => link.group === group).length
+      });
+    }
+  }
+
+  if (!error) {
+    return Astro.redirect(
+      `/admin/links?saved=${encodeURIComponent('Links updated.')}`,
+      303
+    );
+  }
+}
+
+const all = await listAllLinks();
+
+const GROUPS = [
+  {
+    key: 'platform' as const,
+    title: 'Where to listen',
+    icon: 'mic' as const,
+    hint: 'Podcast apps. Shown as icons in the sidebar and listed on the About page.',
+    suggestions: PLATFORM_SUGGESTIONS,
+    servicePlaceholder: 'e.g. Spotify, or type any service'
+  },
+  {
+    key: 'social' as const,
+    title: 'Social profiles',
+    icon: 'users' as const,
+    hint: 'Shown in the sidebar and the footer.',
+    suggestions: SOCIAL_SUGGESTIONS,
+    servicePlaceholder: 'e.g. LinkedIn, or type any service'
+  },
+  {
+    key: 'nav' as const,
+    title: 'Extra navigation links',
+    icon: 'link' as const,
+    hint: 'Added to the site menu under Episodes, People, About and Contact.',
+    suggestions: [],
+    servicePlaceholder: 'Optional'
+  }
+];
+---
+
+<AdminLayout
+  title="Social Links"
+  description="Where people can listen, follow and find you. Any service can be added — the suggestions are just shortcuts."
+  user={user}
+>
+  {
+    error && (
+      <p class="admin-flash is-error" role="alert">
+        <Icon name="close" size={16} />
+        <span>{error}</span>
+      </p>
+    )
+  }
+
+  {
+    GROUPS.map((group) => {
+      const links = all.filter((link) => link.group === group.key);
+
+      return (
+        <div class="admin-card">
+          <h2>
+            <Icon name={group.icon} size={17} />
+            {group.title}
+          </h2>
+          <p class="hint">{group.hint}</p>
+
+          {links.length === 0 ? (
+            <p class="admin-empty" style="padding:22px">
+              Nothing here yet — add the first one below.
+            </p>
+          ) : (
+            <div class="admin-table-wrap" style="margin-bottom:18px">
+              <table class="admin-table">
+                <tbody>
+                  {links.map((link) => (
+                    <tr>
+                      <td class="title-cell" style="width:200px">
+                        {link.label}
+                        <span class="meta">
+                          {link.platform}
+                          {!HAS_ICON.has(link.platform) && ' · shown as text'}
+                        </span>
+                      </td>
+                      <td style="font-size:13px; word-break:break-all">
+                        <a href={link.url} target="_blank" rel="noopener">
+                          {link.url}
+                        </a>
+                      </td>
+                      <td style="width:110px">
+                        <span class:list={['badge', link.isVisible ? 'published' : 'draft']}>
+                          {link.isVisible ? 'visible' : 'hidden'}
+                        </span>
+                      </td>
+                      <td class="row-actions">
+                        <form method="POST">
+                          <input type="hidden" name="action" value="toggle" />
+                          <input type="hidden" name="id" value={link.id} />
+                          <input
+                            type="hidden"
+                            name="isVisible"
+                            value={link.isVisible ? 'false' : 'true'}
+                          />
+                          <button class="btn-admin is-small" type="submit">
+                            <Icon name={link.isVisible ? 'eye-off' : 'eye'} size={14} />
+                            {link.isVisible ? 'Hide' : 'Show'}
+                          </button>
+                        </form>
+                        <form method="POST" onsubmit="return confirm('Remove this link?')">
+                          <input type="hidden" name="action" value="delete" />
+                          <input type="hidden" name="id" value={link.id} />
+                          <button class="btn-admin is-small is-danger" type="submit">
+                            <Icon name="trash" size={14} />
+                            Remove
+                          </button>
+                        </form>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <form method="POST" class="link-add">
+            <input type="hidden" name="action" value="create" />
+            <input type="hidden" name="group" value={group.key} />
+
+            <div class="admin-field">
+              <label for={`platform-${group.key}`}>Service</label>
+              {/*
+                A free-text input with a datalist rather than a <select>: the
+                owner should never be blocked because we did not think of their
+                platform. The suggestions stay one keystroke away.
+              */}
+              <input
+                id={`platform-${group.key}`}
+                name="platform"
+                type="text"
+                list={`services-${group.key}`}
+                placeholder={group.servicePlaceholder}
+                autocomplete="off"
+              />
+              {group.suggestions.length > 0 && (
+                <datalist id={`services-${group.key}`}>
+                  {group.suggestions.map((option) => (
+                    <option value={option.label} />
+                  ))}
+                </datalist>
+              )}
+            </div>
+
+            <div class="admin-field">
+              <label for={`label-${group.key}`}>Name shown on the site</label>
+              <input
+                id={`label-${group.key}`}
+                name="label"
+                type="text"
+                placeholder="Defaults to the service name"
+              />
+            </div>
+
+            <div class="admin-field">
+              <label for={`url-${group.key}`}>Web address</label>
+              <input
+                id={`url-${group.key}`}
+                name="url"
+                type="url"
+                placeholder="https://"
+                required
+              />
+            </div>
+
+            <button class="btn-admin is-primary" type="submit">
+              <Icon name="plus" size={15} />
+              Add
+            </button>
+          </form>
+        </div>
+      );
+    })
+  }
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="rocket" size={17} />
+      Your podcast feed
+    </h2>
+    <p class="hint">
+      This site publishes its own RSS feed. Submit this address to Apple
+      Podcasts, Spotify and other directories so new episodes reach listeners
+      automatically.
+    </p>
+    <code class="admin-code">{new URL('/rss.xml', Astro.site).toString()}</code>
+  </div>
+</AdminLayout>

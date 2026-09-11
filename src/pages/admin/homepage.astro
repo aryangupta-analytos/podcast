@@ -1,0 +1,331 @@
+---
+import FileUpload from '../../components/admin/FileUpload';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sanitizeHtml } from '../../server/sanitize';
+import { listEpisodesForAdmin } from '../../server/repo/episodes';
+import { getSettings, updateSettings } from '../../server/repo/settings';
+
+const user = Astro.locals.user!;
+let errors: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const text = (key: string) => String(form.get(key) ?? '').trim();
+  const checked = (key: string) => form.get(key) === 'on';
+
+  const latestCount = Number.parseInt(text('latestEpisodeCount'), 10);
+  if (!Number.isFinite(latestCount) || latestCount < 1 || latestCount > 24) {
+    errors.push('Show between 1 and 24 latest episodes.');
+  }
+
+  const featured = text('featuredEpisodeId');
+
+  if (errors.length === 0) {
+    await updateSettings({
+      showTitle: text('showTitle') || 'Podcast',
+      tagline: text('tagline'),
+      description: text('description'),
+      artworkUrl: text('artworkUrl') || null,
+
+      heroEyebrow: text('heroEyebrow'),
+      heroTitle: text('heroTitle'),
+      heroDescription: text('heroDescription'),
+      heroImageUrl: text('heroImageUrl') || null,
+      heroCtaText: text('heroCtaText'),
+      heroCtaUrl: text('heroCtaUrl'),
+      heroSecondaryCtaText: text('heroSecondaryCtaText'),
+      heroSecondaryCtaUrl: text('heroSecondaryCtaUrl'),
+
+      featuredEpisodeId: featured || null,
+
+      featuredHeading: text('featuredHeading'),
+      latestHeading: text('latestHeading'),
+      teamHeading: text('teamHeading'),
+      guestsHeading: text('guestsHeading'),
+      aboutHeading: text('aboutHeading'),
+      aboutBody: sanitizeHtml(String(form.get('aboutBody') ?? '')),
+      aboutImageUrl: text('aboutImageUrl') || null,
+
+      latestEpisodeCount: latestCount,
+
+      showHero: checked('showHero'),
+      showFeatured: checked('showFeatured'),
+      showAbout: checked('showAbout'),
+      showTeam: checked('showTeam'),
+      showGuests: checked('showGuests'),
+
+      metaTitle: text('metaTitle'),
+      metaDescription: text('metaDescription'),
+      ogImageUrl: text('ogImageUrl') || null,
+      footerText: text('footerText')
+    });
+
+    return Astro.redirect(
+      `/admin/homepage?saved=${encodeURIComponent('Homepage updated — the changes are live.')}`,
+      303
+    );
+  }
+}
+
+const settings = await getSettings();
+const published = await listEpisodesForAdmin({
+  page: 1,
+  perPage: 100,
+  status: 'published'
+});
+---
+
+<AdminLayout title="Edit Homepage" user={user}>
+  <a class="btn-admin" href="/" target="_blank" rel="noopener" slot="actions">
+    View homepage ↗
+  </a>
+
+  <form method="POST">
+    {
+      errors.length > 0 && (
+        <div class="admin-flash is-error" role="alert">
+          <ul style="margin:0; padding-left:18px">
+            {errors.map((message) => (
+              <li>{message}</li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    <div class="admin-card">
+      <h2>Show identity</h2>
+      <p class="hint">Shown in the sidebar on every page of the website.</p>
+
+      <div class="admin-field">
+        <label for="showTitle">Podcast name</label>
+        <input id="showTitle" name="showTitle" type="text" value={settings.showTitle} required />
+      </div>
+
+      <div class="admin-field">
+        <label for="tagline">Tagline</label>
+        <input id="tagline" name="tagline" type="text" value={settings.tagline} />
+        <p class="help">One short line under the name.</p>
+      </div>
+
+      <div class="admin-field">
+        <label for="description">Show description</label>
+        <textarea id="description" name="description" style="min-height:90px">{settings.description}</textarea>
+      </div>
+
+      <FileUpload
+        client:load
+        name="artworkUrl"
+        kind="image"
+        label="Show artwork"
+        help="The square cover art. Used in the sidebar, the RSS feed and social previews."
+        value={settings.artworkUrl ?? ''}
+      />
+    </div>
+
+    <div class="admin-card">
+      <h2>Hero section</h2>
+      <p class="hint">The first thing a visitor reads.</p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showHero" checked={settings.showHero} />
+        <span>Show the hero section</span>
+      </label>
+
+      <div class="admin-field">
+        <label for="heroEyebrow">Small label above the title</label>
+        <input id="heroEyebrow" name="heroEyebrow" type="text" value={settings.heroEyebrow} />
+      </div>
+
+      <div class="admin-field">
+        <label for="heroTitle">Hero title</label>
+        <input id="heroTitle" name="heroTitle" type="text" value={settings.heroTitle} />
+      </div>
+
+      <div class="admin-field">
+        <label for="heroDescription">Hero description</label>
+        <textarea id="heroDescription" name="heroDescription" style="min-height:90px">{settings.heroDescription}</textarea>
+      </div>
+
+      <FileUpload
+        client:load
+        name="heroImageUrl"
+        kind="image"
+        label="Hero image"
+        help="Optional. Appears beside the hero text."
+        value={settings.heroImageUrl ?? ''}
+      />
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="heroCtaText">Button text</label>
+          <input id="heroCtaText" name="heroCtaText" type="text" value={settings.heroCtaText} />
+        </div>
+        <div class="admin-field">
+          <label for="heroCtaUrl">Button link</label>
+          <input id="heroCtaUrl" name="heroCtaUrl" type="text" value={settings.heroCtaUrl} placeholder="/episodes" />
+        </div>
+        <div class="admin-field">
+          <label for="heroSecondaryCtaText">Second link text</label>
+          <input
+            id="heroSecondaryCtaText"
+            name="heroSecondaryCtaText"
+            type="text"
+            value={settings.heroSecondaryCtaText}
+          />
+        </div>
+        <div class="admin-field">
+          <label for="heroSecondaryCtaUrl">Second link URL</label>
+          <input
+            id="heroSecondaryCtaUrl"
+            name="heroSecondaryCtaUrl"
+            type="text"
+            value={settings.heroSecondaryCtaUrl}
+            placeholder="/about"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Featured episode</h2>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showFeatured" checked={settings.showFeatured} />
+        <span>Show a featured episode</span>
+      </label>
+
+      <div class="admin-field">
+        <label for="featuredEpisodeId">Which episode</label>
+        <select id="featuredEpisodeId" name="featuredEpisodeId">
+          <option value="">Newest published episode (updates itself)</option>
+          {
+            published.items.map((episode) => (
+              <option value={episode.id} selected={settings.featuredEpisodeId === episode.id}>
+                {episode.episodeNumber ? `${episode.episodeNumber}. ` : ''}
+                {episode.title}
+              </option>
+            ))
+          }
+        </select>
+        <p class="help">
+          Leave on "newest" and the homepage keeps itself current with no work.
+        </p>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Sections</h2>
+      <p class="hint">Headings and what appears on the homepage.</p>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="featuredHeading">Featured heading</label>
+          <input id="featuredHeading" name="featuredHeading" type="text" value={settings.featuredHeading} />
+        </div>
+        <div class="admin-field">
+          <label for="latestHeading">Latest episodes heading</label>
+          <input id="latestHeading" name="latestHeading" type="text" value={settings.latestHeading} />
+        </div>
+        <div class="admin-field">
+          <label for="latestEpisodeCount">How many latest episodes</label>
+          <input
+            id="latestEpisodeCount"
+            name="latestEpisodeCount"
+            type="number"
+            min="1"
+            max="24"
+            value={settings.latestEpisodeCount}
+          />
+        </div>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="teamHeading">Team heading</label>
+          <input id="teamHeading" name="teamHeading" type="text" value={settings.teamHeading} />
+        </div>
+        <div class="admin-field">
+          <label for="guestsHeading">Guests heading</label>
+          <input id="guestsHeading" name="guestsHeading" type="text" value={settings.guestsHeading} />
+        </div>
+      </div>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showTeam" checked={settings.showTeam} />
+        <span>Show the team section</span>
+      </label>
+      <label class="admin-check">
+        <input type="checkbox" name="showGuests" checked={settings.showGuests} />
+        <span>Show recent guests</span>
+      </label>
+    </div>
+
+    <div class="admin-card">
+      <h2>About block on the homepage</h2>
+      <p class="hint">A short version of the About page. Basic HTML is allowed.</p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showAbout" checked={settings.showAbout} />
+        <span>Show the about block</span>
+      </label>
+
+      <div class="admin-field">
+        <label for="aboutHeading">Heading</label>
+        <input id="aboutHeading" name="aboutHeading" type="text" value={settings.aboutHeading} />
+      </div>
+
+      <div class="admin-field">
+        <label for="aboutBody">Text</label>
+        <textarea
+          id="aboutBody"
+          name="aboutBody"
+          style="min-height:180px; font-family:ui-monospace, monospace; font-size:13px">{settings.aboutBody}</textarea
+        >
+      </div>
+
+      <FileUpload
+        client:load
+        name="aboutImageUrl"
+        kind="image"
+        label="About image"
+        help="Optional."
+        value={settings.aboutImageUrl ?? ''}
+      />
+    </div>
+
+    <div class="admin-card">
+      <h2>Search engines and sharing</h2>
+
+      <div class="admin-field">
+        <label for="metaTitle">Browser tab / search result title</label>
+        <input id="metaTitle" name="metaTitle" type="text" value={settings.metaTitle} />
+      </div>
+
+      <div class="admin-field">
+        <label for="metaDescription">Search result description</label>
+        <textarea id="metaDescription" name="metaDescription" style="min-height:70px" maxlength="320">{settings.metaDescription}</textarea>
+        <p class="help">Around 150–160 characters reads best in Google.</p>
+      </div>
+
+      <FileUpload
+        client:load
+        name="ogImageUrl"
+        kind="image"
+        label="Social sharing image"
+        help="Shown when someone shares the site on LinkedIn, X or Facebook."
+        value={settings.ogImageUrl ?? ''}
+      />
+
+      <div class="admin-field">
+        <label for="footerText">Footer text</label>
+        <input id="footerText" name="footerText" type="text" value={settings.footerText} />
+      </div>
+    </div>
+
+    <div class="admin-actions is-sticky">
+      <button class="btn-admin is-primary" type="submit">Save homepage</button>
+      <a class="btn-admin" href="/admin">Cancel</a>
+    </div>
+  </form>
+</AdminLayout>

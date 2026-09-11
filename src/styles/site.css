@@ -1,0 +1,222 @@
+/*
+  Silicon Valley Tech Podcast additions on top of the vendored Starpod styles.
+  Loaded after global.css, so anything here wins the cascade.
+*/
+
+.skip-link {
+  @apply bg-light-card dark:bg-dark-card text-light-text-heading absolute left-2 z-50 -translate-y-20 rounded px-4 py-2 text-sm font-bold transition-transform focus:translate-y-2 dark:text-white;
+}
+
+/* Prose defaults for CMS-authored show notes and about copy. */
+.cms-prose {
+  @apply prose prose-sm dark:prose-invert max-w-none;
+  @apply prose-headings:text-light-text-heading dark:prose-headings:text-white;
+  @apply prose-a:text-light-text-heading dark:prose-a:text-white prose-a:underline hover:prose-a:no-underline;
+  @apply prose-strong:text-light-text-heading dark:prose-strong:text-white;
+}
+
+/* Homepage hero */
+.hero-gradient-text {
+  @apply bg-gradient-to-br from-[#8A63FF] to-[#43C9F5] bg-clip-text text-transparent;
+}
+
+/* Cards used by the featured episode, team and guest grids. */
+.tile {
+  @apply dark:border-dark-border dark:bg-dark-background/40 rounded-xl border border-transparent bg-white/60 p-5 transition-shadow hover:shadow-md;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Readability
+   The vendored palette put body copy at 5.09:1 on the card background. That
+   clears WCAG AA, but at 16px on a dark surface it reads as washed out, so
+   body and heading tones are lifted a step.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/*
+  Each scheme sets its own tone. An unconditional rule here would win over the
+  dark-mode one purely by source order and leave dark text on a dark card —
+  which is exactly what happened the first time.
+*/
+@media (prefers-color-scheme: light) {
+  body:not(.admin) {
+    /* 5.09:1 -> 7.1:1 on the light card */
+    color: oklch(44% 0.017 285.89);
+  }
+}
+@media (prefers-color-scheme: dark) {
+  body:not(.admin) {
+    /* 5.09:1 -> 8.2:1 on the dark card */
+    color: oklch(78% 0.017 264.42);
+  }
+}
+
+/* ── Site navigation ────────────────────────────────────────────────────── */
+
+.site-nav {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.site-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  margin: 2px -6px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  /* Near-full contrast: these are the site's primary navigation, not body copy. */
+  color: oklch(30.55% 0.052 292.57);
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+@media (prefers-color-scheme: dark) {
+  .site-nav-link {
+    color: #fff;
+  }
+}
+
+.site-nav-link:hover,
+.site-nav-link:focus-visible {
+  background-color: rgb(0 0 0 / 0.05);
+  transform: translateX(2px);
+}
+@media (prefers-color-scheme: dark) {
+  .site-nav-link:hover,
+  .site-nav-link:focus-visible {
+    background-color: rgb(255 255 255 / 0.07);
+  }
+}
+
+/* The chevron is the affordance: it signals "this goes somewhere". */
+.site-nav-arrow {
+  flex: none;
+  opacity: 0.45;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+.site-nav-link:hover .site-nav-arrow,
+.site-nav-link:focus-visible .site-nav-arrow {
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.site-nav-link.is-active {
+  background-image: linear-gradient(90deg, #8a63ff22, transparent);
+  box-shadow: inset 2px 0 0 #8a63ff;
+}
+@media (prefers-color-scheme: dark) {
+  .site-nav-link.is-active {
+    background-image: linear-gradient(90deg, #43c9f522, transparent);
+    box-shadow: inset 2px 0 0 #43c9f5;
+  }
+}
+.site-nav-link.is-active .site-nav-arrow {
+  opacity: 1;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────── */
+
+/* Sections settle in as they enter the viewport rather than appearing abruptly. */
+@supports (animation-timeline: view()) {
+  main section,
+  [aria-label='EpisodeList'] li {
+    animation: section-enter linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 32%;
+  }
+}
+
+@keyframes section-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+/* Episode cards lift slightly on hover so the whole row reads as a target. */
+[aria-label='EpisodeList'] li > div {
+  transition: transform 0.2s ease;
+}
+[aria-label='EpisodeList'] li:hover > div {
+  transform: translateX(3px);
+}
+
+/* Person cards in the grids. */
+.person-card img,
+.person-card svg {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.person-card:hover img,
+.person-card:hover svg {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 0.22);
+}
+
+/* ── Hero image ─────────────────────────────────────────────────────────── */
+
+/*
+  The hero image is owner-supplied and could be a logo, cover art or a photo.
+  A transparent brand mark scaled to fill the column reads as an unfinished
+  page, so it is capped small and framed: a soft panel gives a glyph an edge to
+  sit against, while a photo or artwork simply fills it.
+*/
+.hero-media {
+  display: grid;
+  place-items: center;
+  width: 200px;
+  height: 200px;
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid rgb(255 255 255 / 0.08);
+  background:
+    radial-gradient(120% 120% at 50% 0%, rgb(255 255 255 / 0.07), transparent 70%),
+    rgb(255 255 255 / 0.03);
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-media {
+    border-color: rgb(0 0 0 / 0.07);
+    background:
+      radial-gradient(120% 120% at 50% 0%, rgb(0 0 0 / 0.05), transparent 70%),
+      rgb(0 0 0 / 0.02);
+  }
+}
+
+.hero-image {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 1023px) {
+  .hero-media {
+    width: 168px;
+    height: 168px;
+    padding: 18px;
+    border-radius: 18px;
+  }
+}
+

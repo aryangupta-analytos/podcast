@@ -1,0 +1,56 @@
+---
+import type { Person } from '../../server/db/schema';
+import Avatar from '../Avatar.astro';
+
+export interface Props {
+  people: Person[];
+  heading: string;
+  id: string;
+  /** Links each card to the person's page. Off for advisors with no content. */
+  linkToProfile?: boolean;
+}
+
+const { people, heading, id, linkToProfile = true } = Astro.props;
+---
+
+{
+  people.length > 0 && (
+    <section class="relative z-10 px-8 py-12 lg:px-18" aria-labelledby={id}>
+      <h2 id={id} class="section-heading-underlined mb-8">
+        {heading}
+      </h2>
+
+      <ul class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+        {people.map((person) => {
+          const card = (
+            <>
+              <Avatar
+                class="mb-3 aspect-square w-full rounded-xl object-cover"
+                name={person.name}
+                imageUrl={person.imageUrl}
+                placeholder={person.placeholder as 'monogram'}
+                size={200}
+              />
+              <p class="text-light-text-heading text-sm font-bold dark:text-white">
+                {person.name}
+              </p>
+              {person.title && <p class="text-xs opacity-80">{person.title}</p>}
+            </>
+          );
+
+          return (
+            <li>
+              {linkToProfile ? (
+                <a class="person-card block" href={`/people/${person.slug}`}>
+                  {card}
+                </a>
+              ) : (
+                <div>{card}</div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  )
+}

@@ -1,0 +1,118 @@
+---
+import Avatar from '../../components/Avatar.astro';
+import SmartImage from '../../components/SmartImage.astro';
+import Layout from '../../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { getEpisodesForPerson, getPersonBySlug } from '../../server/repo/people';
+import { getShowInfo } from '../../server/repo/settings';
+
+const { slug } = Astro.params;
+const person = slug ? await getPersonBySlug(slug) : null;
+
+if (!person || !person.isVisible) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [show, episodes] = await Promise.all([
+  getShowInfo(),
+  getEpisodesForPerson(person.id)
+]);
+
+const roleLabel =
+  person.kind === 'host' ? 'Host' : person.kind === 'team' ? 'Team' : 'Guest';
+
+const socials = [
+  { label: 'LinkedIn', url: person.linkedin },
+  { label: 'Website', url: person.website },
+  { label: 'X / Twitter', url: person.twitter },
+  { label: 'GitHub', url: person.github }
+].filter((link): link is { label: string; url: string } => Boolean(link.url));
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout
+  title={`${person.name} — ${show.title}`}
+  description={person.bio?.slice(0, 300) ||
+    `${person.name}${person.title ? `, ${person.title}` : ''} on ${show.title}.`}
+  imageUrl={person.imageUrl ?? undefined}
+>
+  <div class="relative z-10 px-8 pb-16 lg:px-18">
+    <div class="flex flex-col gap-6 sm:flex-row sm:items-start">
+      <Avatar
+        class="h-32 w-32 shrink-0 rounded-xl object-cover"
+        name={person.name}
+        imageUrl={person.imageUrl}
+        placeholder={person.placeholder as 'monogram'}
+        size={128}
+        loading="eager"
+      />
+
+      <div>
+        <p class="section-heading text-light-icon dark:text-dark-icon">
+          {roleLabel}
+        </p>
+        <h1
+          class="text-light-text-heading mt-2 text-2xl font-bold lg:text-4xl dark:text-white"
+        >
+          {person.name}
+        </h1>
+        {person.title && <p class="mt-1 text-lg">{person.title}</p>}
+
+        {
+          socials.length > 0 && (
+            <div class="mt-4 flex flex-wrap gap-4 text-sm">
+              {socials.map((link) => (
+                <a
+                  class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
+                  href={link.url}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    {person.bio && <div class="cms-prose mt-8 max-w-2xl" set:html={person.bio} />}
+
+    {
+      episodes.length > 0 && (
+        <>
+          <h2 class="section-heading-underlined mt-16 mb-8">
+            {episodes.length} episode{episodes.length === 1 ? '' : 's'}
+          </h2>
+
+          <ul class="space-y-6">
+            {episodes.map((episode) => (
+              <li class="flex gap-4">
+                {episode.thumbnailUrl && (
+                  <SmartImage
+                    class="h-16 w-16 shrink-0 rounded-md object-cover"
+                    src={episode.thumbnailUrl}
+                    alt=""
+                    width={64}
+                    height={64}
+                  />
+                )}
+                <div>
+                  <h3 class="text-light-text-heading font-bold dark:text-white">
+                    <a href={`/episodes/${episode.slug}`}>
+                      {episode.episodeNumber && `${episode.episodeNumber}: `}
+                      {episode.title}
+                    </a>
+                  </h3>
+                  <p class="mt-1 text-sm">{episode.description}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+  </div>
+</Layout>

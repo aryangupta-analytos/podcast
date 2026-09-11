@@ -1,0 +1,108 @@
+---
+import { login } from '../../server/auth';
+import '../../styles/admin.css';
+
+let error = '';
+
+// The "next" path is validated as a site-relative admin path so the login form
+// cannot be turned into an open redirect to another site.
+const rawNext = Astro.url.searchParams.get('next') ?? '/admin';
+const next = /^\/admin(\/|$|\?)/.test(rawNext) ? rawNext : '/admin';
+
+let email = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  email = String(form.get('email') ?? '').trim();
+  const password = String(form.get('password') ?? '');
+
+  if (!email || !password) {
+    error = 'Enter your email address and password.';
+  } else {
+    const result = await login(email, password, Astro);
+    if (result.ok) {
+      return Astro.redirect(next, 303);
+    }
+    error = result.error;
+  }
+}
+
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Sign in · Podcast Admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+
+  <body class="admin">
+    <div class="admin-login">
+      <div class="admin-login-card">
+        <span class="admin-login-brand" aria-hidden="true">SV</span>
+        <h1>Podcast Admin</h1>
+        <p>Sign in to manage The Silicon Valley Tech Podcast.</p>
+
+        {
+          Astro.url.searchParams.get('saved') && (
+            <p class="admin-flash is-success" role="status">
+              {Astro.url.searchParams.get('saved')}
+            </p>
+          )
+        }
+
+        {
+          error && (
+            <p class="admin-flash is-error" role="alert">
+              {error}
+            </p>
+          )
+        }
+
+        <form method="POST">
+          {/*
+            `autofocus` is deliberate here and nowhere else: this is a
+            single-purpose sign-in screen with nothing above the field, so
+            moving focus into it skips no content and matches why the visitor
+            arrived.
+          */}
+          <div class="admin-field">
+            <label for="email">Email address</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={email}
+              autocomplete="username"
+              required
+              autofocus
+            />
+          </div>
+
+          <div class="admin-field">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <button
+            class="btn-admin is-primary"
+            type="submit"
+            style="width:100%; margin-top:4px; padding-block:11px"
+          >
+            Sign in
+          </button>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

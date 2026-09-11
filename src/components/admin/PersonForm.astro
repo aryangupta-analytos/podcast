@@ -1,0 +1,205 @@
+---
+import Avatar from '../Avatar.astro';
+import type { Person } from '../../server/db/schema';
+import FileUpload from './FileUpload';
+import Icon from './Icon.astro';
+import RichText from './RichText';
+
+export interface Props {
+  person?: Person;
+  defaultKind?: 'host' | 'team' | 'guest';
+  errors?: string[];
+}
+
+const { person, defaultKind = 'guest', errors = [] } = Astro.props;
+const kind = person?.kind ?? defaultKind;
+const currentPlaceholder = person?.placeholder ?? 'monogram';
+const previewName = person?.name || 'New Person';
+
+/**
+ * Placeholder styles the owner picks from explicitly.
+ *
+ * The system never guesses which one suits someone: a name says nothing about
+ * how a person looks or identifies, and getting that wrong on a real guest's
+ * profile is worse than showing initials.
+ */
+const PLACEHOLDERS = [
+  { value: 'monogram', label: 'Initials', hint: 'Their initials on a colour' },
+  { value: 'neutral', label: 'Silhouette', hint: 'A plain figure' },
+  { value: 'figure-a', label: 'Figure — short hair', hint: '' },
+  { value: 'figure-b', label: 'Figure — long hair', hint: '' }
+] as const;
+---
+
+<form method="POST">
+  {
+    errors.length > 0 && (
+      <div class="admin-flash is-error" role="alert">
+        <Icon name="close" size={16} />
+        <span>
+          <ul style="margin:0; padding-left:18px">
+            {errors.map((message) => (
+              <li>{message}</li>
+            ))}
+          </ul>
+        </span>
+      </div>
+    )
+  }
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="users" size={17} />
+      Details
+    </h2>
+
+    <div class="admin-row-2">
+      <div class="admin-field">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" value={person?.name ?? ''} required />
+      </div>
+
+      <div class="admin-field">
+        <label for="title">Job title</label>
+        <input
+          id="title"
+          name="title"
+          type="text"
+          value={person?.title ?? ''}
+          placeholder="e.g. CEO at Pensando Systems"
+        />
+      </div>
+    </div>
+
+    <div class="admin-field">
+      <label for="kind">Role on the site</label>
+      <select id="kind" name="kind">
+        <option value="host" selected={kind === 'host'}>
+          Host — shown in the sidebar on every page
+        </option>
+        <option value="team" selected={kind === 'team'}>
+          Team — producer or advisor
+        </option>
+        <option value="guest" selected={kind === 'guest'}>
+          Guest — appeared on episodes
+        </option>
+      </select>
+    </div>
+
+    <div class="admin-field">
+      <label for="bio">Bio</label>
+      <RichText
+        client:load
+        name="bio"
+        value={person?.bio ?? ''}
+        placeholder="A short introduction…"
+        minHeight={150}
+      />
+    </div>
+
+    <label class="admin-check">
+      <input type="checkbox" name="isVisible" checked={person ? person.isVisible : true} />
+      <span>
+        <strong>Show this person on the website</strong>
+        <span class="sub">Turn off to hide them without deleting anything.</span>
+      </span>
+    </label>
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="image" size={17} />
+      Photo
+    </h2>
+    <p class="hint">
+      A real photo always looks best. Without one, pick how their placeholder
+      should look.
+    </p>
+
+    <div class="admin-row-2">
+      <FileUpload
+        client:load
+        name="imageUrl"
+        kind="image"
+        label="Photo"
+        help="Square works best. Optimized automatically."
+        value={person?.imageUrl ?? ''}
+      />
+
+      <fieldset class="admin-field" style="border:0; padding:0; margin:0">
+        <legend class="admin-legend">If there is no photo</legend>
+
+        <div class="placeholder-picker">
+          {
+            PLACEHOLDERS.map((option) => (
+              <label class="placeholder-option">
+                <input
+                  type="radio"
+                  name="placeholder"
+                  value={option.value}
+                  checked={currentPlaceholder === option.value}
+                />
+                <Avatar
+                  name={previewName}
+                  imageUrl={null}
+                  size={52}
+                  placeholder={option.value}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="link" size={17} />
+      Links
+    </h2>
+    <p class="hint">Optional. Shown on their profile page.</p>
+
+    <div class="admin-row">
+      <div class="admin-field">
+        <label for="linkedin">LinkedIn</label>
+        <input id="linkedin" name="linkedin" type="url" value={person?.linkedin ?? ''} />
+      </div>
+      <div class="admin-field">
+        <label for="website">Website</label>
+        <input id="website" name="website" type="url" value={person?.website ?? ''} />
+      </div>
+      <div class="admin-field">
+        <label for="twitter">X / Twitter</label>
+        <input id="twitter" name="twitter" type="url" value={person?.twitter ?? ''} />
+      </div>
+      <div class="admin-field">
+        <label for="github">GitHub</label>
+        <input id="github" name="github" type="url" value={person?.github ?? ''} />
+      </div>
+    </div>
+  </div>
+
+  <div class="admin-actions is-sticky">
+    <button class="btn-admin is-primary" type="submit" name="intent" value="save">
+      <Icon name="check" size={16} />
+      {person ? 'Save changes' : 'Add person'}
+    </button>
+    <a class="btn-admin is-ghost" href="/admin/people">Cancel</a>
+    {
+      person && (
+        <a
+          class="btn-admin is-ghost"
+          href={`/people/${person.slug}`}
+          target="_blank"
+          rel="noopener"
+          style="margin-left:auto"
+        >
+          <Icon name="external" size={15} />
+          View on site
+        </a>
+      )
+    }
+  </div>
+</form>

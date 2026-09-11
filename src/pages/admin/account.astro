@@ -1,0 +1,94 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { changePassword, validatePasswordStrength } from '../../server/auth';
+
+const user = Astro.locals.user!;
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const current = String(form.get('currentPassword') ?? '');
+  const next = String(form.get('newPassword') ?? '');
+  const confirm = String(form.get('confirmPassword') ?? '');
+
+  if (next !== confirm) {
+    error = 'The two new passwords do not match.';
+  } else {
+    const weak = validatePasswordStrength(next);
+    if (weak) {
+      error = weak;
+    } else {
+      const result = await changePassword(user.id, current, next);
+      if (result.ok) {
+        // Every session was just invalidated, including this one — so the next
+        // request lands on the login page by design.
+        return Astro.redirect(
+          `/admin/login?saved=${encodeURIComponent('Password changed. Please sign in again.')}`,
+          303
+        );
+      }
+      error = result.error;
+    }
+  }
+}
+---
+
+<AdminLayout title="Account" user={user}>
+  <div class="admin-card">
+    <h2>Signed in as</h2>
+    <p class="hint">{user.email}</p>
+    <p style="margin:0">
+      <strong>{user.name}</strong>
+      <span style="color:var(--ad-muted)"> · {user.role}</span>
+    </p>
+  </div>
+
+  <div class="admin-card">
+    <h2>Change password</h2>
+    <p class="hint">
+      Changing your password signs you out everywhere, including here.
+    </p>
+
+    {error && <p class="admin-flash is-error" role="alert">{error}</p>}
+
+    <form method="POST">
+      <div class="admin-field">
+        <label for="currentPassword">Current password</label>
+        <input
+          id="currentPassword"
+          name="currentPassword"
+          type="password"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <div class="admin-field">
+        <label for="newPassword">New password</label>
+        <input
+          id="newPassword"
+          name="newPassword"
+          type="password"
+          autocomplete="new-password"
+          minlength="12"
+          required
+        />
+        <p class="help">At least 12 characters, with a letter and a number.</p>
+      </div>
+
+      <div class="admin-field">
+        <label for="confirmPassword">Confirm new password</label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          autocomplete="new-password"
+          minlength="12"
+          required
+        />
+      </div>
+
+      <button class="btn-admin is-primary" type="submit">Change password</button>
+    </form>
+  </div>
+</AdminLayout>

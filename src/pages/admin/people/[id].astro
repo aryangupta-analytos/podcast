@@ -1,0 +1,97 @@
+---
+import PersonForm from '../../../components/admin/PersonForm.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { parsePersonForm } from '../../../server/forms/person';
+import {
+  deletePerson,
+  getEpisodesForPerson,
+  getPersonById,
+  updatePerson
+} from '../../../server/repo/people';
+
+const user = Astro.locals.user!;
+const { id } = Astro.params;
+
+const isUuid =
+  !!id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+let person = isUuid ? await getPersonById(id) : null;
+if (!person) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+let errors: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+
+  if (form.get('intent') === 'delete') {
+    const name = person.name;
+    await deletePerson(person.id);
+    return Astro.redirect(
+      `/admin/people?saved=${encodeURIComponent(`${name} deleted.`)}`,
+      303
+    );
+  }
+
+  const parsed = parsePersonForm(form);
+
+  if (parsed.errors.length === 0) {
+    await updatePerson(person.id, parsed.input);
+    return Astro.redirect(
+      `/admin/people/${person.id}?saved=${encodeURIComponent('Saved.')}`,
+      303
+    );
+  }
+
+  errors = parsed.errors;
+  person = (await getPersonById(person.id)) ?? person;
+}
+
+const episodes = await getEpisodesForPerson(person.id);
+---
+
+<AdminLayout
+  title={person.name}
+  user={user}
+  back={{ label: 'Hosts & Guests', href: '/admin/people' }}
+>
+  <PersonForm person={person} errors={errors} />
+
+  {
+    episodes.length > 0 && (
+      <div class="admin-card">
+        <h2>Episodes</h2>
+        <p class="hint">Published episodes {person.name} appears on.</p>
+        <ul style="margin:0; padding-left:18px; line-height:1.9">
+          {episodes.map((episode) => (
+            <li>
+              <a href={`/episodes/${episode.slug}`} target="_blank" rel="noopener">
+                {episode.episodeNumber ? `${episode.episodeNumber}. ` : ''}
+                {episode.title}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  <div class="admin-card" style="border-color: var(--ad-danger)">
+    <h2>Delete {person.name}</h2>
+    <p class="hint">
+      They will be removed from the site and from
+      {episodes.length === 1 ? ' 1 episode' : ` ${episodes.length} episodes`}.
+      The episodes themselves are not affected.
+    </p>
+
+    <form
+      method="POST"
+      onsubmit="return confirm('Delete this person permanently? This cannot be undone.')"
+    >
+      <button class="btn-admin is-danger" type="submit" name="intent" value="delete">
+        Delete person
+      </button>
+    </form>
+  </div>
+</AdminLayout>

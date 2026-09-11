@@ -1,0 +1,83 @@
+---
+import SmartImage from '../SmartImage.astro';
+import FormattedDate from '../FormattedDate';
+import FullPlayButton from '../FullPlayButton';
+import type { Episode, Show } from '../../lib/types';
+import { formatDuration } from '../../lib/format';
+
+export interface Props {
+  episode: Episode;
+  show: Show;
+  heading: string;
+}
+
+const { episode, show, heading } = Astro.props;
+---
+
+<section class="relative z-10 px-8 py-12 lg:px-18" aria-labelledby="featured-heading">
+  <h2 id="featured-heading" class="section-heading-underlined mb-8">{heading}</h2>
+
+  <article class="flex flex-col gap-6 sm:flex-row">
+    <SmartImage
+      class="h-40 w-40 shrink-0 rounded-xl object-cover"
+      src={episode.episodeThumbnail ?? show.image}
+      alt=""
+      height={160}
+      width={160}
+      loading="eager"
+    />
+
+    <div class="min-w-0">
+      <div class="flex flex-wrap items-center gap-3 text-sm">
+        <FormattedDate date={new Date(episode.published)} />
+        {episode.duration > 0 && <span>· {formatDuration(episode.duration)}</span>}
+      </div>
+
+      <h3 class="text-light-text-heading mt-2 text-xl font-bold text-balance lg:text-3xl dark:text-white">
+        <a href={`/episodes/${episode.episodeSlug}`}>
+          {episode.episodeNumber && `${episode.episodeNumber}: `}{episode.title}
+        </a>
+      </h3>
+
+      {episode.description && <p class="mt-3 text-pretty">{episode.description}</p>}
+
+      {
+        episode.guests.length > 0 && (
+          <p class="mt-3 text-sm">
+            With{' '}
+            {episode.guests.map((guest, index) => (
+              <>
+                {index > 0 && ', '}
+                <a class="font-bold underline hover:no-underline" href={`/people/${guest.slug}`}>
+                  {guest.name}
+                </a>
+              </>
+            ))}
+          </p>
+        )
+      }
+
+      <div class="mt-6 flex flex-wrap items-center gap-6 text-sm">
+        {
+          episode.audio.src && (
+            <FullPlayButton
+              client:visible
+              episode={{
+                audio: episode.audio,
+                episodeNumber: episode.episodeNumber,
+                id: episode.id,
+                title: episode.title
+              }}
+            />
+          )
+        }
+        <a
+          class="text-light-text-heading font-bold dark:text-white"
+          href={`/episodes/${episode.episodeSlug}`}
+        >
+          Show notes
+        </a>
+      </div>
+    </div>
+  </article>
+</section>

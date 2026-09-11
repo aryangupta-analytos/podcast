@@ -1,0 +1,36 @@
+---
+import PersonForm from '../../../components/admin/PersonForm.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { parsePersonForm } from '../../../server/forms/person';
+import { createPerson } from '../../../server/repo/people';
+
+const user = Astro.locals.user!;
+let errors: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const parsed = parsePersonForm(form);
+
+  if (parsed.errors.length === 0) {
+    const person = await createPerson(parsed.input);
+    return Astro.redirect(
+      `/admin/people/${person.id}?saved=${encodeURIComponent(`${person.name} added.`)}`,
+      303
+    );
+  }
+
+  errors = parsed.errors;
+}
+
+const kindParam = Astro.url.searchParams.get('kind');
+const defaultKind =
+  kindParam === 'host' || kindParam === 'team' ? kindParam : 'guest';
+---
+
+<AdminLayout
+  title="Add person"
+  user={user}
+  back={{ label: 'Hosts & Guests', href: '/admin/people' }}
+>
+  <PersonForm defaultKind={defaultKind} errors={errors} />
+</AdminLayout>

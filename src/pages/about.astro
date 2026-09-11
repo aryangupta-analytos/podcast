@@ -1,0 +1,139 @@
+---
+import Avatar from '../components/Avatar.astro';
+import LargePlatforms from '../components/LargePlatforms.astro';
+import Layout from '../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../lib/cache';
+import { listPeople } from '../server/repo/people';
+import { getLinks, getSettings, getShowInfo } from '../server/repo/settings';
+
+const [settings, show, hosts, team, platforms] = await Promise.all([
+  getSettings(),
+  getShowInfo(),
+  listPeople('host'),
+  listPeople('team'),
+  getLinks('platform')
+]);
+
+const rssFeed = new URL('/rss.xml', Astro.site).toString();
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout
+  title={`${settings.aboutTitle} — ${show.title}`}
+  description={settings.description}
+>
+  <div class="relative z-10 px-8 pb-16 lg:px-18">
+    <h1
+      class="text-light-text-heading mb-4 text-2xl font-bold lg:mb-6 lg:text-5xl dark:text-white"
+    >
+      {settings.aboutTitle}
+    </h1>
+
+    {
+      settings.aboutBody ? (
+        <div class="cms-prose max-w-2xl" set:html={settings.aboutBody} />
+      ) : (
+        <p class="max-w-2xl">{settings.description}</p>
+      )
+    }
+
+    <h2 class="section-heading-underlined mt-16">Where to listen</h2>
+    <LargePlatforms platforms={platforms} rssFeed={rssFeed} />
+
+    {
+      hosts.length > 0 && (
+        <>
+          <h2 class="section-heading-underlined mt-16 lg:mt-24">
+            Meet the hosts
+          </h2>
+
+          <div class="mt-9 space-y-8 lg:mt-12">
+            {hosts.map((host) => (
+              <div class="flex flex-col lg:flex-row">
+                <Avatar
+                  class="mr-6 mb-4 h-20 w-20 shrink-0 rounded-lg object-cover"
+                  name={host.name}
+                  imageUrl={host.imageUrl}
+                  placeholder={host.placeholder as 'monogram'}
+                  size={80}
+                />
+
+                <div>
+                  <h3 class="text-light-text-heading text-lg font-bold lg:text-2xl dark:text-white">
+                    <a href={`/people/${host.slug}`}>{host.name}</a>
+                  </h3>
+                  {host.title && <p class="text-sm opacity-80">{host.title}</p>}
+                  {host.bio && <div class="cms-prose mt-2 lg:mt-3" set:html={host.bio} />}
+
+                  <div class="mt-4 flex flex-wrap gap-4">
+                    {host.linkedin && (
+                      <a
+                        class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
+                        href={host.linkedin}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        LinkedIn
+                      </a>
+                    )}
+                    {host.twitter && (
+                      <a
+                        class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
+                        href={host.twitter}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        X / Twitter
+                      </a>
+                    )}
+                    {host.website && (
+                      <a
+                        class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
+                        href={host.website}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                      >
+                        Website
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )
+    }
+
+    {
+      team.length > 0 && (
+        <>
+          <h2 class="section-heading-underlined mt-16 lg:mt-24">The team</h2>
+
+          <ul class="mt-9 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            {team.map((member) => (
+              <li>
+                <a class="person-card block" href={`/people/${member.slug}`}>
+                  <Avatar
+                    class="mb-3 aspect-square w-full rounded-xl object-cover"
+                    name={member.name}
+                    imageUrl={member.imageUrl}
+                    placeholder={member.placeholder as 'monogram'}
+                    size={200}
+                  />
+                  <p class="text-light-text-heading text-sm font-bold dark:text-white">
+                    {member.name}
+                  </p>
+                  {member.title && (
+                    <p class="text-xs opacity-80">{member.title}</p>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </>
+      )
+    }
+  </div>
+</Layout>

@@ -1,0 +1,114 @@
+---
+import FileUpload from '../../components/admin/FileUpload';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { sanitizeHtml } from '../../server/sanitize';
+import { getSettings, updateSettings } from '../../server/repo/settings';
+
+const user = Astro.locals.user!;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const text = (key: string) => String(form.get(key) ?? '').trim();
+
+  await updateSettings({
+    aboutTitle: text('aboutTitle') || 'About',
+    aboutBody: sanitizeHtml(String(form.get('aboutBody') ?? '')),
+    aboutImageUrl: text('aboutImageUrl') || null,
+    contactHeading: text('contactHeading') || 'Contact',
+    contactBody: sanitizeHtml(String(form.get('contactBody') ?? '')),
+    contactEmail: text('contactEmail') || null,
+    contactPhone: text('contactPhone') || null
+  });
+
+  return Astro.redirect(
+    `/admin/about?saved=${encodeURIComponent('About and contact pages updated.')}`,
+    303
+  );
+}
+
+const settings = await getSettings();
+---
+
+<AdminLayout title="Edit About" user={user}>
+  <a class="btn-admin" href="/about" target="_blank" rel="noopener" slot="actions">
+    View page ↗
+  </a>
+
+  <form method="POST">
+    <div class="admin-card">
+      <h2>About page</h2>
+      <p class="hint">
+        The full story of the show. Basic HTML is allowed — paragraphs, links,
+        lists, bold.
+      </p>
+
+      <div class="admin-field">
+        <label for="aboutTitle">Page title</label>
+        <input id="aboutTitle" name="aboutTitle" type="text" value={settings.aboutTitle} />
+      </div>
+
+      <div class="admin-field">
+        <label for="aboutBody">Page text</label>
+        <textarea
+          id="aboutBody"
+          name="aboutBody"
+          style="min-height:300px; font-family:ui-monospace, monospace; font-size:13px">{settings.aboutBody}</textarea
+        >
+        <p class="help">
+          Hosts and the team are listed automatically below this text — manage
+          them in <a href="/admin/people">Hosts &amp; Guests</a>.
+        </p>
+      </div>
+
+      <FileUpload
+        client:load
+        name="aboutImageUrl"
+        kind="image"
+        label="About image"
+        help="Optional."
+        value={settings.aboutImageUrl ?? ''}
+      />
+    </div>
+
+    <div class="admin-card">
+      <h2>Contact page</h2>
+
+      <div class="admin-field">
+        <label for="contactHeading">Page title</label>
+        <input id="contactHeading" name="contactHeading" type="text" value={settings.contactHeading} />
+      </div>
+
+      <div class="admin-field">
+        <label for="contactBody">Intro text</label>
+        <textarea
+          id="contactBody"
+          name="contactBody"
+          style="min-height:160px; font-family:ui-monospace, monospace; font-size:13px">{settings.contactBody}</textarea
+        >
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="contactEmail">Public email address</label>
+          <input
+            id="contactEmail"
+            name="contactEmail"
+            type="email"
+            value={settings.contactEmail ?? ''}
+          />
+          <p class="help">Also used as the owner email in the podcast RSS feed.</p>
+        </div>
+
+        <div class="admin-field">
+          <label for="contactPhone">Phone number</label>
+          <input id="contactPhone" name="contactPhone" type="text" value={settings.contactPhone ?? ''} />
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-actions is-sticky">
+      <button class="btn-admin is-primary" type="submit">Save pages</button>
+      <a class="btn-admin" href="/admin">Cancel</a>
+    </div>
+  </form>
+</AdminLayout>

@@ -1,0 +1,9 @@
+{
+  "name": "The Silicon Valley Tech Podcast",
+  "short_name": "SV Tech Podcast",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }],
+  "theme_color": "#0b0e14",
+  "background_color": "#0b0e14",
+  "display": "standalone",
+  "start_url": "/"
+}

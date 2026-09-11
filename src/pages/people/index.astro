@@ -1,0 +1,71 @@
+---
+import Avatar from '../../components/Avatar.astro';
+import Layout from '../../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { listPeople, listRecentGuests } from '../../server/repo/people';
+import { getShowInfo } from '../../server/repo/settings';
+
+const [show, hosts, team, guests] = await Promise.all([
+  getShowInfo(),
+  listPeople('host'),
+  listPeople('team'),
+  listRecentGuests(200)
+]);
+
+const GROUPS = [
+  { id: 'hosts', title: 'Hosts', people: hosts },
+  { id: 'team', title: 'The team', people: team },
+  { id: 'guests', title: 'Guests', people: guests }
+].filter((group) => group.people.length > 0);
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout
+  title={`People — ${show.title}`}
+  description={`The hosts, team and guests of ${show.title}.`}
+>
+  <div class="relative z-10 px-8 pb-16 lg:px-18">
+    <h1
+      class="text-light-text-heading mb-4 text-2xl font-bold lg:mb-6 lg:text-5xl dark:text-white"
+    >
+      People
+    </h1>
+
+    <p class="mb-4 max-w-2xl">
+      Everyone who has been behind the microphone on {show.title}.
+    </p>
+
+    {
+      GROUPS.map((group) => (
+        <section aria-labelledby={group.id}>
+          <h2 id={group.id} class="section-heading-underlined mt-12 mb-8">
+            {group.title}
+          </h2>
+
+          <ul class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
+            {group.people.map((person) => (
+              <li>
+                <a class="person-card block" href={`/people/${person.slug}`}>
+                  <Avatar
+                    class="mb-3 aspect-square w-full rounded-xl object-cover"
+                    name={person.name}
+                    imageUrl={person.imageUrl}
+                    placeholder={person.placeholder as 'monogram'}
+                    size={200}
+                  />
+                  <p class="text-light-text-heading text-sm font-bold dark:text-white">
+                    {person.name}
+                  </p>
+                  {person.title && (
+                    <p class="text-xs opacity-80">{person.title}</p>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    }
+  </div>
+</Layout>

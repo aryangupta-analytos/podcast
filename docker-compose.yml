@@ -1,0 +1,24 @@
+# Local Postgres for development. Production uses a managed Postgres
+# (Neon / Supabase / RDS) via DATABASE_URL — nothing else changes.
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: svtech_podcast_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: svtech
+      POSTGRES_PASSWORD: svtech_dev_password
+      POSTGRES_DB: svtech_podcast
+    ports:
+      # 55432 on the host so this never collides with another local Postgres.
+      - '55432:5432'
+    volumes:
+      - svtech_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U svtech -d svtech_podcast']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  svtech_pgdata:

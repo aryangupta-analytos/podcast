@@ -1,0 +1,92 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import {
+  deleteContactMessage,
+  listContactMessages,
+  markMessageRead
+} from '../../server/repo/contact';
+
+const user = Astro.locals.user!;
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const id = String(form.get('id') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  if (id) {
+    if (action === 'read') await markMessageRead(id, true);
+    else if (action === 'unread') await markMessageRead(id, false);
+    else if (action === 'delete') await deleteContactMessage(id);
+  }
+
+  return Astro.redirect(`/admin/messages?saved=${encodeURIComponent('Updated.')}`, 303);
+}
+
+const messages = await listContactMessages(200);
+---
+
+<AdminLayout title="Messages" user={user}>
+  <div class="admin-card">
+    <h2>Contact form</h2>
+    <p class="hint">
+      Everything sent through the contact page on your website.
+    </p>
+
+    {
+      messages.length === 0 ? (
+        <p class="admin-empty">No messages yet.</p>
+      ) : (
+        <ul style="list-style:none; margin:0; padding:0; display:grid; gap:12px">
+          {messages.map((message) => (
+            <li
+              style={`padding:16px; border:1px solid var(--ad-border); border-radius:10px; ${
+                message.isRead ? 'opacity:.72' : 'background:var(--ad-surface-2)'
+              }`}
+            >
+              <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:space-between; align-items:baseline">
+                <strong>{message.name}</strong>
+                <span style="color:var(--ad-muted); font-size:12.5px">
+                  {message.createdAt.toLocaleString('en-US', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}
+                </span>
+              </div>
+
+              <a
+                href={`mailto:${message.email}?subject=${encodeURIComponent('Re: your message to the podcast')}`}
+                style="font-size:13px"
+              >
+                {message.email}
+              </a>
+
+              <p style="margin:10px 0 12px; white-space:pre-wrap">{message.message}</p>
+
+              <div style="display:flex; gap:8px; flex-wrap:wrap">
+                <form method="POST">
+                  <input type="hidden" name="id" value={message.id} />
+                  <input
+                    type="hidden"
+                    name="action"
+                    value={message.isRead ? 'unread' : 'read'}
+                  />
+                  <button class="btn-admin is-small" type="submit">
+                    Mark as {message.isRead ? 'unread' : 'read'}
+                  </button>
+                </form>
+
+                <form method="POST" onsubmit="return confirm('Delete this message?')">
+                  <input type="hidden" name="id" value={message.id} />
+                  <input type="hidden" name="action" value="delete" />
+                  <button class="btn-admin is-small is-danger" type="submit">
+                    Delete
+                  </button>
+                </form>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</AdminLayout>

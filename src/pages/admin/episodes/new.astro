@@ -1,0 +1,52 @@
+---
+import EpisodeForm from '../../../components/admin/EpisodeForm.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { createEpisode } from '../../../server/repo/episodes';
+import { listPeople } from '../../../server/repo/people';
+import { parseEpisodeForm } from '../../../server/forms/episode';
+
+const user = Astro.locals.user!;
+let errors: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const parsed = await parseEpisodeForm(form);
+
+  // "Save and publish" overrides the status dropdown — it is the button the
+  // owner reaches for when they mean it.
+  if (form.get('intent') === 'publish') {
+    parsed.input.status = 'published';
+    if (!parsed.input.audioUrl) {
+      parsed.errors = parsed.errors.filter(
+        (message) => !message.startsWith('An episode needs an audio file')
+      );
+      parsed.errors.push('Add an audio file before publishing this episode.');
+    }
+  }
+
+  if (parsed.errors.length === 0) {
+    const episode = await createEpisode(parsed.input);
+    const message =
+      episode.status === 'published'
+        ? 'Episode published — it is live on the website now.'
+        : 'Episode saved as a draft.';
+
+    return Astro.redirect(
+      `/admin/episodes/${episode.id}?saved=${encodeURIComponent(message)}`,
+      303
+    );
+  }
+
+  errors = parsed.errors;
+}
+
+const guestOptions = await listPeople('guest', { includeHidden: true });
+---
+
+<AdminLayout
+  title="Add Episode"
+  user={user}
+  back={{ label: 'All episodes', href: '/admin/episodes' }}
+>
+  <EpisodeForm guestOptions={guestOptions} errors={errors} />
+</AdminLayout>

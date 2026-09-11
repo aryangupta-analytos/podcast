@@ -1,0 +1,50 @@
+---
+import Avatar from '../Avatar.astro';
+
+export interface Props {
+  people: Array<{
+    slug: string;
+    name: string;
+    title?: string | null;
+    imageUrl?: string | null;
+    placeholder?: string | null;
+    isHost: boolean;
+  }>;
+}
+
+const { people } = Astro.props;
+
+// Hosts first, then guests, each alphabetically.
+const ordered = [...people].sort((a, b) => {
+  if (a.isHost !== b.isHost) return a.isHost ? -1 : 1;
+  return a.name.localeCompare(b.name);
+});
+---
+
+{
+  ordered.length > 0 && (
+    <>
+      <h3 class="section-heading pb-6">Creators and Guests</h3>
+
+      <div class="mb-12 grid grid-cols-1 gap-4 lg:mb-20 lg:grid-cols-2">
+        {ordered.map((person) => (
+          <a class="flex items-center" href={`/people/${person.slug}`}>
+            <Avatar
+              class="mr-4 h-12 w-12 rounded-lg object-cover"
+              name={person.name}
+              imageUrl={person.imageUrl}
+              placeholder={(person.placeholder ?? 'monogram') as 'monogram'}
+              size={48}
+            />
+            <span>
+              {person.name}
+              {person.title && (
+                <span class="block text-xs opacity-70">{person.title}</span>
+              )}
+            </span>
+          </a>
+        ))}
+      </div>
+    </>
+  )
+}

@@ -1,0 +1,10 @@
+---
+import NotFoundContent from '../components/NotFoundContent.astro';
+import Layout from '../layouts/Layout.astro';
+
+Astro.response.status = 404;
+---
+
+<Layout title="404 — Page not found" noindex>
+  <NotFoundContent />
+</Layout>

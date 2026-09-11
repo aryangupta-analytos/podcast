@@ -1,0 +1,209 @@
+---
+import Icon from '../components/admin/Icon.astro';
+import type { IconName } from '../components/admin/icons';
+import type { SessionUser } from '../server/auth/session';
+import '../styles/admin.css';
+
+export interface Props {
+  title: string;
+  user: SessionUser;
+  /** Shown as a back link above the page title. */
+  back?: { label: string; href: string };
+  /** One-line explanation under the page title. */
+  description?: string;
+  /** Lets a data-heavy page use the full window width. */
+  wide?: boolean;
+}
+
+const { title, user, back, description, wide = false } = Astro.props;
+const { pathname } = Astro.url;
+
+const isActive = (href: string) =>
+  href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+
+const NAV: Array<{
+  label: string;
+  items: Array<{ href: string; label: string; icon: IconName }>;
+}> = [
+  {
+    label: 'Overview',
+    items: [{ href: '/admin', label: 'Dashboard', icon: 'dashboard' }]
+  },
+  {
+    label: 'Episodes',
+    items: [
+      { href: '/admin/episodes', label: 'Manage Episodes', icon: 'mic' },
+      { href: '/admin/episodes/new', label: 'Add Episode', icon: 'plus' }
+    ]
+  },
+  {
+    label: 'Website',
+    items: [
+      { href: '/admin/homepage', label: 'Edit Homepage', icon: 'home' },
+      { href: '/admin/about', label: 'Edit About', icon: 'document' },
+      { href: '/admin/people', label: 'Hosts & Guests', icon: 'users' },
+      { href: '/admin/links', label: 'Social Links', icon: 'link' }
+    ]
+  },
+  {
+    label: 'Media',
+    items: [{ href: '/admin/media', label: 'Images & Audio', icon: 'image' }]
+  },
+  {
+    label: 'Inbox',
+    items: [{ href: '/admin/messages', label: 'Messages', icon: 'mail' }]
+  }
+];
+
+// Flash messages survive the redirect that follows every save.
+const flash = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+
+const initials = user.name
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((w) => w[0]?.toUpperCase() ?? '')
+  .join('');
+---
+
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} · Podcast Admin</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+
+  <body class="admin">
+    <a href="#admin-main" class="admin-skip">Skip to content</a>
+
+    <div class="admin-shell">
+      <aside class="admin-sidebar" id="admin-sidebar">
+        <div class="admin-brand">
+          <span class="admin-brand-mark">SV</span>
+          <span class="admin-brand-text">
+            <strong>Podcast Admin</strong>
+            <small>{user.name}</small>
+          </span>
+          <button
+            class="admin-sidebar-toggle"
+            type="button"
+            aria-expanded="false"
+            aria-controls="admin-nav"
+            aria-label="Show navigation"
+          >
+            <Icon name="chevron-down" size={18} />
+          </button>
+        </div>
+
+        <nav aria-label="Admin" id="admin-nav" class="admin-nav">
+          {
+            NAV.map((group) => (
+              <div class="admin-nav-group">
+                <p class="admin-nav-label">{group.label}</p>
+                {group.items.map((item) => (
+                  <a
+                    class:list={['admin-nav-link', isActive(item.href) && 'is-active']}
+                    href={item.href}
+                    aria-current={isActive(item.href) ? 'page' : undefined}
+                  >
+                    <Icon name={item.icon} />
+                    <span>{item.label}</span>
+                  </a>
+                ))}
+              </div>
+            ))
+          }
+
+          <div class="admin-sidebar-footer">
+            <a class="admin-nav-link" href="/" target="_blank" rel="noopener">
+              <Icon name="external" />
+              <span>View website</span>
+            </a>
+            <a
+              class:list={['admin-nav-link', isActive('/admin/account') && 'is-active']}
+              href="/admin/account"
+            >
+              <span class="admin-avatar" aria-hidden="true">{initials}</span>
+              <span>Account</span>
+            </a>
+            <form method="POST" action="/admin/logout">
+              <button class="admin-nav-link admin-nav-button" type="submit">
+                <Icon name="logout" />
+                <span>Sign out</span>
+              </button>
+            </form>
+          </div>
+        </nav>
+      </aside>
+
+      <main id="admin-main" class:list={['admin-main', wide && 'is-wide']}>
+        <div class="admin-inner">
+          {
+            flash && (
+              <p class="admin-flash is-success" role="status">
+                <Icon name="check" size={16} />
+                <span>{flash}</span>
+              </p>
+            )
+          }
+          {
+            error && (
+              <p class="admin-flash is-error" role="alert">
+                <Icon name="close" size={16} />
+                <span>{error}</span>
+              </p>
+            )
+          }
+
+          <header class="admin-header">
+            {
+              back && (
+                <a class="admin-back" href={back.href}>
+                  <Icon name="chevron-right" size={14} class="flip" />
+                  {back.label}
+                </a>
+              )
+            }
+            <div class="admin-header-row">
+              <div>
+                <h1>{title}</h1>
+                {description && <p class="admin-subtitle">{description}</p>}
+              </div>
+              <div class="admin-header-actions">
+                <slot name="actions" />
+              </div>
+            </div>
+          </header>
+
+          <slot />
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // Collapsible navigation on small screens. Progressive enhancement: with
+      // no JavaScript the CSS leaves the nav expanded, so it is never trapped.
+      const sidebar = document.getElementById('admin-sidebar');
+      const toggle = sidebar?.querySelector<HTMLButtonElement>('.admin-sidebar-toggle');
+
+      toggle?.addEventListener('click', () => {
+        const open = sidebar!.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', String(open));
+        toggle.setAttribute('aria-label', open ? 'Hide navigation' : 'Show navigation');
+      });
+
+      // A flash message has been read by the time the next interaction happens;
+      // clearing it from the URL stops it reappearing on refresh.
+      if (location.search.includes('saved=') || location.search.includes('error=')) {
+        const url = new URL(location.href);
+        url.searchParams.delete('saved');
+        url.searchParams.delete('error');
+        history.replaceState(null, '', url);
+      }
+    </script>
+  </body>
+</html>

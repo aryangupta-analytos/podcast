@@ -1,0 +1,182 @@
+---
+import Avatar from '../../components/Avatar.astro';
+import Icon from '../../components/admin/Icon.astro';
+import type { IconName } from '../../components/admin/icons';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import { formatBytes } from '../../lib/format';
+import { countUnreadMessages } from '../../server/repo/contact';
+import { getEpisodeCounts, listEpisodesForAdmin } from '../../server/repo/episodes';
+import { getMediaStats } from '../../server/repo/media';
+import { listPeople } from '../../server/repo/people';
+
+// Guaranteed by middleware; asserted here so the page is not silently
+// renderable without a user if the middleware is ever changed.
+const user = Astro.locals.user!;
+
+const [counts, recent, media, guests, hosts, unread] = await Promise.all([
+  getEpisodeCounts(),
+  listEpisodesForAdmin({ page: 1, perPage: 5 }),
+  getMediaStats(),
+  listPeople('guest', { includeHidden: true }),
+  listPeople('host', { includeHidden: true }),
+  countUnreadMessages()
+]);
+
+const actions: Array<{
+  href: string;
+  icon: IconName;
+  title: string;
+  sub: string;
+  primary?: boolean;
+}> = [
+  {
+    href: '/admin/episodes/new',
+    icon: 'plus',
+    title: 'Add Episode',
+    sub: 'Upload audio, write the notes, publish',
+    primary: true
+  },
+  {
+    href: '/admin/episodes',
+    icon: 'mic',
+    title: 'Manage Episodes',
+    sub: `${counts.published} published · ${counts.draft} draft${counts.draft === 1 ? '' : 's'}`
+  },
+  {
+    href: '/admin/homepage',
+    icon: 'home',
+    title: 'Edit Homepage',
+    sub: 'Hero, featured episode, sections'
+  },
+  {
+    href: '/admin/people',
+    icon: 'users',
+    title: 'Hosts & Guests',
+    sub: `${hosts.length} hosts · ${guests.length} guests`
+  },
+  {
+    href: '/admin/media',
+    icon: 'image',
+    title: 'Images & Audio',
+    sub: `${media.image.count + media.audio.count} files · ${formatBytes(media.image.bytes + media.audio.bytes)}`
+  },
+  {
+    href: '/admin/messages',
+    icon: 'mail',
+    title: 'Messages',
+    sub: unread > 0 ? `${unread} unread` : 'Nothing new'
+  }
+];
+
+const stats = [
+  { value: counts.published, label: 'Published episodes' },
+  { value: counts.draft, label: 'Drafts' },
+  { value: counts.unpublished, label: 'Unpublished' },
+  { value: guests.length, label: 'Guests' }
+];
+---
+
+<AdminLayout
+  title={`Welcome back, ${user.name.split(' ')[0]}`}
+  description="Everything about the podcast website is managed from here."
+  user={user}
+>
+  <div class="admin-grid" style="margin-bottom: 26px;">
+    {
+      actions.map((action) => (
+        <a
+          class:list={['admin-action', action.primary && 'is-primary']}
+          href={action.href}
+        >
+          <span class="icon">
+            <Icon name={action.icon} size={19} />
+          </span>
+          <span>
+            {action.title}
+            <small>{action.sub}</small>
+          </span>
+        </a>
+      ))
+    }
+  </div>
+
+  <div class="admin-grid" style="margin-bottom: 26px;">
+    {
+      stats.map((stat) => (
+        <div class="admin-stat">
+          <span class="value">{stat.value}</span>
+          <span class="label">{stat.label}</span>
+        </div>
+      ))
+    }
+  </div>
+
+  <div class="admin-card">
+    <h2>
+      <Icon name="clock" size={17} />
+      Recent episodes
+    </h2>
+    <p class="hint">The five most recent, newest first.</p>
+
+    {
+      recent.items.length === 0 ? (
+        <p class="admin-empty">
+          No episodes yet. <a href="/admin/episodes/new">Add your first one</a>.
+        </p>
+      ) : (
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th aria-label="Artwork" />
+                <th>Episode</th>
+                <th>Status</th>
+                <th aria-label="Actions" />
+              </tr>
+            </thead>
+            <tbody>
+              {recent.items.map((episode) => (
+                <tr>
+                  <td>
+                    <Avatar
+                      class="thumb"
+                      name={episode.title}
+                      imageUrl={episode.episodeThumbnail}
+                      size={42}
+                      placeholder="monogram"
+                    />
+                  </td>
+                  <td class="title-cell">
+                    <a href={`/admin/episodes/${episode.id}`}>
+                      {episode.episodeNumber && `${episode.episodeNumber}. `}
+                      {episode.title}
+                    </a>
+                    <span class="meta">
+                      {new Date(episode.published).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="status-cell">
+                      <span class:list={['badge', episode.status]}>{episode.status}</span>
+                      {episode.isFeatured && <span class="badge featured">Featured</span>}
+                    </span>
+                  </td>
+                  <td class="row-actions">
+                    <a class="btn-admin is-small" href={`/admin/episodes/${episode.id}`}>
+                      <Icon name="edit" size={14} />
+                      Edit
+                    </a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+    }
+  </div>
+</AdminLayout>

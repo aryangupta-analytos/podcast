@@ -1,0 +1,138 @@
+---
+import SmartImage from './SmartImage.astro';
+
+export interface Props {
+  name: string;
+  imageUrl?: string | null;
+  /** Rendered size in CSS pixels. */
+  size: number;
+  class?: string;
+  loading?: 'lazy' | 'eager';
+  /**
+   * Which placeholder to draw when there is no photo. Chosen by the owner per
+   * person — never inferred, because a name does not tell you what someone
+   * looks like or how they identify.
+   */
+  placeholder?: 'monogram' | 'neutral' | 'figure-a' | 'figure-b' | null;
+}
+
+const {
+  name,
+  imageUrl,
+  size,
+  class: className = '',
+  loading = 'lazy',
+  placeholder = 'monogram'
+} = Astro.props;
+
+/** First letters of the first and last word: "Sunil S Ranka" → "SR". */
+function initials(full: string): string {
+  const words = full.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  const first = words[0][0] ?? '';
+  const last = words.length > 1 ? (words[words.length - 1][0] ?? '') : '';
+  return (first + last).toUpperCase();
+}
+
+/**
+ * A stable hue per person, so the same name always gets the same colour and a
+ * list of people reads as a set of distinct faces rather than a grey wall.
+ */
+function hueFor(full: string): number {
+  let hash = 0;
+  for (let i = 0; i < full.length; i++) {
+    hash = (hash * 31 + full.charCodeAt(i)) % 360;
+  }
+  return hash;
+}
+
+const hue = hueFor(name);
+const letters = initials(name);
+const id = `av-${hue}-${letters}-${size}`;
+// Smaller avatars need proportionally larger text to stay legible.
+const fontSize = size <= 56 ? size * 0.4 : size * 0.34;
+---
+
+{
+  imageUrl ? (
+    <SmartImage
+      src={imageUrl}
+      width={size}
+      height={size}
+      alt=""
+      class={className}
+      loading={loading}
+    />
+  ) : (
+    <svg
+      class={className}
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label=""
+      style={`--av-h:${hue}`}
+      preserveAspectRatio="xMidYMid slice"
+    >
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color={`hsl(${hue} 62% 58%)`} />
+          <stop offset="1" stop-color={`hsl(${(hue + 42) % 360} 58% 44%)`} />
+        </linearGradient>
+      </defs>
+
+      <rect width="100" height="100" fill={`url(#${id})`} />
+
+      {placeholder === 'monogram' && (
+        <text
+          x="50"
+          y="50"
+          text-anchor="middle"
+          dominant-baseline="central"
+          fill="#fff"
+          font-family="ui-sans-serif, system-ui, sans-serif"
+          font-weight="600"
+          font-size={(fontSize / size) * 100}
+          letter-spacing="1"
+        >
+          {letters}
+        </text>
+      )}
+
+      {/* A simple bust silhouette. Same shape for both figure options; they
+          differ only in hair, so neither reads as a default. */}
+      {placeholder !== 'monogram' && (
+        <g fill="#fff" fill-opacity="0.92">
+          <circle cx="50" cy="38" r="16" />
+          <path d="M18 92a32 32 0 0 1 64 0z" />
+          {placeholder === 'figure-a' && (
+            <path d="M31 36a19 19 0 0 1 38 0c0-14-8-21-19-21s-19 7-19 21z" fill-opacity="0.75" />
+          )}
+          {placeholder === 'figure-b' && (
+            <path
+              d="M30 40c0-16 9-24 20-24s20 8 20 24c0 8-2 14-4 14 1-8-1-16-4-19-6 4-18 5-24 1-3 3-5 10-4 18-2 0-4-6-4-14z"
+              fill-opacity="0.75"
+            />
+          )}
+        </g>
+      )}
+    </svg>
+  )
+}
+
+<style>
+  /*
+    Tailwind's reset gives `img` `height: auto`, so a fluid photo tile sized
+    `w-full aspect-square` lands at 170x170. An `svg` gets no such reset, so its
+    `height` attribute wins, rendering the placeholder 170x200 and pushing that
+    card out of the row — the misaligned "MK" tile.
+
+    Scoped to this component, and low enough in specificity that a fixed-size
+    caller (`.admin-table .thumb`) still wins.
+  */
+  svg {
+    display: block;
+    height: auto;
+    aspect-ratio: 1;
+  }
+</style>
