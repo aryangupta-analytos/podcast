@@ -86,7 +86,9 @@ export default defineConfig({
       fallbacks: ['Impact', 'Arial Narrow', 'sans-serif']
     }
   ],
-  build: { inlineStylesheets: 'always' },
+  // The server bundle is emitted as index.mjs; the adapter looks for whatever
+  // name is configured here, and its default (entry.mjs) never exists.
+  build: { inlineStylesheets: 'always', serverEntry: 'index.mjs' },
   prefetch: { prefetchAll: true, defaultStrategy: 'viewport' },
   trailingSlash: 'never',
   vite: {
