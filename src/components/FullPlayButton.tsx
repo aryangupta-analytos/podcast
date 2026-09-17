@@ -80,8 +80,7 @@ export default function FullPlayButton({
 
   const classes = `pill ${TONES[tone]} ${className}`;
 
-  // Already on the episode page, or already playing this one: just toggle.
-  if (!href || showPauseIcon || (typeof location !== 'undefined' && location.pathname === href)) {
+  if (!href) {
     return (
       <button type="button" class={classes} onClick={play}>
         {inner}
@@ -89,10 +88,27 @@ export default function FullPlayButton({
     );
   }
 
-  // A real link, carrying `#play`: the episode page starts playback itself on
-  // arrival, so this works even before this island has hydrated.
+  /*
+    With an href this is ALWAYS an <a>, whatever the playback state. Switching
+    element type by state broke two things: pressing Listen re-rendered the
+    link into a button mid-click, so the router never saw a link and the page
+    did not change; and coming back to a page while that episode was playing
+    made the client render a <button> over the server's <a>, which hydration
+    kept both of.
+
+    The link carries `#play`: the episode page starts playback itself on
+    arrival, so this works even before this island has hydrated. Pausing, or
+    pressing it on the episode's own page, toggles in place instead.
+  */
+  const onLinkClick = (event: MouseEvent) => {
+    if (showPauseIcon || location.pathname === href) {
+      event.preventDefault();
+      play();
+    }
+  };
+
   return (
-    <a href={`${href}#play`} class={classes} onClick={play}>
+    <a href={`${href}#play`} class={classes} onClick={onLinkClick}>
       {inner}
     </a>
   );
