@@ -1,0 +1,88 @@
+---
+import EmptyState from '../../components/EmptyState.astro';
+import Container from '../../components/site/Container.astro';
+import VideoCard from '../../components/video/VideoCard.astro';
+import Layout from '../../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { getEpisodesWithVideo } from '../../server/repo/episodes';
+import { getSettings, getShowInfo } from '../../server/repo/settings';
+
+const PER_PAGE = 12;
+
+const requested = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);
+const page = Number.isFinite(requested) && requested > 0 ? requested : 1;
+
+const [settings, show, videos] = await Promise.all([
+  getSettings(),
+  getShowInfo(),
+  getEpisodesWithVideo({ page, perPage: PER_PAGE })
+]);
+
+if (page > videos.totalPages && videos.total > 0) {
+  return Astro.redirect('/videos', 302);
+}
+
+const title = `Videos — ${show.title}`;
+const canonicalURL = new URL(page > 1 ? `/videos?page=${page}` : '/videos', Astro.site);
+const prevHref = page === 2 ? '/videos' : `/videos?page=${page - 1}`;
+const nextHref = `/videos?page=${page + 1}`;
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout
+  title={title}
+  description={`Watch ${show.title} on YouTube. ${settings.description}`.slice(0, 300)}
+  canonicalURL={canonicalURL}
+>
+  <Fragment slot="head">
+    {page > 1 && <link rel="prev" href={prevHref} />}
+    {page < videos.totalPages && <link rel="next" href={nextHref} />}
+  </Fragment>
+
+  <Container class="pt-10 pb-16 lg:pt-14">
+    <div class="max-w-3xl">
+      <p class="section-heading text-primary mb-3">Watch</p>
+      <h1 class="display text-5xl lg:text-6xl">{settings.videosHeading || 'Videos'}</h1>
+      <p class="text-text-muted mt-4">
+        {videos.total} video{videos.total === 1 ? '' : 's'}
+        {videos.totalPages > 1 && ` · page ${page} of ${videos.totalPages}`}
+      </p>
+    </div>
+
+    {
+      videos.items.length === 0 ? (
+        <EmptyState message="No videos yet. Check back soon!" />
+      ) : (
+        <ul class="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3" role="list">
+          {videos.items.map((episode, index) => (
+            <li>
+              <VideoCard episode={episode} eager={index < 3} />
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    {
+      videos.totalPages > 1 && (
+        <nav class="flex items-center justify-between gap-4 py-12" aria-label="Video pages">
+          {page > 1 ? (
+            <a class="pill pill-ghost" href={prevHref} rel="prev">
+              ← Newer videos
+            </a>
+          ) : (
+            <span />
+          )}
+          {page < videos.totalPages ? (
+            <a class="pill pill-ghost" href={nextHref} rel="next">
+              Older videos →
+            </a>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )
+    }
+  </Container>
+</Layout>

@@ -1,0 +1,40 @@
+---
+import type { Episode } from '../../lib/types';
+import { youtubeId } from '../../lib/youtube';
+import FormattedDate from '../FormattedDate';
+import LiteYouTube from './LiteYouTube';
+
+export interface Props {
+  episode: Episode;
+  /** `client:load` above the fold, `client:visible` in rows. */
+  eager?: boolean;
+}
+
+const { episode, eager = false } = Astro.props;
+const id = youtubeId(episode.links.youtube);
+const href = `/episodes/${episode.episodeSlug}`;
+const guestNames = episode.guests.map((g) => g.name).join(', ');
+---
+
+{
+  id && (
+    <article class="flex h-full flex-col" role="listitem">
+      {eager ? (
+        <LiteYouTube client:load videoId={id} title={episode.title} />
+      ) : (
+        <LiteYouTube client:visible videoId={id} title={episode.title} />
+      )}
+      <div class="mt-4">
+        <div class="text-text-muted text-xs">
+          <FormattedDate date={new Date(episode.published)} />
+        </div>
+        <h3 class="font-display text-heading mt-1 text-lg leading-snug font-semibold">
+          <a href={href} class="hover:underline">
+            {episode.title}
+          </a>
+        </h3>
+        {guestNames && <p class="text-text-muted mt-1 text-sm">{guestNames}</p>}
+      </div>
+    </article>
+  )
+}

@@ -1,0 +1,55 @@
+---
+import Avatar from '../Avatar.astro';
+
+export interface Props {
+  person: {
+    slug: string;
+    name: string;
+    title?: string | null;
+    imageUrl?: string | null;
+    placeholder?: string | null;
+    kind?: string;
+  };
+  /** Position in its grid — picks the accent colour behind the photo. */
+  index?: number;
+  /** Rendered size of the photo in CSS pixels. */
+  size?: number;
+  /** Small label above the name, e.g. "Host". */
+  eyebrow?: string;
+  loading?: 'lazy' | 'eager';
+  class?: string;
+}
+
+const {
+  person,
+  index = 0,
+  size = 320,
+  eyebrow,
+  loading = 'lazy',
+  class: className = ''
+} = Astro.props;
+
+const accent = (index % 6) + 1;
+---
+
+<a
+  class:list={['person-tile group block', className]}
+  href={`/people/${person.slug}`}
+  style={`--tile-bg: var(--brand-accent-${accent})`}
+>
+  <div class="person-tile-media">
+    <span class="person-tile-mark" aria-hidden="true" />
+    <Avatar
+      name={person.name}
+      imageUrl={person.imageUrl}
+      placeholder={(person.placeholder ?? 'monogram') as 'monogram'}
+      size={size}
+      loading={loading}
+    />
+  </div>
+  {eyebrow && <p class="section-heading text-text-muted mt-4">{eyebrow}</p>}
+  <p class:list={['font-display text-heading text-lg leading-snug font-semibold group-hover:underline', eyebrow ? 'mt-1' : 'mt-4']}>
+    {person.name}
+  </p>
+  {person.title && <p class="text-text-muted mt-1 text-sm">{person.title}</p>}
+</a>

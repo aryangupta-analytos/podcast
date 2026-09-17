@@ -1,4 +1,5 @@
 ---
+import { readFormData } from '../../server/read-form';
 import FileUpload from '../../components/admin/FileUpload';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { sanitizeHtml } from '../../server/sanitize';
@@ -7,7 +8,7 @@ import { getSettings, updateSettings } from '../../server/repo/settings';
 const user = Astro.locals.user!;
 
 if (Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
+  const form = await readFormData(Astro.request);
   const text = (key: string) => String(form.get(key) ?? '').trim();
 
   await updateSettings({

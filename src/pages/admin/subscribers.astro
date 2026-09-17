@@ -1,0 +1,125 @@
+---
+import { readFormData } from '../../server/read-form';
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import {
+  countSubscribers,
+  deleteSubscriber,
+  listSubscribers
+} from '../../server/repo/newsletter';
+
+const user = Astro.locals.user!;
+
+if (Astro.request.method === 'POST') {
+  const form = await readFormData(Astro.request);
+  const id = String(form.get('id') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  if (id && action === 'delete') await deleteSubscriber(id);
+
+  return Astro.redirect(
+    `/admin/subscribers?saved=${encodeURIComponent('Subscriber removed.')}`,
+    303
+  );
+}
+
+const requested = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);
+const page = Number.isFinite(requested) && requested > 0 ? requested : 1;
+
+const [subscribers, active] = await Promise.all([
+  listSubscribers({ page, perPage: 50 }),
+  countSubscribers()
+]);
+---
+
+<AdminLayout
+  title="Subscribers"
+  user={user}
+  description="Everyone who signed up through the newsletter box on the website."
+>
+  <a class="btn-admin is-primary" href="/admin/subscribers.csv" slot="actions">
+    Export CSV
+  </a>
+
+  <div class="admin-card">
+    <h2>
+      {active} active subscriber{active === 1 ? '' : 's'}
+    </h2>
+    <p class="hint">
+      Export the list as CSV and import it into whichever email tool you send
+      from. Addresses are only ever collected with the person's consent on the
+      website.
+    </p>
+
+    {
+      subscribers.items.length === 0 ? (
+        <p class="admin-empty">No subscribers yet.</p>
+      ) : (
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Email</th>
+              <th>Signed up</th>
+              <th>Source</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {subscribers.items.map((row) => (
+              <tr style={row.unsubscribedAt ? 'opacity:.6' : ''}>
+                <td>
+                  <a href={`mailto:${row.email}`}>{row.email}</a>
+                  {row.unsubscribedAt && (
+                    <span style="color:var(--ad-muted); font-size:12px"> · unsubscribed</span>
+                  )}
+                </td>
+                <td style="white-space:nowrap">
+                  {row.createdAt.toLocaleString('en-US', {
+                    dateStyle: 'medium',
+                    timeStyle: 'short'
+                  })}
+                </td>
+                <td>{row.source}</td>
+                <td style="text-align:right">
+                  <form method="POST" onsubmit="return confirm('Remove this subscriber?')">
+                    <input type="hidden" name="id" value={row.id} />
+                    <input type="hidden" name="action" value="delete" />
+                    <button class="btn-admin is-small is-danger" type="submit">
+                      Remove
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )
+    }
+
+    {
+      subscribers.totalPages > 1 && (
+        <nav
+          style="display:flex; justify-content:space-between; gap:12px; margin-top:16px"
+          aria-label="Subscriber pages"
+        >
+          {page > 1 ? (
+            <a class="btn-admin is-small" href={`/admin/subscribers?page=${page - 1}`}>
+              ← Newer
+            </a>
+          ) : (
+            <span />
+          )}
+          <span style="color:var(--ad-muted); font-size:13px">
+            Page {page} of {subscribers.totalPages}
+          </span>
+          {page < subscribers.totalPages ? (
+            <a class="btn-admin is-small" href={`/admin/subscribers?page=${page + 1}`}>
+              Older →
+            </a>
+          ) : (
+            <span />
+          )}
+        </nav>
+      )
+    }
+  </div>
+</AdminLayout>

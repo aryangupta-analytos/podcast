@@ -17,6 +17,34 @@ What changed vs upstream v1.1.0:
 - Pages moved from the integration's injected routes into real `src/pages/`.
 - Site identity (`starpod.config.ts`) replaced by the `site_settings` table.
 
+## Redesign (September 2026)
+
+The public site was re-skinned on a single navy theme with a top header
+and full footer, replacing Starpod's sidebar shell and its OS-driven
+dark/light mode. What that changed relative to the vendored v1.1.0 files:
+
+- **Removed:** `InfoCard.astro`, `Hosts.astro`, `ShowArtwork.astro` (and the
+  `atropos` dependency), `Dots.astro`, `Platforms.astro`, `LargePlatforms.astro`,
+  `EpisodeList.astro`, `home/Hero.astro`, `home/FeaturedEpisode.astro`,
+  `home/AboutSection.astro`, `home/PersonGrid.astro`, the `*-light` assets in
+  `src/assets` and `src/svgs`, and the platform SVGs in `src/svgs`.
+- **Rewritten:** `layouts/Layout.astro` (header/main/footer shell; the
+  ClientRouter stall fallback is kept verbatim), `Breadcrumbs.astro`,
+  `SocialLinks.astro`, `NotFoundContent.astro`, both illustrations,
+  `episode/CreatorsAndGuests.astro`, and every page under `src/pages`.
+- **Converted to one theme:** `SearchDialog.tsx`, `SearchButton.tsx`,
+  `FullPlayButton.tsx`, `Player.tsx` (no more sidebar offset),
+  `player/PlayButton.tsx`, `player/PlaybackRateButton.tsx`,
+  `player/Slider/styles.css`, `ContactForm.tsx`, and all of `src/styles`.
+  Design tokens now live in `src/styles/theme.css`; `tailwind.css` only bridges
+  them. The old OKLCH `--color-dark-*` / `--color-light-*` tokens are gone.
+- **Added (not vendored):** `components/site/*`, `components/episode/EpisodeCard.astro`,
+  `components/episode/PlatformButtons.astro`, `components/people/*`,
+  `components/video/*`, `components/home/*`, `components/EmptyState.astro`.
+
+The `Episode` / `Show` shapes in `src/lib/types.ts` are unchanged, so the
+player and search components still consume the same data.
+
 Upstream LICENSE is preserved at `LICENSE-starpod.md`.
 
 To diff against upstream, fetch the same version again:

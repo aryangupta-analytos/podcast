@@ -1,0 +1,16 @@
+---
+import UFOIllustration from './illustrations/UFOIllustration.astro';
+
+export interface Props {
+  message?: string;
+}
+
+const { message = 'Nothing here yet. Check back soon!' } = Astro.props;
+---
+
+<div class="flex flex-col items-center py-10 text-center">
+  <div class="h-auto w-full max-w-72">
+    <UFOIllustration />
+  </div>
+  <p class="text-heading py-8 text-lg font-bold">{message}</p>
+</div>

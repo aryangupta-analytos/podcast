@@ -215,13 +215,23 @@ export async function uploadFile(
     throw new Error(`That file is too large. The limit is ${mb} MB.`);
   }
 
-  const body = new FormData();
-  body.append('file', file);
-  body.append('kind', kind);
-  if (durationSeconds) body.append('duration', String(Math.round(durationSeconds)));
+  /*
+   * Sent as JSON with the bytes base64'd rather than as multipart. Some proxies
+   * refuse to forward multipart form posts — Cloudflare's free quick tunnels
+   * reject them at the edge — and an upload that never reaches the origin is
+   * indistinguishable from a broken admin panel. JSON is forwarded untouched,
+   * and the route reassembles a real File (`readUploadData()`), so the storage
+   * layer still sniffs magic bytes exactly as before.
+   */
+  const body = JSON.stringify({
+    kind,
+    duration: durationSeconds ? String(Math.round(durationSeconds)) : undefined,
+    file: { name: file.name, type: file.type, data: await toBase64(file) }
+  });
 
   const xhr = new XMLHttpRequest();
   xhr.open('POST', '/api/admin/upload');
+  xhr.setRequestHeader('Content-Type', 'application/json');
 
   const posted = await xhrSend(xhr, body, handlers);
   if (posted.status < 200 || posted.status >= 300) {
@@ -229,4 +239,19 @@ export async function uploadFile(
   }
 
   return JSON.parse(posted.text);
+}
+
+
+/** Reads a File as base64, without the `data:...;base64,` prefix. */
+function toBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('That file could not be read.'));
+    reader.onload = () => {
+      const result = String(reader.result);
+      const comma = result.indexOf(',');
+      resolve(comma === -1 ? result : result.slice(comma + 1));
+    };
+    reader.readAsDataURL(file);
+  });
 }

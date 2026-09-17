@@ -11,71 +11,40 @@
 */
 
 :root {
-  color-scheme: light;
+  /* One navy theme, matching the public site (src/styles/theme.css). */
+  color-scheme: dark;
 
-  --ad-bg: #f7f7f8;
-  --ad-surface: #ffffff;
-  --ad-surface-2: #f0f0f2;
-  --ad-surface-3: #e8e8ec;
-  --ad-border: #e3e3e7;
-  --ad-border-strong: #d0d0d6;
-  --ad-text: #141416;
-  --ad-text-soft: #52525b;
-  --ad-muted: #76767f;
+  --ad-bg: #070b2b;
+  --ad-surface: #0d1240;
+  --ad-surface-2: #141a52;
+  --ad-surface-3: #1c2366;
+  --ad-border: #232a6b;
+  --ad-border-strong: #343c8a;
+  --ad-text: #ffffff;
+  --ad-text-soft: #d7dbf3;
+  --ad-muted: #9aa1cf;
 
-  --ad-accent: #10a37f;
-  --ad-accent-hover: #0d8c6d;
-  --ad-accent-text: #ffffff;
-  --ad-accent-soft: #e7f5f1;
-  --ad-accent-ring: rgba(16, 163, 127, 0.28);
+  --ad-accent: #3ddc0a;
+  --ad-accent-hover: #5cf02c;
+  --ad-accent-text: #070b2b;
+  --ad-accent-soft: rgba(61, 220, 10, 0.14);
+  --ad-accent-ring: rgba(61, 220, 10, 0.35);
 
-  --ad-danger: #c0392f;
-  --ad-danger-soft: #fdecea;
-  --ad-success: #0f7a52;
-  --ad-success-soft: #e6f5ee;
-  --ad-warning: #9a6300;
-  --ad-warning-soft: #fdf3e2;
+  --ad-danger: #ff8177;
+  --ad-danger-soft: #3a1d2b;
+  --ad-success: #6df03f;
+  --ad-success-soft: rgba(61, 220, 10, 0.14);
+  --ad-warning: #ffd400;
+  --ad-warning-soft: rgba(255, 212, 0, 0.14);
 
-  --ad-radius: 12px;
-  --ad-radius-sm: 8px;
+  --ad-radius: 18px;
+  --ad-radius-sm: 12px;
   --ad-sidebar-width: 260px;
-  --ad-shadow-sm: 0 1px 2px rgba(16, 18, 22, 0.06);
-  --ad-shadow: 0 4px 16px rgba(16, 18, 22, 0.08);
-  --ad-shadow-lg: 0 12px 40px rgba(16, 18, 22, 0.14);
+  --ad-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ad-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --ad-shadow-lg: 0 18px 50px rgba(0, 0, 0, 0.55);
   --ad-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-
-    --ad-bg: #0f0f11;
-    --ad-surface: #18181b;
-    --ad-surface-2: #212125;
-    --ad-surface-3: #2a2a30;
-    --ad-border: #2a2a30;
-    --ad-border-strong: #3a3a42;
-    --ad-text: #f4f4f6;
-    --ad-text-soft: #c4c4cc;
-    --ad-muted: #9a9aa4;
-
-    --ad-accent: #19c39a;
-    --ad-accent-hover: #2ad3aa;
-    --ad-accent-text: #08120f;
-    --ad-accent-soft: #16302a;
-    --ad-accent-ring: rgba(25, 195, 154, 0.32);
-
-    --ad-danger: #ff8177;
-    --ad-danger-soft: #3a1d1b;
-    --ad-success: #5fd6a4;
-    --ad-success-soft: #14302a;
-    --ad-warning: #e5b567;
-    --ad-warning-soft: #332711;
-
-    --ad-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --ad-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
-    --ad-shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.6);
-  }
+  --ad-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
 * {
@@ -583,7 +552,7 @@ body.admin {
   appearance: none;
   -webkit-appearance: none;
   padding-right: 38px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%2376767f' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' stroke='%239aa1cf' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 8l5 5 5-5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 11px center;
   cursor: pointer;
@@ -1590,4 +1559,136 @@ body.admin {
   font-size: 13px;
   word-break: break-all;
   user-select: all;
+}
+
+
+/* ── Site-matched polish: type, colour accents and motion ─────────────────── */
+
+body.admin {
+  font-family: var(--astro-font-inter), ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(900px 480px at 85% -10%, rgba(143, 123, 255, 0.16), transparent 60%),
+    radial-gradient(700px 420px at -5% 105%, rgba(61, 220, 10, 0.08), transparent 60%),
+    var(--ad-bg);
+  background-attachment: fixed;
+}
+
+.admin-header h1,
+.admin-login-card h1 {
+  font-family: var(--astro-font-fraunces), Georgia, serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.admin-card h2 {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 13px;
+  color: var(--ad-accent);
+}
+
+/* Pills, like the site's buttons. */
+.btn-admin {
+  border-radius: 999px;
+  font-weight: 700;
+  transition:
+    transform 0.25s var(--ad-spring),
+    background-color 0.18s var(--ad-ease),
+    border-color 0.18s var(--ad-ease),
+    box-shadow 0.18s var(--ad-ease);
+}
+.btn-admin:hover {
+  transform: translateY(-1px);
+}
+.btn-admin:active {
+  transform: scale(0.96);
+}
+.btn-admin.is-primary:hover {
+  box-shadow: 0 6px 22px rgba(61, 220, 10, 0.3);
+}
+
+/* Cards lift on hover and rise in on load, one after another. */
+.admin-card,
+.admin-table-wrap,
+.admin-flash {
+  animation: ad-rise 0.5s var(--ad-ease) both;
+}
+.admin-card {
+  transition:
+    border-color 0.2s var(--ad-ease),
+    box-shadow 0.25s var(--ad-ease),
+    transform 0.25s var(--ad-ease);
+}
+.admin-card:hover {
+  border-color: var(--ad-border-strong);
+  box-shadow: var(--ad-shadow);
+}
+.admin-card:nth-of-type(2) { animation-delay: 0.05s; }
+.admin-card:nth-of-type(3) { animation-delay: 0.1s; }
+.admin-card:nth-of-type(4) { animation-delay: 0.15s; }
+.admin-card:nth-of-type(n + 5) { animation-delay: 0.2s; }
+.admin-header {
+  animation: ad-rise 0.4s var(--ad-ease) both;
+}
+.admin-flash {
+  animation-name: ad-pop;
+  animation-timing-function: var(--ad-spring);
+}
+
+@keyframes ad-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@keyframes ad-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-6px);
+  }
+}
+
+/* Sidebar links slide a touch and carry a green marker when active. */
+.admin-nav a {
+  transition:
+    background-color 0.18s var(--ad-ease),
+    color 0.18s var(--ad-ease),
+    transform 0.25s var(--ad-spring);
+}
+.admin-nav a:hover {
+  transform: translateX(3px);
+}
+.admin-nav a[aria-current='page'] {
+  box-shadow: inset 3px 0 0 var(--ad-accent);
+}
+
+/* Fields: a soft green focus glow. */
+.admin-field input,
+.admin-field textarea,
+.admin-field select {
+  transition:
+    border-color 0.18s var(--ad-ease),
+    box-shadow 0.18s var(--ad-ease),
+    background-color 0.18s var(--ad-ease);
+}
+.admin-table tbody tr {
+  transition: background-color 0.15s var(--ad-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-card,
+  .admin-table-wrap,
+  .admin-flash,
+  .admin-header {
+    animation: none;
+  }
+  .btn-admin,
+  .admin-nav a,
+  .admin-card {
+    transition: none;
+  }
+  .btn-admin:hover,
+  .btn-admin:active,
+  .admin-nav a:hover {
+    transform: none;
+  }
 }

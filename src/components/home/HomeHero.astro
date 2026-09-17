@@ -1,0 +1,50 @@
+---
+import type { Episode, Show } from '../../lib/types';
+import type { SiteSettings } from '../../server/db/schema';
+import EpisodeCard from '../episode/EpisodeCard.astro';
+import Carousel from '../site/Carousel.astro';
+
+export interface Props {
+  settings: SiteSettings;
+  show: Show;
+  featured: Episode | null;
+  latest: Episode[];
+}
+
+const { settings, show, featured, latest } = Astro.props;
+
+// The featured episode leads; the newest few follow. Deduped because the
+// featured fallback is the newest episode.
+const seen = new Set<string>();
+const cards = [featured, ...latest]
+  .filter((e): e is Episode => Boolean(e) && !seen.has(e!.id) && Boolean(seen.add(e!.id)))
+  .slice(0, 5);
+---
+
+{
+  cards.length > 0 && (
+    <section class="home-hero" aria-label="Featured episodes">
+
+        <Carousel
+          label="Featured episodes"
+          arrows="sides"
+          centered
+          dots
+          autoplay={3000}
+          itemClass="w-[86vw] sm:w-[560px] lg:w-[760px] xl:w-[820px]"
+        >
+          {cards.map((episode, index) => (
+            <EpisodeCard
+              episode={episode}
+              show={show}
+              variant="hero"
+              index={index}
+              eyebrow={index === 0 ? settings.featuredHeading : undefined}
+              loading={index === 0 ? 'eager' : 'lazy'}
+            />
+          ))}
+        </Carousel>
+
+    </section>
+  )
+}

@@ -1,6 +1,10 @@
 ---
-import Avatar from '../components/Avatar.astro';
-import LargePlatforms from '../components/LargePlatforms.astro';
+import NewsletterBand from '../components/home/NewsletterBand.astro';
+import HostCard from '../components/people/HostCard.astro';
+import PersonTile from '../components/people/PersonTile.astro';
+import Container from '../components/site/Container.astro';
+import PlatformIcons from '../components/site/PlatformIcons.astro';
+import SmartImage from '../components/SmartImage.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import { listPeople } from '../server/repo/people';
@@ -15,6 +19,14 @@ const [settings, show, hosts, team, platforms] = await Promise.all([
 ]);
 
 const rssFeed = new URL('/rss.xml', Astro.site).toString();
+const artwork = settings.aboutImageUrl ?? show.image;
+
+// The call-to-action copy the owner wrote for the homepage doubles as the
+// "about the show" editorial card here; nothing is invented for this page.
+const ctaHeading = settings.ctaHeading || settings.aboutHeading;
+const ctaBody = settings.ctaBody || settings.description;
+
+const hasContact = Boolean(settings.contactEmail || settings.contactPhone || settings.contactBody);
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
@@ -22,118 +34,148 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 <Layout
   title={`${settings.aboutTitle} — ${show.title}`}
   description={settings.description}
+  hideBreadcrumbs
 >
-  <div class="relative z-10 px-8 pb-16 lg:px-18">
-    <h1
-      class="text-light-text-heading mb-4 text-2xl font-bold lg:mb-6 lg:text-5xl dark:text-white"
-    >
-      {settings.aboutTitle}
-    </h1>
+  <!-- Hero: type is the design -->
+  <section class="page-hero-band about-hero">
+    <Container class="text-center">
+      <p class="section-heading text-primary">About</p>
+      <h1 class="display about-hero-title">{settings.aboutTitle}</h1>
+      {settings.tagline && <p class="about-hero-tagline">{settings.tagline}</p>}
+    </Container>
+  </section>
 
-    {
-      settings.aboutBody ? (
-        <div class="cms-prose max-w-2xl" set:html={settings.aboutBody} />
-      ) : (
-        <p class="max-w-2xl">{settings.description}</p>
-      )
-    }
+  <!-- The show: artwork beside the owner's About copy, on the brand colour -->
+  <section class="about-section" aria-labelledby="about-show">
+    <Container>
+      <div class="about-band">
+        <div class="about-band-art">
+          <SmartImage
+            src={artwork}
+            alt=""
+            width={420}
+            height={420}
+            sizes="(min-width: 1024px) 380px, 70vw"
+            loading="eager"
+          />
+        </div>
+        <div class="about-band-copy">
+          <h2 id="about-show" class="section-heading">About {show.title}</h2>
+          {
+            settings.aboutBody ? (
+              <div class="about-band-prose" set:html={settings.aboutBody} />
+            ) : (
+              <p class="about-band-prose">{settings.description}</p>
+            )
+          }
+          <PlatformIcons platforms={platforms} showTitle={show.title} size="lg" class="about-band-icons mt-6" />
+        </div>
+      </div>
+    </Container>
+  </section>
 
-    <h2 class="section-heading-underlined mt-16">Where to listen</h2>
-    <LargePlatforms platforms={platforms} rssFeed={rssFeed} />
-
-    {
-      hosts.length > 0 && (
-        <>
-          <h2 class="section-heading-underlined mt-16 lg:mt-24">
-            Meet the hosts
-          </h2>
-
-          <div class="mt-9 space-y-8 lg:mt-12">
-            {hosts.map((host) => (
-              <div class="flex flex-col lg:flex-row">
-                <Avatar
-                  class="mr-6 mb-4 h-20 w-20 shrink-0 rounded-lg object-cover"
-                  name={host.name}
-                  imageUrl={host.imageUrl}
-                  placeholder={host.placeholder as 'monogram'}
-                  size={80}
-                />
-
-                <div>
-                  <h3 class="text-light-text-heading text-lg font-bold lg:text-2xl dark:text-white">
-                    <a href={`/people/${host.slug}`}>{host.name}</a>
-                  </h3>
-                  {host.title && <p class="text-sm opacity-80">{host.title}</p>}
-                  {host.bio && <div class="cms-prose mt-2 lg:mt-3" set:html={host.bio} />}
-
-                  <div class="mt-4 flex flex-wrap gap-4">
-                    {host.linkedin && (
-                      <a
-                        class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-                        href={host.linkedin}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        LinkedIn
-                      </a>
-                    )}
-                    {host.twitter && (
-                      <a
-                        class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-                        href={host.twitter}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        X / Twitter
-                      </a>
-                    )}
-                    {host.website && (
-                      <a
-                        class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-                        href={host.website}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                      >
-                        Website
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
+  <!-- Hosts -->
+  {
+    hosts.length > 0 && (
+      <section class="about-section" aria-labelledby="hosts-heading">
+        <Container>
+          <h2 id="hosts-heading" class="sr-only">Meet the hosts</h2>
+          <div class="grid gap-8 lg:grid-cols-2 lg:gap-10">
+            {hosts.map((host, index) => (
+              <HostCard person={host} index={index} />
             ))}
           </div>
-        </>
-      )
-    }
+        </Container>
+      </section>
+    )
+  }
 
-    {
-      team.length > 0 && (
-        <>
-          <h2 class="section-heading-underlined mt-16 lg:mt-24">The team</h2>
+  <!-- Asymmetric editorial cards: a small card beside a large one -->
+  <section class="about-section" aria-label="More about the show">
+    <Container>
+      <div class="about-grid">
+        <div class="about-card about-card-listen">
+          <h2 class="section-heading">Where to listen</h2>
+          <PlatformIcons
+            platforms={platforms}
+            showTitle={show.title}
+            size="lg"
+            withLabels
+            class="about-listen-list mt-5"
+          />
+          <a class="about-listen-rss" href={rssFeed}>
+            RSS feed
+          </a>
+        </div>
 
-          <ul class="mt-9 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            {team.map((member) => (
+        {
+          ctaHeading && (
+            <div class="about-card about-card-feature">
+              <h2 class="display about-card-title">{ctaHeading}</h2>
+              {ctaBody && <p class="about-card-body">{ctaBody}</p>}
+              <a class="pill pill-ink mt-6 self-start" href="/episodes">
+                {settings.heroCtaText || settings.latestHeading}
+              </a>
+            </div>
+          )
+        }
+      </div>
+    </Container>
+  </section>
+
+  <!-- Team -->
+  {
+    team.length > 0 && (
+      <section class="about-section" aria-labelledby="team-heading">
+        <Container>
+          <h2 id="team-heading" class="section-heading text-heading mb-8">
+            {settings.teamHeading}
+          </h2>
+          <ul class="people-grid" role="list">
+            {team.map((member, index) => (
               <li>
-                <a class="person-card block" href={`/people/${member.slug}`}>
-                  <Avatar
-                    class="mb-3 aspect-square w-full rounded-xl object-cover"
-                    name={member.name}
-                    imageUrl={member.imageUrl}
-                    placeholder={member.placeholder as 'monogram'}
-                    size={200}
-                  />
-                  <p class="text-light-text-heading text-sm font-bold dark:text-white">
-                    {member.name}
-                  </p>
-                  {member.title && (
-                    <p class="text-xs opacity-80">{member.title}</p>
-                  )}
-                </a>
+                <PersonTile person={member} index={index + hosts.length} eyebrow="Team" />
               </li>
             ))}
           </ul>
-        </>
-      )
-    }
-  </div>
+        </Container>
+      </section>
+    )
+  }
+
+  <!-- Contact: minimal and spacious -->
+  {
+    hasContact && (
+      <section class="about-contact" aria-labelledby="contact-heading">
+        <Container class="text-center">
+          <h2 id="contact-heading" class="display about-contact-title">
+            {settings.contactHeading}
+          </h2>
+          <p class="about-contact-links">
+            {settings.contactEmail && (
+              <a href={`mailto:${settings.contactEmail}`}>{settings.contactEmail}</a>
+            )}
+            {settings.contactEmail && settings.contactPhone && <span aria-hidden="true"> · </span>}
+            {settings.contactPhone && (
+              <a href={`tel:${settings.contactPhone.replace(/[^+\d]/g, '')}`}>{settings.contactPhone}</a>
+            )}
+          </p>
+          <a class="pill pill-primary mt-6" href="/contact">
+            {settings.contactHeading}
+          </a>
+        </Container>
+      </section>
+    )
+  }
+
+  {
+    settings.showNewsletter && (
+      <NewsletterBand
+        heading={settings.newsletterHeading}
+        body={settings.newsletterBody}
+        buttonText={settings.newsletterButtonText || 'Subscribe'}
+        showTitle={show.title}
+      />
+    )
+  }
 </Layout>

@@ -1,0 +1,160 @@
+---
+import type { LinkRow } from '../../server/db/schema';
+import type { Show } from '../../lib/types';
+import SearchButton from '../SearchButton';
+import SmartImage from '../SmartImage.astro';
+import Container from './Container.astro';
+import PlatformIcons from './PlatformIcons.astro';
+
+export interface Props {
+  show: Show;
+  platforms: LinkRow[];
+  /** Extra navigation links managed from the admin panel. */
+  navLinks?: LinkRow[];
+  /** Hide the Videos item until an episode has a video. */
+  hasVideos?: boolean;
+}
+
+const { show, platforms, navLinks = [], hasVideos = false } = Astro.props;
+const { pathname } = Astro.url;
+
+// The admin panel is deliberately absent here — it is never linked from any
+// public surface.
+const builtIn = [
+  { label: 'Home', href: '/' },
+  { label: 'Episodes', href: '/episodes' },
+  ...(hasVideos ? [{ label: 'Videos', href: '/videos' }] : []),
+  { label: 'People', href: '/people' },
+  { label: 'About', href: '/about' },
+  { label: 'Contact', href: '/contact' }
+];
+
+/*
+  Active state is computed on the server for every request. The header is not
+  `transition:persist`ed, so it is re-rendered on each navigation and this is
+  always correct — do not add persist to it, or the active link goes stale.
+*/
+const isActive = (href: string) =>
+  href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
+
+const hasArtwork = show.image && !show.image.endsWith('artwork-placeholder.svg');
+---
+
+<header class="site-header sticky top-0 z-40">
+  <Container>
+    <div class="flex h-16 items-center justify-between gap-4 lg:h-[72px]">
+      <div class="hidden min-w-0 flex-1 lg:block">
+        <PlatformIcons platforms={platforms} showTitle={show.title} />
+      </div>
+
+      <a
+        class="flex min-w-0 items-center gap-3 lg:flex-none"
+        href="/"
+        aria-label={`${show.title} — home`}
+      >
+        {
+          hasArtwork && (
+            <SmartImage
+              class="h-9 w-9 shrink-0 rounded-lg object-cover"
+              src={show.image}
+              alt=""
+              width={36}
+              height={36}
+              loading="eager"
+              fetchpriority="high"
+            />
+          )
+        }
+        <span class="site-wordmark truncate">{show.title}</span>
+      </a>
+
+      <div class="flex flex-1 items-center justify-end gap-2">
+        <SearchButton client:load />
+
+        <details class="relative lg:hidden">
+          <summary
+            class="text-heading border-line flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-full border"
+            aria-label="Menu"
+          >
+            <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            </svg>
+          </summary>
+          <nav
+            class="bg-surface border-line absolute top-12 right-0 z-50 w-64 rounded-2xl border p-3 shadow-2xl"
+            aria-label="Site"
+          >
+            <ul class="flex flex-col">
+              {
+                [...builtIn, ...navLinks.map((l) => ({ label: l.label, href: l.url }))].map(
+                  (link) => (
+                    <li>
+                      <a
+                        class:list={['nav-link block', isActive(link.href) && 'is-active']}
+                        href={link.href}
+                        aria-current={isActive(link.href) ? 'page' : undefined}
+                        {...(link.href.startsWith('http')
+                          ? { rel: 'noopener noreferrer', target: '_blank' }
+                          : {})}
+                      >
+                        {link.label}
+                      </a>
+                    </li>
+                  )
+                )
+              }
+            </ul>
+            <div class="border-line mt-3 border-t pt-3">
+              <PlatformIcons platforms={platforms} showTitle={show.title} class="px-3" />
+            </div>
+          </nav>
+        </details>
+      </div>
+    </div>
+
+  </Container>
+
+  <div class="site-nav-band hidden lg:block">
+  <Container>
+    <nav class="flex justify-center" aria-label="Site">
+      <ul class="flex items-center gap-1">
+        {
+          builtIn.map((link) => (
+            <li>
+              <a
+                class:list={['nav-link', isActive(link.href) && 'is-active']}
+                href={link.href}
+                aria-current={isActive(link.href) ? 'page' : undefined}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+        {
+          navLinks.map((link) => (
+            <li>
+              <a
+                class="nav-link"
+                href={link.url}
+                {...(link.url.startsWith('http')
+                  ? { rel: 'noopener noreferrer', target: '_blank' }
+                  : {})}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </Container>
+  </div>
+</header>
+
+<script>
+  // Close the mobile menu after a navigation so it does not reopen stale.
+  document.addEventListener('astro:before-swap', () => {
+    document.querySelectorAll('header details[open]').forEach((d) => d.removeAttribute('open'));
+  });
+</script>

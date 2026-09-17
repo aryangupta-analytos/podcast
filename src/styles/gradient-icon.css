@@ -1,27 +1,13 @@
 @property --gradient-start {
   syntax: '<color>';
   inherits: false;
-  initial-value: oklch(67.65% 0.043 285.21);
+  initial-value: #9aa1cc;
 }
 
 @property --gradient-stop {
   syntax: '<color>';
   inherits: false;
-  initial-value: oklch(67.65% 0.043 285.21);
-}
-
-@media (prefers-color-scheme: dark) {
-  @property --gradient-start {
-    syntax: '<color>';
-    inherits: false;
-    initial-value: oklch(71.44% 0.019 264.45);
-  }
-
-  @property --gradient-stop {
-    syntax: '<color>';
-    inherits: false;
-    initial-value: oklch(71.44% 0.019 264.45);
-  }
+  initial-value: #9aa1cc;
 }
 
 @utility gradient-icon {
@@ -35,11 +21,7 @@
     --gradient-stop 300ms;
 
   &:hover {
-    --gradient-start: oklch(77.32% 0.129 294.81);
-    --gradient-stop: oklch(67.59% 0.18851878808119876 292.4954219580293);
-    @media (prefers-color-scheme: dark) {
-      --gradient-start: oklch(88.52% 0.079 220.53);
-      --gradient-stop: oklch(78.86% 0.125 223.67);
-    }
+    --gradient-start: var(--brand-primary);
+    --gradient-stop: var(--brand-accent-4);
   }
 }

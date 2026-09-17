@@ -1,5 +1,7 @@
 ---
-import EpisodeList from '../../components/EpisodeList.astro';
+import EmptyState from '../../components/EmptyState.astro';
+import EpisodeCard from '../../components/episode/EpisodeCard.astro';
+import Container from '../../components/site/Container.astro';
 import Layout from '../../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
 import { getPublishedEpisodes } from '../../server/repo/episodes';
@@ -29,6 +31,8 @@ const canonicalURL = new URL(
   page > 1 ? `/episodes?page=${page}` : '/episodes',
   Astro.site
 );
+const prevHref = page === 2 ? '/episodes' : `/episodes?page=${page - 1}`;
+const nextHref = `/episodes?page=${page + 1}`;
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
@@ -39,36 +43,46 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
   canonicalURL={canonicalURL}
 >
   <Fragment slot="head">
-    {page > 1 && <link rel="prev" href={page === 2 ? '/episodes' : `/episodes?page=${page - 1}`} />}
-    {page < episodes.totalPages && <link rel="next" href={`/episodes?page=${page + 1}`} />}
+    {page > 1 && <link rel="prev" href={prevHref} />}
+    {page < episodes.totalPages && <link rel="next" href={nextHref} />}
   </Fragment>
 
-  <div class="relative z-10 px-8 lg:px-18">
-    <h1
-      class="text-light-text-heading text-2xl font-bold lg:text-5xl dark:text-white"
-    >
-      Episodes
-    </h1>
+  <Container class="pt-10 pb-16 lg:pt-14">
+    <div class="max-w-3xl">
+      <p class="section-heading text-primary mb-3">Podcast</p>
+      <h1 class="display text-5xl lg:text-6xl">{settings.episodesHeading || 'Episodes'}</h1>
+      {settings.episodesIntro && <p class="text-text mt-4 text-lg">{settings.episodesIntro}</p>}
+      <p class="text-text-muted mt-4">
+        {episodes.total} episode{episodes.total === 1 ? '' : 's'}
+        {episodes.totalPages > 1 && ` · page ${page} of ${episodes.totalPages}`}
+      </p>
+    </div>
 
-    <p class="mt-3">
-      {episodes.total} episode{episodes.total === 1 ? '' : 's'}
-      {episodes.totalPages > 1 && ` · page ${page} of ${episodes.totalPages}`}
-    </p>
-
-    <EpisodeList episodes={episodes.items} show={show} />
+    {
+      episodes.items.length === 0 ? (
+        <EmptyState message="No episodes yet. Check back soon!" />
+      ) : (
+        <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
+          {episodes.items.map((episode, index) => (
+            <li>
+              <EpisodeCard
+                episode={episode}
+                show={show}
+                variant="card"
+                index={index}
+                loading={index < 3 ? 'eager' : 'lazy'}
+              />
+            </li>
+          ))}
+        </ul>
+      )
+    }
 
     {
       episodes.totalPages > 1 && (
-        <nav
-          class="flex items-center justify-between gap-4 py-12"
-          aria-label="Episode pages"
-        >
+        <nav class="flex items-center justify-between gap-4 py-12" aria-label="Episode pages">
           {page > 1 ? (
-            <a
-              class="text-light-text-heading font-bold underline hover:no-underline dark:text-white"
-              href={page === 2 ? '/episodes' : `/episodes?page=${page - 1}`}
-              rel="prev"
-            >
+            <a class="pill pill-ghost" href={prevHref} rel="prev">
               ← Newer episodes
             </a>
           ) : (
@@ -76,11 +90,7 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
           )}
 
           {page < episodes.totalPages ? (
-            <a
-              class="text-light-text-heading font-bold underline hover:no-underline dark:text-white"
-              href={`/episodes?page=${page + 1}`}
-              rel="next"
-            >
+            <a class="pill pill-ghost" href={nextHref} rel="next">
               Older episodes →
             </a>
           ) : (
@@ -89,5 +99,5 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
         </nav>
       )
     }
-  </div>
+  </Container>
 </Layout>

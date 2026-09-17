@@ -1,0 +1,26 @@
+---
+import type { Person } from '../../server/db/schema';
+import PersonTile from '../people/PersonTile.astro';
+import Section from '../site/Section.astro';
+
+export interface Props {
+  people: Person[];
+  heading: string;
+}
+
+const { people, heading } = Astro.props;
+---
+
+{
+  people.length > 0 && (
+    <Section id="people" heading={heading} moreHref="/people" moreLabel="See everyone">
+      <ul class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 lg:gap-8" role="list">
+        {people.map((person, index) => (
+          <li>
+            <PersonTile person={person} index={index} />
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}

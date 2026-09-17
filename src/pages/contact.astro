@@ -1,5 +1,6 @@
 ---
 import ContactForm from '../components/ContactForm';
+import Container from '../components/site/Container.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import { getSettings, getShowInfo } from '../server/repo/settings';
@@ -13,47 +14,53 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
   title={`${settings.contactHeading} — ${show.title}`}
   description={`Get in touch with ${show.title}.`}
 >
-  <div class="relative z-10 px-8 pb-16 lg:px-18">
-    <h1
-      class="text-light-text-heading mb-4 text-2xl font-bold lg:mb-6 lg:text-5xl dark:text-white"
-    >
-      {settings.contactHeading}
-    </h1>
+  <Container class="pt-10 pb-16 lg:pt-14">
+    <div class="grid gap-12 lg:grid-cols-12 lg:gap-16">
+      <div class="lg:col-span-5">
+        <p class="section-heading text-primary mb-3">Contact</p>
+        <h1 class="display text-5xl lg:text-6xl">{settings.contactHeading}</h1>
 
-    {
-      settings.contactBody ? (
-        <div class="cms-prose mb-8 max-w-2xl" set:html={settings.contactBody} />
-      ) : (
-        <p class="mb-8 max-w-2xl">
-          Have a question, or a guest you would like to hear from? Send us a
-          note and we will be in touch.
-        </p>
-      )
-    }
+        {
+          settings.contactBody ? (
+            <div class="cms-prose mt-6" set:html={settings.contactBody} />
+          ) : (
+            <p class="text-text mt-6 text-lg">
+              Have a question, or a guest you would like to hear from? Send us a
+              note and we will be in touch.
+            </p>
+          )
+        }
 
-    {
-      (settings.contactEmail || settings.contactPhone) && (
-        <div class="mb-10 flex flex-wrap gap-6 text-sm">
-          {settings.contactEmail && (
-            <a
-              class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-              href={`mailto:${settings.contactEmail}`}
-            >
-              {settings.contactEmail}
-            </a>
-          )}
-          {settings.contactPhone && (
-            <a
-              class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-              href={`tel:${settings.contactPhone.replace(/[^+\d]/g, '')}`}
-            >
-              {settings.contactPhone}
-            </a>
-          )}
+        {
+          (settings.contactEmail || settings.contactPhone) && (
+            <ul class="mt-8 space-y-3 text-base">
+              {settings.contactEmail && (
+                <li>
+                  <a class="text-heading font-semibold hover:underline" href={`mailto:${settings.contactEmail}`}>
+                    {settings.contactEmail}
+                  </a>
+                </li>
+              )}
+              {settings.contactPhone && (
+                <li>
+                  <a
+                    class="text-heading font-semibold hover:underline"
+                    href={`tel:${settings.contactPhone.replace(/[^+\d]/g, '')}`}
+                  >
+                    {settings.contactPhone}
+                  </a>
+                </li>
+              )}
+            </ul>
+          )
+        }
+      </div>
+
+      <div class="lg:col-span-7">
+        <div class="card p-6 sm:p-8">
+          <ContactForm client:load />
         </div>
-      )
-    }
-
-    <ContactForm client:load />
-  </div>
+      </div>
+    </div>
+  </Container>
 </Layout>

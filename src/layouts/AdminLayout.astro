@@ -1,4 +1,6 @@
 ---
+import { Font } from 'astro:assets';
+import FormTransport from '../components/admin/FormTransport.astro';
 import Icon from '../components/admin/Icon.astro';
 import type { IconName } from '../components/admin/icons';
 import type { SessionUser } from '../server/auth/session';
@@ -51,7 +53,10 @@ const NAV: Array<{
   },
   {
     label: 'Inbox',
-    items: [{ href: '/admin/messages', label: 'Messages', icon: 'mail' }]
+    items: [
+      { href: '/admin/messages', label: 'Messages', icon: 'mail' },
+      { href: '/admin/subscribers', label: 'Subscribers', icon: 'users' }
+    ]
   }
 ];
 
@@ -75,6 +80,10 @@ const initials = user.name
     <meta name="robots" content="noindex, nofollow" />
     <title>{title} · Podcast Admin</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <Font cssVariable="--astro-font-inter" preload />
+
+    <Font cssVariable="--astro-font-fraunces" />
   </head>
 
   <body class="admin">
@@ -205,5 +214,6 @@ const initials = user.name
         history.replaceState(null, '', url);
       }
     </script>
+    <FormTransport />
   </body>
 </html>

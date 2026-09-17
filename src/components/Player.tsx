@@ -1,6 +1,15 @@
 import { useEffect, useState, useRef } from 'preact/hooks';
 
-import { currentEpisode, isMuted, isPlaying, seekTo } from '../components/state';
+import {
+  currentEpisode,
+  isMuted,
+  isPlaying,
+  playbackRate,
+  playerDuration,
+  playerTime,
+  seekTo,
+  skipBy
+} from '../components/state';
 import MuteButton from './player/MuteButton';
 import PlayButton from './player/PlayButton';
 import PlaybackRateButton from './player/PlaybackRateButton';
@@ -24,6 +33,8 @@ export default function Player() {
       const time = audioPlayer.current.currentTime;
       const percentage = (time / audioPlayer.current.duration) * 100;
       setCurrentTime(time);
+      playerTime.value = time;
+      playerDuration.value = audioPlayer.current.duration;
 
       const slider = document.querySelector('.slider');
       const particles = document.querySelector('.ship-particles');
@@ -50,13 +61,29 @@ export default function Player() {
     if (audioPlayer.current) {
       audioPlayer.current.src = audio.src;
       audioPlayer.current.currentTime = 0;
-      audioPlayer.current.play();
+      audioPlayer.current.playbackRate = playbackRate.value;
+      playerTime.value = 0;
+      playerDuration.value = 0;
+      audioPlayer.current.play().catch(() => (isPlaying.value = false));
     }
   }, [audio]);
 
+  // Skips and speed changes requested by other islands.
+  useEffect(() => {
+    const delta = skipBy.value;
+    if (delta === null || !audioPlayer.current) return;
+    audioPlayer.current.currentTime = Math.max(0, audioPlayer.current.currentTime + delta);
+    playerTime.value = audioPlayer.current.currentTime;
+    skipBy.value = null;
+  }, [skipBy.value]);
+
+  useEffect(() => {
+    if (audioPlayer.current) audioPlayer.current.playbackRate = playbackRate.value;
+  }, [playbackRate.value]);
+
   useEffect(() => {
     if (isPlaying.value) {
-      audioPlayer.current?.play();
+      audioPlayer.current?.play().catch(() => (isPlaying.value = false));
       progressRef.current = requestAnimationFrame(whilePlaying);
     } else {
       audioPlayer.current?.pause();
@@ -106,9 +133,9 @@ export default function Player() {
   }, [currentTime]);
 
   return (
-    <div class="player fixed inset-x-0 bottom-0 z-50 lg:left-112 xl:left-120">
+    <div class="player fixed inset-x-0 bottom-0 z-50">
       <div
-        class="flex items-center gap-6 bg-light-player/90 px-4 py-4 backdrop-blur-xs md:px-6 dark:bg-dark-player/90"
+        class="border-line text-heading flex items-center gap-6 border-t px-4 py-4 md:px-6"
         role="region"
         style={{ viewTransitionName: 'player' }}
       >
@@ -118,7 +145,7 @@ export default function Player() {
 
         <div class="flex flex-1 flex-col gap-3 overflow-hidden p-1">
           <a
-            href={`/${episodeNumber}`}
+            href={episodeNumber ? `/episodes/${episodeNumber}` : '/episodes'}
             class="truncate text-center text-sm font-bold leading-6 md:text-left"
             title={title}
           >
@@ -144,6 +171,19 @@ export default function Player() {
               <div class="hidden items-center md:flex">
                 <MuteButton />
               </div>
+              <a
+                href={audio.src}
+                download
+                class="text-heading/70 hover:text-heading inline-flex h-5 w-5 items-center justify-center transition-colors"
+                aria-label="Download this episode"
+                title="Download episode"
+              >
+                <svg class="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3v12" />
+                  <path d="m7 10 5 5 5-5" />
+                  <path d="M5 21h14" />
+                </svg>
+              </a>
             </div>
           </div>
 

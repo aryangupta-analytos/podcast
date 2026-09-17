@@ -1,0 +1,143 @@
+---
+import type { Episode, Show } from '../../lib/types';
+import { formatDuration } from '../../lib/format';
+import { dasherize } from '../../utils/dasherize';
+import FormattedDate from '../FormattedDate';
+import FullPlayButton from '../FullPlayButton';
+import SmartImage from '../SmartImage.astro';
+
+export interface Props {
+  episode: Episode;
+  show: Show;
+  /**
+   * `hero`: a large colour card for the homepage carousel — copy on the left,
+   *         the guest's photo filling the right.
+   * `card`: a photo tile on a colour block with the title underneath.
+   * `row`:  a compact horizontal card for lists.
+   */
+  variant?: 'hero' | 'card' | 'row';
+  /** Position in its list — picks the accent colour. */
+  index?: number;
+  eyebrow?: string;
+  loading?: 'lazy' | 'eager';
+}
+
+const {
+  episode,
+  show,
+  variant = 'card',
+  index = 0,
+  eyebrow,
+  loading = 'lazy'
+} = Astro.props;
+
+const href = `/episodes/${episode.episodeSlug}`;
+const accent = (index % 6) + 1;
+const guest = episode.guests[0];
+// The guest's photo is the picture, like the reference; the artwork is the
+// fallback when a guest has none.
+const photo = guest?.imageUrl ?? episode.episodeThumbnail ?? show.image;
+const isPortrait = Boolean(guest?.imageUrl);
+const guestLine = episode.guests
+  .map((g) => (g.title ? `${g.name}, ${g.title}` : g.name))
+  .join(' · ');
+const playerEpisode = {
+  audio: episode.audio,
+  episodeNumber: episode.episodeNumber,
+  id: episode.id,
+  title: episode.title
+};
+const vtStyle = `view-transition-name: var(--should-vt); --vt-name: vt-${dasherize(episode.title)}`;
+---
+
+{
+  variant === 'hero' && (
+    <article class:list={['hero-card', `band-accent-${accent}`]} role="listitem">
+      <div class="hero-card-copy">
+        <p class="section-heading">
+          {eyebrow ?? (episode.episodeNumber ? `Episode ${episode.episodeNumber}` : 'Episode')}
+        </p>
+        <h3 class="hero-card-title">
+          <a href={href}>{episode.title}</a>
+        </h3>
+        {guestLine && <p class="hero-card-guest">{guestLine}</p>}
+        {episode.description && <p class="hero-card-desc">{episode.description}</p>}
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+          <a class="pill pill-ink" href={href}>
+            Go to episode
+          </a>
+          {episode.audio.src && (
+            <FullPlayButton client:visible episode={playerEpisode} href={href} tone="light" compact />
+          )}
+        </div>
+      </div>
+      <a href={href} class:list={['hero-card-media', isPortrait && 'is-portrait']} aria-hidden="true" tabindex="-1">
+        <SmartImage
+          src={photo}
+          alt=""
+          width={520}
+          height={520}
+          sizes="(min-width: 1024px) 480px, 90vw"
+          loading={loading}
+        />
+      </a>
+    </article>
+  )
+}
+
+{
+  variant === 'card' && (
+    <article class="episode-tile" role="listitem" style={`--card-accent: var(--brand-accent-${accent})`}>
+      <a href={href} class="episode-tile-media" aria-hidden="true" tabindex="-1">
+        <SmartImage
+          src={photo}
+          alt=""
+          width={360}
+          height={360}
+          sizes="(min-width: 1024px) 320px, (min-width: 640px) 45vw, 80vw"
+          loading={loading}
+        />
+      </a>
+      {episode.audio.src && (
+        <div class="episode-tile-play">
+          <FullPlayButton client:visible episode={playerEpisode} href={href} tone="light" compact class="px-4 py-2 text-xs" />
+        </div>
+      )}
+      <h3 class="episode-tile-title">
+        <a href={href} style={vtStyle}>
+          {episode.title}
+        </a>
+      </h3>
+      {guestLine ? (
+        <p class="episode-tile-guest">{guestLine}</p>
+      ) : (
+        <p class="episode-tile-guest">
+          <FormattedDate date={new Date(episode.published)} />
+          {episode.duration > 0 && ` · ${formatDuration(episode.duration)}`}
+        </p>
+      )}
+    </article>
+  )
+}
+
+{
+  variant === 'row' && (
+    <article class="card flex gap-4 p-4" role="listitem">
+      <a href={href} class="shrink-0" aria-hidden="true" tabindex="-1">
+        <SmartImage class="h-20 w-20 rounded-xl object-cover" src={photo} alt="" width={80} height={80} loading={loading} />
+      </a>
+      <div class="min-w-0 flex-1">
+        <div class="text-text-muted flex flex-wrap items-center gap-2 text-xs">
+          <FormattedDate date={new Date(episode.published)} />
+          {episode.episodeNumber && <span>· Episode {episode.episodeNumber}</span>}
+        </div>
+        <h3 class="text-heading mt-1 text-lg leading-snug font-bold">
+          <a href={href} class="hover:underline">
+            {episode.title}
+          </a>
+        </h3>
+        {episode.description && <p class="text-text-muted mt-1 line-clamp-2 text-sm">{episode.description}</p>}
+      </div>
+    </article>
+  )
+}

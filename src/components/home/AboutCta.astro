@@ -1,0 +1,47 @@
+---
+import Section from '../site/Section.astro';
+import SmartImage from '../SmartImage.astro';
+
+export interface Props {
+  heading: string;
+  body?: string;
+  buttonText?: string;
+  buttonUrl?: string;
+  imageUrl?: string | null;
+  tone?: 'accent-1' | 'accent-2' | 'accent-3' | 'accent-4';
+}
+
+const { heading, body, buttonText, buttonUrl, imageUrl, tone = 'accent-3' } = Astro.props;
+const hasButton = Boolean(buttonText && buttonUrl);
+---
+
+<Section id="cta" tone={tone}>
+  <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
+    <div class:list={[imageUrl ? 'lg:col-span-5' : 'lg:col-span-6']}>
+      <h2 class="display text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">{heading}</h2>
+    </div>
+    <div class:list={['flex flex-col gap-6', imageUrl ? 'lg:col-span-4' : 'lg:col-span-6']}>
+      {body && <p class="text-base text-pretty opacity-90 lg:text-lg">{body}</p>}
+      {
+        hasButton && (
+          <a class="pill pill-ink self-start" href={buttonUrl}>
+            {buttonText}
+          </a>
+        )
+      }
+    </div>
+    {
+      imageUrl && (
+        <div class="lg:col-span-3">
+          <SmartImage
+            class="mx-auto aspect-square w-48 rounded-3xl object-cover shadow-2xl lg:w-full"
+            src={imageUrl}
+            alt=""
+            width={280}
+            height={280}
+          />
+        </div>
+      )
+    }
+  </div>
+</Section>

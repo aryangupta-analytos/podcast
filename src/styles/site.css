@@ -1,28 +1,146 @@
 /*
-  Silicon Valley Tech Podcast additions on top of the vendored Starpod styles.
-  Loaded after global.css, so anything here wins the cascade.
+  Silicon Valley Tech Podcast styles on top of the vendored Starpod pieces.
+  Loaded after tailwind.css, so anything here wins the cascade.
 */
 
 .skip-link {
-  @apply bg-light-card dark:bg-dark-card text-light-text-heading absolute left-2 z-50 -translate-y-20 rounded px-4 py-2 text-sm font-bold transition-transform focus:translate-y-2 dark:text-white;
+  @apply bg-surface text-heading absolute left-2 z-50 -translate-y-20 rounded px-4 py-2 text-sm font-bold transition-transform focus:translate-y-2;
 }
 
-/* Prose defaults for CMS-authored show notes and about copy. */
+/* Prose defaults for CMS-authored show notes, bios and about copy. */
 .cms-prose {
-  @apply prose prose-sm dark:prose-invert max-w-none;
-  @apply prose-headings:text-light-text-heading dark:prose-headings:text-white;
-  @apply prose-a:text-light-text-heading dark:prose-a:text-white prose-a:underline hover:prose-a:no-underline;
-  @apply prose-strong:text-light-text-heading dark:prose-strong:text-white;
+  @apply prose prose-invert max-w-none;
+  @apply prose-headings:text-heading prose-headings:font-display prose-headings:font-semibold;
+  @apply prose-a:text-primary prose-a:underline hover:prose-a:no-underline;
+  @apply prose-strong:text-heading prose-p:text-text prose-li:text-text;
 }
 
-/* Homepage hero */
-.hero-gradient-text {
-  @apply bg-gradient-to-br from-[#8A63FF] to-[#43C9F5] bg-clip-text text-transparent;
+/* Display headlines. Fraunces is a variable font; keep the weight moderate so
+   large sizes stay crisp rather than heavy. */
+.display {
+  @apply font-display text-heading font-semibold tracking-tight text-balance;
+  font-variation-settings: 'opsz' 96;
 }
 
-/* Cards used by the featured episode, team and guest grids. */
-.tile {
-  @apply dark:border-dark-border dark:bg-dark-background/40 rounded-xl border border-transparent bg-white/60 p-5 transition-shadow hover:shadow-md;
+/* Full-bleed colour blocks (hero cards, newsletter, CTA). */
+.band {
+  @apply overflow-hidden rounded-[var(--radius-card)];
+}
+.band-accent-1 {
+  background: var(--brand-accent-1);
+  color: var(--brand-on-accent);
+  --card-accent: var(--brand-accent-1);
+}
+.band-accent-2 {
+  background: var(--brand-accent-2);
+  color: var(--brand-on-accent);
+  --card-accent: var(--brand-accent-2);
+}
+.band-accent-3 {
+  background: var(--brand-accent-3);
+  color: var(--brand-on-accent);
+  --card-accent: var(--brand-accent-3);
+}
+.band-accent-4 {
+  background: var(--brand-accent-4);
+  color: var(--brand-on-accent);
+  --card-accent: var(--brand-accent-4);
+}
+.band-accent-5 {
+  background: var(--brand-accent-5);
+  color: var(--brand-on-accent);
+  --card-accent: var(--brand-accent-5);
+}
+.band-accent-6 {
+  background: var(--brand-accent-6);
+  color: var(--brand-on-accent);
+  --card-accent: var(--brand-accent-6);
+}
+.band-surface {
+  background: var(--brand-surface);
+}
+.band-accent-1 .display,
+.band-accent-2 .display,
+.band-accent-3 .display,
+.band-accent-4 .display,
+.on-accent {
+  color: var(--brand-on-accent);
+}
+
+/* Pill buttons. `.btn` (buttons.css) is the outlined animated one; these are
+   the solid ones used on colour bands and in the header. */
+.pill {
+  @apply relative inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold focus-visible:outline-2 focus-visible:outline-offset-2;
+}
+.pill-primary {
+  background: var(--brand-primary);
+  color: var(--brand-on-accent);
+}
+.pill-ink {
+  background: var(--brand-contrast);
+  color: var(--brand-on-contrast);
+}
+.pill-ghost {
+  @apply border-line text-heading border;
+}
+.pill-ghost:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+/* Cards */
+.card {
+  @apply bg-surface rounded-[var(--radius-card)] transition-transform duration-200;
+}
+a.card:hover {
+  transform: translateY(-3px);
+}
+
+/* Person tiles: a photo on a coloured square. */
+.person-tile {
+  --tile-bg: var(--brand-accent-1);
+}
+.person-tile-media {
+  background: var(--tile-bg);
+  @apply aspect-square w-full overflow-hidden rounded-[var(--radius-card)];
+}
+.person-tile-media img,
+.person-tile-media svg {
+  @apply h-full w-full object-cover;
+  transition: transform 0.3s ease;
+}
+.person-tile:hover .person-tile-media img,
+.person-tile:hover .person-tile-media svg {
+  transform: scale(1.04);
+}
+
+/* Carousel */
+.carousel-track {
+  @apply flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2;
+  scrollbar-width: none;
+}
+.carousel-track > * {
+  @apply shrink-0 snap-start;
+}
+.carousel-track::-webkit-scrollbar {
+  display: none;
+}
+.carousel-btn {
+  @apply border-line text-heading inline-flex h-10 w-10 items-center justify-center rounded-full border transition-colors;
+}
+.carousel-btn:hover {
+  background: rgb(255 255 255 / 0.1);
+}
+.carousel-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* Header nav */
+.nav-link {
+  @apply text-heading/80 hover:text-heading rounded-full px-3 py-2 text-sm font-semibold transition-colors;
+}
+.nav-link.is-active {
+  color: var(--brand-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -36,109 +154,11 @@
   }
 }
 
-/* ──────────────────────────────────────────────────────────────────────────
-   Readability
-   The vendored palette put body copy at 5.09:1 on the card background. That
-   clears WCAG AA, but at 16px on a dark surface it reads as washed out, so
-   body and heading tones are lifted a step.
-   ────────────────────────────────────────────────────────────────────────── */
-
-/*
-  Each scheme sets its own tone. An unconditional rule here would win over the
-  dark-mode one purely by source order and leave dark text on a dark card —
-  which is exactly what happened the first time.
-*/
-@media (prefers-color-scheme: light) {
-  body:not(.admin) {
-    /* 5.09:1 -> 7.1:1 on the light card */
-    color: oklch(44% 0.017 285.89);
-  }
-}
-@media (prefers-color-scheme: dark) {
-  body:not(.admin) {
-    /* 5.09:1 -> 8.2:1 on the dark card */
-    color: oklch(78% 0.017 264.42);
-  }
-}
-
-/* ── Site navigation ────────────────────────────────────────────────────── */
-
-.site-nav {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.site-nav-link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 14px;
-  margin: 2px -6px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  text-decoration: none;
-  /* Near-full contrast: these are the site's primary navigation, not body copy. */
-  color: oklch(30.55% 0.052 292.57);
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.18s ease;
-}
-@media (prefers-color-scheme: dark) {
-  .site-nav-link {
-    color: #fff;
-  }
-}
-
-.site-nav-link:hover,
-.site-nav-link:focus-visible {
-  background-color: rgb(0 0 0 / 0.05);
-  transform: translateX(2px);
-}
-@media (prefers-color-scheme: dark) {
-  .site-nav-link:hover,
-  .site-nav-link:focus-visible {
-    background-color: rgb(255 255 255 / 0.07);
-  }
-}
-
-/* The chevron is the affordance: it signals "this goes somewhere". */
-.site-nav-arrow {
-  flex: none;
-  opacity: 0.45;
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-.site-nav-link:hover .site-nav-arrow,
-.site-nav-link:focus-visible .site-nav-arrow {
-  opacity: 1;
-  transform: translateX(3px);
-}
-
-.site-nav-link.is-active {
-  background-image: linear-gradient(90deg, #8a63ff22, transparent);
-  box-shadow: inset 2px 0 0 #8a63ff;
-}
-@media (prefers-color-scheme: dark) {
-  .site-nav-link.is-active {
-    background-image: linear-gradient(90deg, #43c9f522, transparent);
-    box-shadow: inset 2px 0 0 #43c9f5;
-  }
-}
-.site-nav-link.is-active .site-nav-arrow {
-  opacity: 1;
-}
-
 /* ── Motion ─────────────────────────────────────────────────────────────── */
 
 /* Sections settle in as they enter the viewport rather than appearing abruptly. */
 @supports (animation-timeline: view()) {
-  main section,
-  [aria-label='EpisodeList'] li {
+  main section {
     animation: section-enter linear both;
     animation-timeline: view();
     animation-range: entry 0% entry 32%;
@@ -152,71 +172,1632 @@
   }
 }
 
-/* Episode cards lift slightly on hover so the whole row reads as a target. */
-[aria-label='EpisodeList'] li > div {
+/* ── Richer surface ─────────────────────────────────────────────────────── */
+
+/* Ambient colour wash so the dark ground has depth instead of feeling empty -
+   soft accent glows anchored to the corners, fixed so they stay put on scroll. */
+body {
+  background-color: #080a24;
+  background-image:
+    radial-gradient(58% 48% at 18% -8%, rgb(120 92 246 / 0.26), transparent 60%),
+    radial-gradient(50% 44% at 96% 10%, rgb(35 196 177 / 0.18), transparent 58%),
+    radial-gradient(55% 50% at 82% 108%, rgb(255 93 162 / 0.16), transparent 60%),
+    radial-gradient(46% 44% at 4% 106%, rgb(56 182 255 / 0.14), transparent 60%),
+    linear-gradient(160deg, #0c1038 0%, #080a24 55%, #0a0722 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
+.site-header {
+  background: var(--brand-ink-2);
+  border-bottom: 1px solid var(--brand-line);
+  box-shadow: none;
+}
+
+.platform-chip {
+  @apply text-heading inline-flex items-center gap-2 rounded-full px-2.5 py-1.5 transition-colors;
+  background: rgb(255 255 255 / 0.08);
+}
+.platform-chip:hover {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+
+.card {
+  border: 1px solid var(--brand-line);
+  box-shadow: none;
+}
+.card:hover,
+a.card:hover {
+  box-shadow: 0 16px 40px rgb(0 0 0 / 0.35);
+}
+
+.card-badge {
+  @apply absolute top-3 left-3 rounded-full px-3 py-1 text-xs font-bold;
+  background: var(--badge, var(--brand-primary));
+  color: var(--brand-on-accent);
+}
+
+/* Colour cards get a soft light glow in one corner. */
+.hero-card {
+  min-height: 100%;
+}
+.hero-card-glow {
+  position: absolute;
+  inset: auto -20% -40% auto;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 255 255 / 0.35), transparent 65%);
+  pointer-events: none;
+}
+
+.pill-light {
+  background: rgb(255 255 255 / 0.92);
+  color: var(--brand-ink);
+}
+.pill-outline-dark {
+  border: 2px solid rgb(7 11 43 / 0.75);
+  color: var(--brand-heading);
+}
+.pill-outline-dark:hover {
+  background: rgb(7 11 43 / 0.1);
+}
+
+/* ── Carousel: arrows on either side, equal-height slides ───────────────── */
+
+.carousel {
+  position: relative;
+}
+.carousel-track {
+  align-items: stretch;
+  cursor: grab;
+  outline: none;
+  padding-block: 4px;
+}
+.carousel-track.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+  user-select: none;
+}
+.carousel-btn-prev,
+.carousel-btn-next {
+  @apply absolute top-1/2 z-10 h-12 w-12 -translate-y-1/2;
+  background: var(--brand-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+}
+.carousel-btn-prev {
+  left: -1.5rem;
+}
+.carousel-btn-next {
+  right: -1.5rem;
+}
+@media (max-width: 1279px) {
+  .carousel-btn-prev {
+    left: 0.25rem;
+  }
+  .carousel-btn-next {
+    right: 0.25rem;
+  }
+}
+.carousel-btn:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.carousel.is-static .carousel-btn {
+  display: none;
+}
+
+/* ── Show notes ─────────────────────────────────────────────────────────── */
+
+.show-notes {
+  @apply prose-lg;
+}
+.show-notes p {
+  @apply text-text;
+}
+.show-notes p:first-child {
+  @apply font-display text-heading text-2xl leading-snug font-semibold;
+  letter-spacing: -0.01em;
+}
+.show-notes p {
+  @apply leading-relaxed;
+  max-width: 68ch;
+}
+.show-notes p + p {
+  @apply mt-5;
+}
+.show-notes h2,
+.show-notes h3 {
+  @apply mt-10 mb-3;
+}
+.note-link {
+  @apply mr-1 mb-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold no-underline;
+  background: color-mix(in srgb, var(--brand-primary) 10%, transparent);
+  color: var(--brand-primary) !important;
+  text-decoration: none !important;
+}
+.note-link::after {
+  content: '↗';
+  font-size: 0.8em;
+}
+.note-link:hover {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary) !important;
+}
+
+/* Buttons are the containing block for their own sr-only labels; otherwise an
+   absolutely positioned label inside a carousel slide lands outside the scroll
+   container and widens the page. */
+.pill,
+.btn,
+.carousel-btn {
+  position: relative;
+}
+
+/* ── Episode page (mirrors the reference layout) ─────────────────────────── */
+
+.episode-hero {
+  background: var(--brand-contrast);
+  color: rgb(255 255 255 / 0.85);
+  padding-block: 3.5rem;
+}
+@media (min-width: 1024px) {
+  .episode-hero {
+    padding-block: 5rem;
+  }
+}
+.episode-hero-eyebrow {
+  @apply section-heading flex flex-wrap items-center gap-2;
+  color: var(--brand-primary);
+}
+.episode-hero-eyebrow time {
+  color: inherit;
+}
+.episode-hero-title {
+  @apply font-display mt-4 text-4xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl;
+  color: #fff;
+  font-variation-settings: 'opsz' 120;
+}
+.episode-hero-guest {
+  @apply mt-4 text-lg font-semibold;
+  color: #fff;
+}
+.episode-hero-copy {
+  @apply mt-5 max-w-2xl text-base text-pretty lg:text-lg;
+}
+.platform-chip-dark {
+  background: rgb(255 255 255 / 0.12);
+  color: #fff;
+}
+.platform-chip-dark:hover {
+  background: #fff;
+  color: var(--brand-contrast);
+}
+
+/* Inline player card */
+.episode-player {
+  @apply mx-auto max-w-4xl rounded-[var(--radius-card)] p-6 sm:p-8;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-line);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.35);
+}
+.episode-player-controls {
+  @apply mt-6 flex items-center justify-center gap-5 sm:gap-7;
+}
+.episode-player-rate {
+  @apply rounded-full px-3 py-1.5 text-sm font-bold;
+  background: rgb(255 255 255 / 0.1);
+  color: var(--brand-heading);
+  min-width: 3.25rem;
+}
+.episode-player-skip {
+  @apply relative flex h-11 w-11 items-center justify-center;
+  color: var(--brand-heading);
+}
+.episode-player-skip svg {
+  @apply h-10 w-10;
+}
+.episode-player-skip span {
+  @apply absolute text-[10px] font-bold;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -45%);
+}
+.episode-player-play {
+  @apply flex h-16 w-16 items-center justify-center rounded-full transition-transform hover:scale-105;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--brand-primary) 40%, transparent);
+}
+.episode-player-play svg {
+  @apply h-6 w-6;
+}
+.episode-player-download {
+  @apply flex h-11 w-11 items-center justify-center rounded-full;
+  color: var(--brand-heading);
+}
+.episode-player-download svg {
+  @apply h-6 w-6;
+}
+.episode-player-download:hover,
+.episode-player-skip:hover,
+.episode-player-rate:hover {
+  color: var(--brand-primary);
+}
+.episode-player-timeline {
+  @apply mt-6 flex items-center gap-4;
+}
+.episode-player-range {
+  @apply h-1.5 w-full cursor-pointer appearance-none rounded-full;
+  background: linear-gradient(
+    to right,
+    var(--brand-primary) var(--progress, 0%),
+    rgb(255 255 255 / 0.15) var(--progress, 0%)
+  );
+}
+.episode-player-range::-webkit-slider-thumb {
+  @apply h-4 w-4 appearance-none rounded-full;
+  background: var(--brand-primary);
+  border: 3px solid var(--brand-ink);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.25);
+}
+.episode-player-range::-moz-range-thumb {
+  @apply h-4 w-4 rounded-full border-0;
+  background: var(--brand-primary);
+  border: 3px solid var(--brand-ink);
+}
+
+/* Content blocks */
+.episode-block {
+  @apply py-8;
+  border-bottom: 1px solid var(--brand-line);
+}
+.episode-block:last-child {
+  border-bottom: 0;
+}
+.episode-bio ul {
+  @apply grid gap-2;
+}
+.episode-bio li {
+  @apply text-heading font-medium;
+}
+
+/* Accordions (show notes) */
+.episode-accordion {
+  border-bottom: 1px solid var(--brand-line);
+}
+.episode-accordion summary {
+  @apply flex cursor-pointer list-none items-center justify-between py-6;
+}
+.episode-accordion summary::-webkit-details-marker {
+  display: none;
+}
+.episode-accordion-toggle {
+  @apply text-primary flex items-center gap-1 text-sm font-bold;
+}
+.episode-accordion-toggle svg {
+  @apply h-4 w-4 transition-transform;
+}
+.episode-accordion[open] .episode-accordion-toggle svg {
+  transform: rotate(180deg);
+}
+.episode-accordion .when-open,
+.episode-accordion[open] .when-closed {
+  display: none;
+}
+.episode-accordion[open] .when-open {
+  display: inline;
+}
+.episode-accordion > div {
+  padding-bottom: 2rem;
+}
+
+/* ── Reference-style homepage ────────────────────────────────────────────── */
+
+/* Header: navy bar, green nav row underneath. */
+.site-header {
+  background: var(--brand-ink);
+  border-bottom: 0;
+}
+.site-header nav.hidden.lg\:flex {
+  background: transparent;
+}
+.nav-link {
+  color: var(--brand-primary);
+}
+.nav-link:hover {
+  color: #fff;
+}
+.nav-link.is-active {
+  color: #fff;
+}
+.platform-chip {
+  background: transparent;
+  color: var(--brand-primary);
+  padding: 0.35rem;
+}
+.platform-chip:hover {
+  background: transparent;
+  color: #fff;
+}
+.platform-chip-dark {
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+
+/* Section headings and "See all" links. */
+.section-heading {
+  letter-spacing: 0.06em;
+}
+main section h2.section-heading {
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+/* Hero: a centred colour card with the neighbours peeking in. */
+.home-hero {
+  padding-block: 2.5rem 1rem;
+}
+@media (min-width: 1024px) {
+  .home-hero {
+    padding-block: 3.5rem 1.5rem;
+  }
+}
+.carousel-centered .carousel-track {
+  scroll-snap-type: x mandatory;
+  padding-inline: calc(50% - 44vw);
+}
+@media (min-width: 640px) {
+  .carousel-centered .carousel-track {
+    padding-inline: calc(50% - 320px);
+  }
+}
+@media (min-width: 1024px) {
+  .carousel-centered .carousel-track {
+    padding-inline: calc(50% - 450px);
+  }
+}
+@media (min-width: 1280px) {
+  .carousel-centered .carousel-track {
+    padding-inline: calc(50% - 490px);
+  }
+}
+.carousel-centered .carousel-track > * {
+  scroll-snap-align: center;
+}
+
+.hero-card {
+  @apply grid min-h-[420px] overflow-hidden rounded-[var(--radius-card)];
+  grid-template-columns: 1fr;
+}
+@media (min-width: 640px) {
+  .hero-card {
+    grid-template-columns: 1.05fr 1fr;
+    min-height: 520px;
+  }
+}
+.hero-card-copy {
+  @apply flex flex-col justify-center p-8 sm:p-10 lg:p-14;
+  color: var(--brand-on-accent);
+}
+.hero-card-title {
+  @apply font-display mt-3 text-3xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl;
+  font-variation-settings: 'opsz' 120;
+}
+.hero-card-title a:hover {
+  text-decoration: underline;
+}
+.hero-card-guest {
+  @apply mt-4 text-base font-bold;
+}
+.hero-card-desc {
+  @apply mt-3 line-clamp-4 text-base text-pretty;
+}
+.hero-card-media {
+  @apply relative block min-h-[260px];
+}
+.hero-card-media img {
+  @apply absolute inset-0 h-full w-full object-cover object-top;
+}
+/* Artwork (not a portrait) sits framed rather than bleeding to the edge. */
+.hero-card-media:not(.is-portrait) img {
+  object-fit: contain;
+  padding: 2rem;
+}
+
+/* Green circular arrows. */
+.carousel-btn {
+  @apply h-9 w-9 border-0;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.carousel-btn:hover {
+  background: #fff;
+}
+.carousel-btn-side {
+  @apply absolute top-1/2 z-10 -translate-y-1/2;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+}
+.carousel-sides .carousel-btn-prev {
+  left: 0.25rem;
+}
+.carousel-sides .carousel-btn-next {
+  right: 0.25rem;
+}
+@media (min-width: 1280px) {
+  .carousel-sides .carousel-btn-prev {
+    left: calc(50% - 490px - 3.25rem);
+  }
+  .carousel-sides .carousel-btn-next {
+    right: calc(50% - 490px - 3.25rem);
+  }
+}
+.carousel-btn:disabled {
+  opacity: 0.35;
+  pointer-events: none;
+}
+.carousel-dots {
+  @apply mt-5 flex justify-center gap-2;
+}
+.carousel-dot {
+  @apply h-2 w-2 rounded-full;
+  background: rgb(255 255 255 / 0.35);
+}
+.carousel-dot.is-active {
+  background: #fff;
+}
+
+/* Episode tiles: the guest's photo on a colour block, title below. */
+.episode-tile {
+  --card-accent: var(--brand-accent-1);
+  background: var(--card-accent);
+  color: var(--brand-on-accent);
+  border-radius: var(--radius-card);
+  padding: 0.85rem 0.85rem 1.35rem;
+  display: flex;
+  flex-direction: column;
   transition: transform 0.2s ease;
 }
-[aria-label='EpisodeList'] li:hover > div {
-  transform: translateX(3px);
-}
-
-/* Person cards in the grids. */
-.person-card img,
-.person-card svg {
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease;
-}
-.person-card:hover img,
-.person-card:hover svg {
+.episode-tile:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 24px rgb(0 0 0 / 0.22);
+}
+.episode-tile-media {
+  @apply relative block aspect-square w-full overflow-hidden;
+  border-radius: calc(var(--radius-card) - 6px);
+  background: rgb(7 11 43 / 0.12);
+}
+.episode-tile-media img {
+  @apply h-full w-full object-cover object-top transition-transform duration-300;
+}
+.episode-tile:hover .episode-tile-media img {
+  transform: scale(1.04);
+}
+.episode-tile-play {
+  @apply mt-3 flex;
+}
+.episode-tile-title {
+  @apply mt-4 px-1 text-base leading-snug font-bold;
+  color: var(--brand-on-accent);
+}
+.episode-tile-title a:hover {
+  text-decoration: underline;
+}
+.episode-tile-guest {
+  @apply mt-1 px-1 text-sm font-medium;
+  color: color-mix(in srgb, var(--brand-on-accent) 72%, transparent);
+}
+/* Listen sits on the coloured card as a white pill with an accent play circle,
+   matching the hero. */
+.episode-tile .episode-tile-play {
+  @apply mt-4 px-1;
+}
+.episode-tile .pill-light > span:first-child {
+  background: var(--card-accent);
+  color: var(--brand-ink);
 }
 
-/* ── Hero image ─────────────────────────────────────────────────────────── */
-
-/*
-  The hero image is owner-supplied and could be a logo, cover art or a photo.
-  A transparent brand mark scaled to fill the column reads as an unfinished
-  page, so it is capped small and framed: a soft panel gives a glyph an edge to
-  sit against, while a photo or artwork simply fills it.
-*/
-.hero-media {
-  display: grid;
-  place-items: center;
-  width: 200px;
-  height: 200px;
-  padding: 22px;
-  border-radius: 22px;
-  border: 1px solid rgb(255 255 255 / 0.08);
-  background:
-    radial-gradient(120% 120% at 50% 0%, rgb(255 255 255 / 0.07), transparent 70%),
-    rgb(255 255 255 / 0.03);
+/* Pills on colour blocks: navy with green text, like "Go to Episode". */
+.pill-ink {
+  background: var(--brand-contrast);
+  color: var(--brand-on-contrast);
+}
+.pill-primary {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
 }
 
-@media (prefers-color-scheme: light) {
-  .hero-media {
-    border-color: rgb(0 0 0 / 0.07);
-    background:
-      radial-gradient(120% 120% at 50% 0%, rgb(0 0 0 / 0.05), transparent 70%),
-      rgb(0 0 0 / 0.02);
+/* Newsletter band with illustration. */
+.newsletter-band {
+  @apply relative overflow-hidden px-6 pt-10 pb-64 sm:px-10 lg:px-14 lg:pt-16 lg:pb-80;
+}
+.newsletter-band-grid {
+  @apply relative z-10 grid gap-8 lg:grid-cols-2 lg:gap-16;
+}
+.newsletter-band-form {
+  @apply flex flex-col justify-center;
+}
+.newsletter-band-art {
+  @apply pointer-events-none absolute inset-x-0 bottom-0 w-full;
+  height: 60%;
+}
+.newsletter-band .pill-ink {
+  color: var(--brand-primary);
+}
+
+/* Person tiles: name bold, no serif, like the reference's guest grid. */
+.person-tile p.font-display {
+  font-family: var(--font-inter);
+  font-size: 1rem;
+}
+
+/* The hero carousel spans the full viewport so neighbours peek in at the edges. */
+.home-hero .carousel {
+  overflow: hidden;
+}
+.home-hero .carousel-track {
+  padding-inline: 6vw;
+}
+@media (min-width: 640px) {
+  .home-hero .carousel-track {
+    padding-inline: calc(50vw - 320px);
   }
 }
-
-.hero-image {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
+@media (min-width: 1024px) {
+  .home-hero .carousel-track {
+    padding-inline: calc(50vw - 450px);
+  }
 }
-
+@media (min-width: 1280px) {
+  .home-hero .carousel-track {
+    padding-inline: calc(50vw - 490px);
+  }
+}
+.home-hero .carousel-btn-side {
+  left: max(0.5rem, calc(50vw - 490px - 3.5rem));
+}
+.home-hero .carousel-btn-next {
+  left: auto;
+  right: max(0.5rem, calc(50vw - 490px - 3.5rem));
+}
 @media (max-width: 1023px) {
-  .hero-media {
-    width: 168px;
-    height: 168px;
-    padding: 18px;
-    border-radius: 18px;
+  .home-hero .carousel-btn-side {
+    left: 0.5rem;
+  }
+  .home-hero .carousel-btn-next {
+    right: 0.5rem;
+    left: auto;
   }
 }
 
+/* ── Refinements ────────────────────────────────────────────────────────── */
+
+/* An arrow with nothing on its side disappears rather than dimming. */
+.carousel-btn:disabled {
+  display: none;
+}
+.carousel-btn {
+  @apply h-11 w-11;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  border: 2px solid rgb(7 11 43 / 0.25);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.45);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.carousel-btn svg {
+  @apply h-5 w-5;
+}
+.carousel-btn:hover {
+  background: #fff;
+  color: var(--brand-ink);
+}
+.carousel-btn-side:hover {
+  transform: none;
+}
+.carousel-below .carousel-btn {
+  @apply h-10 w-10;
+}
+
+/* Pills never underline, and each tone has a clear hover. */
+.pill,
+.pill:hover {
+  text-decoration: none;
+}
+.pill-ink:hover {
+  background: #fff;
+  color: var(--brand-ink);
+}
+.pill-ink:hover > span:first-child {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.pill-primary:hover {
+  background: #fff;
+  color: var(--brand-ink);
+}
+.pill-ghost:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+.pill > span:first-child {
+  transition: background-color 0.15s ease;
+}
+
+/* A shorter hero card. */
+@media (min-width: 640px) {
+  .hero-card {
+    min-height: 400px;
+  }
+}
+.hero-card-copy {
+  @apply py-8 lg:py-10;
+}
+.hero-card-title {
+  @apply text-3xl sm:text-4xl lg:text-[2.6rem];
+}
+.hero-card-desc {
+  @apply line-clamp-3;
+}
+
+
+/* ── Fixes: arrows, drag, listen button ─────────────────────────────────── */
+
+/* Hero (side) arrows vanish at the ends; the row (below) arrows stay in view. */
+.carousel-sides .carousel-btn:disabled {
+  opacity: 0;
+  pointer-events: none;
+}
+.carousel-below .carousel-btn:disabled {
+  display: inline-flex;   /* keep both row arrows visible, unlike the hero */
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+/* The white Listen pill keeps the green play circle it used to show only on
+   hover, so it reads as a button rather than a plain white lozenge. */
+.pill-light > span:first-child {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+
+/* Dragging a carousel should scroll it, never start a native image drag. */
+.carousel-track,
+.carousel-track img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+
+/* ── Batch 2: card buttons match the card, calmer side arrows ───────────── */
+
+/* Hero-card buttons wear the card's own colour so they belong to it, and the
+   hover no longer flips to white or lifts. */
+.hero-card .pill-ink {
+  background: var(--brand-ink);
+  color: var(--card-accent, #fff);
+}
+.hero-card .pill-ink:hover {
+  background: var(--brand-ink-2);
+  color: var(--card-accent, #fff);
+  transform: none;
+}
+.hero-card .pill-ink:hover > span:first-child {
+  background: var(--card-accent, var(--brand-primary));
+  color: var(--brand-ink);
+}
+/* The white Listen pill's play circle takes the card colour instead of green. */
+.hero-card .pill-light > span:first-child {
+  background: var(--card-accent, var(--brand-primary));
+  color: var(--brand-ink);
+}
+.hero-card .pill-light:hover {
+  background: #fff;
+  transform: none;
+}
+
+/* Side (hero) arrows: white discs that read on the dark ground, no green, no
+   movement on hover. */
+.carousel-btn-side {
+  background: #ffffff;
+  color: var(--brand-ink);
+}
+.carousel-btn-side:hover {
+  background: #eef0f5;
+  color: var(--brand-ink);
+  transform: none;
+}
+
+
+/* ── Batch 3: show-notes container + colourful accents ──────────────────── */
+
+.show-notes {
+  background: var(--brand-ink-2);
+  border: 1px solid var(--brand-line);
+  border-left: 5px solid var(--brand-accent-4);
+  border-radius: var(--radius-card);
+  padding: 1.6rem 1.9rem;
+}
+.show-notes.pt-6 { padding-top: 1.6rem; }
+
+
+/* A centred carousel keeps `scroll-snap-type: x mandatory`, which was defined
+   after `.carousel-track.is-dragging` at the same specificity and therefore
+   won even mid-drag - snap yanked the hero back on every pointermove, so it
+   felt like it could not be dragged at all. Beat it while dragging. */
+.carousel-centered .carousel-track.is-dragging {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+
+
+/* ── Batch 4: richer page-hero band, wider measure ──────────────────────── */
+
+/* The flat blue About band gets a soft two-colour wash instead. */
+.page-hero-band {
+  background:
+    radial-gradient(120% 130% at 0% 0%, rgb(143 123 255 / 0.30), transparent 55%),
+    radial-gradient(110% 130% at 100% 10%, rgb(35 196 177 / 0.22), transparent 55%),
+    var(--brand-ink-2);
+  border-bottom: 1px solid var(--brand-line);
+}
+
+/* ── Fluid-interface rules (feedback, materials, type, accessibility) ───── */
+
+/* While a spring or drag drives the row, native snap must not fight it. */
+.carousel-track.is-animating,
+.carousel-track.is-dragging {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+}
+.carousel-track.is-dragging * {
+  pointer-events: none;
+}
+
+/* Feedback lives on the press and is instant; release springs back. */
+.pill,
+.carousel-btn,
+.platform-chip,
+.nav-link,
+.carousel-dot,
+.episode-player-play,
+.episode-player-skip,
+.episode-player-rate {
+  transition:
+    transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
+}
+.pill:active,
+.platform-chip:active,
+.episode-player-skip:active,
+.episode-player-rate:active {
+  transform: scale(0.96);
+  transition-duration: 80ms;
+}
+.episode-player-play:active {
+  transform: scale(0.94);
+  transition-duration: 80ms;
+}
+.carousel-dot {
+  transition: transform 200ms ease, background-color 200ms ease;
+}
+.carousel-dot.is-active {
+  transform: scale(1.25);
+}
+
+/* Type: tracking is size-specific — tighten display sizes, keep body near 0. */
+.display,
+.hero-card-title,
+.episode-hero-title,
+h1.display {
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
+}
+.episode-tile-title,
+.person-tile p,
+.episode-player-head p {
+  letter-spacing: -0.005em;
+}
+body {
+  letter-spacing: 0;
+  line-height: 1.55;
+}
+
+/* Materials: translucent chrome that content scrolls under, no hard rule.
+   A scroll-edge fade marks where content meets the floating header. */
+.site-header {
+  background: color-mix(in srgb, var(--brand-ink) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 0;
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.06);
+}
+.site-header::after {
+  content: '';
+  position: absolute;
+  inset: 100% 0 auto 0;
+  height: 18px;
+  pointer-events: none;
+  background: linear-gradient(to bottom, rgb(7 11 43 / 0.55), transparent);
+}
+.site-header {
+  position: sticky;
+}
+.player > div {
+  background: color-mix(in srgb, var(--brand-ink-2) 78%, transparent) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  border-top: 1px solid rgb(255 255 255 / 0.1) !important;
+  box-shadow: 0 -12px 32px rgb(0 0 0 / 0.35);
+}
+
+/* Surfaces materialise — blur and scale settle together — rather than fading. */
+@keyframes materialize {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(6px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.search-panel {
+  animation: materialize 320ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  transform-origin: top center;
+}
+header details[open] > nav {
+  animation: materialize 260ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+  transform-origin: top right; /* it belongs to the button that opened it */
+}
+
+/* Reduced motion is gentler feedback, not none. */
+@media (prefers-reduced-motion: reduce) {
+  .search-panel,
+  header details[open] > nav {
+    animation: none;
+    transition: opacity 200ms ease;
+  }
+  .pill:active,
+  .carousel-btn:active,
+  .carousel-btn-side:active,
+  .episode-player-play:active {
+    transform: none;
+  }
+  .carousel-track {
+    scroll-behavior: auto;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header,
+  .player > div {
+    background: var(--brand-ink-2) !important;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+@media (prefers-contrast: more) {
+  .site-header,
+  .player > div,
+  .card,
+  .episode-player {
+    background: var(--brand-ink-2) !important;
+    border: 1px solid rgb(255 255 255 / 0.5);
+  }
+  .carousel-btn {
+    border-color: #fff;
+  }
+}
+
+/* ── Page hero: a soft glow that belongs to the page, not a box behind it ── */
+/* No solid base and no rule underneath. The colour lives on a pseudo-element
+   that reaches up under the breadcrumb and fades out at the bottom, so there
+   is no seam above and no edge below. */
+.page-hero-band {
+  position: relative;
+  background: none;
+  border-bottom: 0;
+  isolation: isolate;
+}
+.page-hero-band::before {
+  content: '';
+  position: absolute;
+  inset: -7rem 0 -4rem 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 90% at 12% 20%, rgb(143 123 255 / 0.28), transparent 70%),
+    radial-gradient(45% 80% at 88% 10%, rgb(35 196 177 / 0.18), transparent 70%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 55%, transparent 100%);
+}
+
+/* ── Carousel arrows stay put ────────────────────────────────────────────── */
+/* Centred with auto margins, never with translate/transform, so no hover or
+   press rule can shift them. The arrows do not move or scale in any state:
+   hover and press are shown with colour and shadow only. Keep this block last. */
+.carousel-btn,
+.carousel-btn:hover,
+.carousel-btn:active,
+.carousel-btn:focus-visible {
+  transform: none !important;
+  translate: none !important;
+  scale: none !important;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease,
+    opacity 150ms ease !important;
+}
+.carousel-btn-side,
+.carousel-btn-side:hover,
+.carousel-btn-side:active {
+  top: 0 !important;
+  bottom: 0 !important;
+  margin-block: auto !important;
+}
+.carousel-btn-side:hover {
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.5);
+}
+.carousel-btn:active {
+  filter: brightness(0.92);
+}
+/* With dots under the row, centre on the cards rather than cards + dots. */
+.carousel[data-dots] .carousel-btn-side,
+.carousel[data-dots] .carousel-btn-side:hover,
+.carousel[data-dots] .carousel-btn-side:active {
+  bottom: 1.75rem !important;
+}
+
+/* ── Reference header: banner, green wordmark, nav band, search ─────────── */
+
+/* Announcement strip: pale mint, navy copy, navy pill with green text. */
+.announce {
+  position: relative;
+  background: #e6f1e3;
+  color: #070b2b;
+}
+.announce-inner {
+  @apply mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-2 px-12 py-2.5 text-center;
+}
+.announce-text {
+  @apply text-sm sm:text-base;
+}
+.announce-label {
+  @apply mr-2 font-extrabold tracking-wide uppercase;
+}
+.announce-cta {
+  @apply px-10 py-2.5 text-sm;
+  background: #070b2b;
+  color: var(--brand-primary);
+}
+.announce-cta:hover {
+  background: #1a2160;
+  color: var(--brand-primary);
+}
+.announce-close {
+  @apply absolute top-1/2 right-3 flex h-9 w-9 items-center justify-center rounded-full sm:right-6;
+  margin-top: -1.125rem;
+  color: #070b2b;
+}
+.announce-close svg {
+  @apply h-6 w-6;
+}
+.announce-close:hover {
+  background: rgb(7 11 43 / 0.08);
+}
+
+/* Header: solid navy bar; the nav sits on its own lighter full-width band. */
+.site-header {
+  background: var(--brand-ink);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+.site-header::after {
+  display: none;
+}
+.site-nav-band {
+  background: #211b45; /* the reference's muted violet-navy strip */
+}
+.site-nav-band .nav-link {
+  @apply rounded-none px-4 py-3 text-base font-bold;
+  color: var(--brand-primary);
+}
+.site-nav-band .nav-link:hover,
+.site-nav-band .nav-link.is-active {
+  color: #fff;
+}
+
+/* Wordmark: condensed, heavy, green — like the reference logo. */
+.site-wordmark {
+  font-family: var(--astro-font-oswald), Impact, 'Arial Narrow', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--brand-primary);
+}
+@media (min-width: 640px) {
+  .site-wordmark {
+    font-size: 1.9rem;
+  }
+}
+
+/* Header platform icons: green, like the reference (brand colours elsewhere). */
+.site-header .platform-chip svg {
+  color: var(--brand-primary) !important;
+}
+.site-header .platform-chip:hover svg {
+  color: #fff !important;
+}
+
+/* Search: green word + green disc with a navy magnifier. */
+.search-trigger {
+  @apply inline-flex items-center gap-3 text-base font-bold;
+  color: var(--brand-primary);
+}
+.search-trigger-disc {
+  @apply flex h-7 w-7 items-center justify-center rounded-full;
+  background: var(--brand-primary);
+  color: var(--brand-ink);
+}
+.search-trigger-disc svg {
+  @apply h-4 w-4;
+}
+.search-trigger:hover {
+  color: #fff;
+}
+.search-trigger:hover .search-trigger-disc {
+  background: #fff;
+}
+
+/* ── Smaller cards ───────────────────────────────────────────────────────── */
+@media (min-width: 640px) {
+  .hero-card {
+    min-height: 320px;
+  }
+}
+.hero-card-copy {
+  @apply p-6 sm:p-8 lg:px-10 lg:py-8;
+}
+.hero-card-title {
+  @apply text-2xl sm:text-3xl lg:text-[2.1rem];
+}
+.hero-card-desc {
+  @apply line-clamp-2 text-sm;
+}
+.hero-card-media {
+  min-height: 200px;
+}
+.home-hero {
+  padding-block: 1.75rem 0.5rem;
+}
+/* Centre the narrower hero slide and keep the arrows just outside it. */
+@media (min-width: 640px) {
+  .home-hero .carousel-track {
+    padding-inline: calc(50vw - 280px);
+  }
+}
+@media (min-width: 1024px) {
+  .home-hero .carousel-track {
+    padding-inline: calc(50vw - 380px);
+  }
+  .home-hero .carousel-btn-prev {
+    left: max(0.5rem, calc(50vw - 380px - 3.5rem)) !important;
+  }
+  .home-hero .carousel-btn-next {
+    right: max(0.5rem, calc(50vw - 380px - 3.5rem)) !important;
+    left: auto !important;
+  }
+}
+@media (min-width: 1280px) {
+  .home-hero .carousel-track {
+    padding-inline: calc(50vw - 410px);
+  }
+  .home-hero .carousel-btn-prev {
+    left: max(0.5rem, calc(50vw - 410px - 3.5rem)) !important;
+  }
+  .home-hero .carousel-btn-next {
+    right: max(0.5rem, calc(50vw - 410px - 3.5rem)) !important;
+  }
+}
+.episode-tile-title {
+  @apply mt-3 text-sm;
+}
+.episode-tile-guest {
+  @apply text-xs;
+}
+/* Slides stretch to the tallest one, so long copy must be clamped or a single
+   wordy episode makes every hero card tall. */
+.hero-card-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+.hero-card-guest {
+  @apply mt-3 line-clamp-1 text-sm;
+}
+.hero-card-copy .mt-6 {
+  margin-top: 1.1rem;
+}
+
+/* ── Taller nav band ─────────────────────────────────────────────────────── */
+.site-nav-band .nav-link {
+  @apply py-4;
+}
+
+/* ── Editorial pages: About and People ───────────────────────────────────── */
+
+.about-hero {
+  @apply pt-20 pb-14 lg:pt-28 lg:pb-20;
+}
+.about-hero-title {
+  @apply mx-auto mt-4 max-w-4xl text-5xl leading-[1.02] sm:text-6xl lg:text-7xl;
+}
+.about-hero-tagline {
+  @apply text-heading mx-auto mt-5 max-w-2xl text-lg font-medium lg:text-xl;
+}
+.people-hero-lede {
+  @apply text-text font-normal;
+}
+.about-section {
+  @apply py-8 lg:py-12;
+}
+
+/* The show band: artwork beside the copy, on the brand colour. */
+.about-band {
+  @apply grid items-center gap-8 rounded-[var(--radius-card)] p-7 sm:p-10 lg:grid-cols-12 lg:gap-14 lg:p-16;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.about-band-art {
+  @apply lg:col-span-5;
+}
+.about-band-art img {
+  @apply mx-auto aspect-square w-full max-w-sm rounded-2xl object-cover;
+}
+.about-band-copy {
+  @apply lg:col-span-7;
+}
+.about-band-prose {
+  @apply mt-5 max-w-xl space-y-4 text-base leading-relaxed lg:text-[1.05rem];
+}
+.about-band-prose em {
+  @apply font-semibold;
+}
+.about-band-icons .platform-chip {
+  background: var(--brand-ink);
+  @apply h-10 w-10 justify-center rounded-xl p-0;
+}
+.about-band-icons .platform-chip svg {
+  color: var(--brand-primary) !important;
+}
+.about-band-icons .platform-chip:hover {
+  background: #fff;
+}
+.about-band-icons .platform-chip:hover svg {
+  color: var(--brand-ink) !important;
+}
+
+/* Host cards: a colour block with the photo cropped into its corner. */
+.host-card {
+  @apply relative grid min-h-[280px] overflow-hidden rounded-[var(--radius-card)];
+  grid-template-columns: 1.15fr 1fr;
+  background: var(--host-bg);
+  color: var(--brand-on-accent);
+  transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.host-card:hover {
+  transform: translateY(-4px);
+}
+.host-card-copy {
+  @apply flex flex-col justify-center p-7 sm:p-10;
+}
+.host-card-name {
+  @apply font-display mt-2 text-4xl leading-[1.02] font-semibold tracking-tight sm:text-5xl;
+  letter-spacing: -0.02em;
+}
+.host-card-role {
+  @apply mt-4 max-w-[18rem] text-base;
+}
+.host-card-media {
+  @apply relative block self-end;
+  height: 100%;
+}
+.host-card-media img,
+.host-card-media svg {
+  @apply absolute right-0 bottom-0 h-[92%] w-full object-cover object-top;
+  border-top-left-radius: 1.25rem;
+  transition: transform 500ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  transform-origin: bottom right;
+}
+.host-card:hover .host-card-media img,
+.host-card:hover .host-card-media svg {
+  transform: scale(1.04);
+}
+@media (max-width: 479px) {
+  .host-card {
+    grid-template-columns: 1fr;
+  }
+  .host-card-media {
+    height: 260px;
+  }
+  .host-card-media img,
+  .host-card-media svg {
+    @apply h-full;
+    border-radius: 0;
+  }
+}
+
+/* Asymmetric card pair: small beside large. */
+.about-grid {
+  @apply grid gap-8 lg:grid-cols-12 lg:gap-10;
+}
+.about-card {
+  @apply flex flex-col rounded-[var(--radius-card)] p-7 sm:p-10;
+}
+.about-card-listen {
+  @apply lg:col-span-4;
+  background: #15123f;
+  border: 1px solid rgb(255 255 255 / 0.12);
+}
+.about-card-listen .section-heading {
+  color: #fff;
+}
+.about-listen-list {
+  @apply flex-col items-start gap-1;
+}
+.about-listen-list .platform-chip {
+  @apply gap-3 rounded-lg px-2 py-2;
+  background: transparent;
+  color: var(--brand-primary);
+}
+.about-listen-list .platform-chip:hover {
+  color: #fff;
+}
+.about-listen-rss {
+  @apply mt-3 inline-block px-2 text-sm font-semibold;
+  color: var(--brand-primary);
+}
+.about-listen-rss:hover {
+  color: #fff;
+}
+.about-card-feature {
+  @apply justify-center lg:col-span-8 lg:p-16;
+  background: var(--brand-accent-2);
+  color: var(--brand-on-accent);
+}
+.about-card-title {
+  @apply text-4xl leading-[1.05] lg:text-5xl;
+  color: var(--brand-on-accent);
+}
+.about-card-body {
+  @apply mt-5 max-w-xl text-base lg:text-lg;
+}
+
+/* Contact: a heading, a line, a button. */
+.about-contact {
+  @apply py-20 lg:py-28;
+}
+.about-contact-title {
+  @apply text-5xl lg:text-6xl;
+}
+.about-contact-links {
+  @apply text-heading mt-5 text-lg;
+}
+.about-contact-links a {
+  color: var(--brand-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.about-contact-links a:hover {
+  color: #fff;
+}
+
+/* People directory */
+.people-filters {
+  @apply mb-12 flex flex-nowrap justify-start gap-3 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible;
+  scrollbar-width: none;
+}
+.people-filters::-webkit-scrollbar {
+  display: none;
+}
+.people-filters .pill {
+  @apply shrink-0 px-6 py-2.5;
+}
+.people-filter-count {
+  @apply text-xs font-semibold opacity-70;
+}
+.people-grid {
+  @apply grid grid-cols-1 gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-10 lg:gap-y-16;
+}
+.people-grid .person-tile {
+  transition: transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+.people-grid .person-tile:hover {
+  transform: translateY(-4px);
+}
+.people-grid .person-tile-media {
+  @apply relative aspect-[4/5];
+}
+.people-grid .person-tile-media img,
+.people-grid .person-tile-media svg {
+  object-position: top center;
+}
+/* Subtle overlay and a green marker on hover. */
+.person-tile-media {
+  position: relative;
+}
+.person-tile-mark {
+  @apply pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(to top, rgb(7 11 43 / 0.35), transparent 45%);
+  border-bottom: 5px solid var(--brand-primary);
+}
+.person-tile:hover .person-tile-mark {
+  opacity: 1;
+}
+.people-grid .person-tile .section-heading {
+  @apply mt-5 text-[0.7rem];
+  color: var(--brand-primary);
+}
+.people-grid .person-tile p.font-display {
+  font-family: var(--font-display);
+  @apply mt-1.5 text-2xl leading-tight;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+.people-grid .person-tile > p:last-child {
+  @apply mt-2 text-sm leading-relaxed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .host-card:hover,
+  .people-grid .person-tile:hover {
+    transform: none;
+  }
+}
+
+/* On a phone the full show name must fit beside the search and menu buttons. */
+@media (max-width: 479px) {
+  .site-wordmark {
+    font-size: 0.98rem;
+    letter-spacing: 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    line-height: 1.1;
+  }
+}
+
+/* ── Smaller people cards, taller nav band ───────────────────────────────── */
+.people-grid {
+  @apply grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-4 lg:gap-x-8 lg:gap-y-12;
+}
+.people-grid .person-tile-media {
+  @apply aspect-square;
+}
+.people-grid .person-tile p.font-display {
+  @apply text-lg;
+}
+.people-grid .person-tile > p:last-child {
+  @apply text-xs;
+}
+.site-nav-band .nav-link {
+  @apply py-5;
+}
+.site-nav-band {
+  @apply py-1;
+}
+/* Height set on the band itself so no link-padding rule can shrink it. */
+.site-nav-band {
+  padding-block: 0 !important;
+}
+.site-nav-band nav {
+  min-height: 60px;
+  align-items: center;
+}
+.site-nav-band nav ul {
+  min-height: 60px;
+  align-items: center;
+}
+
+
+/* ── Batch 9: episode page colour cards, topics + notes panel, bare tiles ── */
+
+/* Host / guest card: colour block, serif name, photo standing on the right. */
+.person-card {
+  --card-accent: var(--brand-accent-2);
+  @apply relative grid overflow-hidden;
+  grid-template-columns: minmax(0, 1fr) 42%;
+  min-height: 15rem;
+  background: var(--card-accent);
+  color: var(--brand-on-accent);
+  border-radius: var(--radius-card);
+}
+.person-card-copy {
+  @apply flex flex-col items-start p-7 lg:p-9;
+}
+.person-card-name {
+  @apply font-display mt-1 text-4xl leading-[1.05] font-semibold lg:text-[2.75rem];
+  color: var(--brand-ink);
+}
+.person-card-title {
+  @apply mt-3 text-base;
+}
+.person-card-copy .person-card-link {
+  margin-top: auto;
+  min-width: 11rem;
+  justify-content: center;
+}
+.person-card-title {
+  margin-bottom: 1.75rem;
+}
+.person-card-media {
+  @apply block self-end;
+  aspect-ratio: 1;
+}
+.person-card-media img,
+.person-card-media svg {
+  @apply block h-full w-full object-cover object-top;
+  border-radius: 0;
+}
+@media (max-width: 480px) {
+  .person-card {
+    grid-template-columns: minmax(0, 1fr) 36%;
+    min-height: 12rem;
+  }
+  .person-card-name {
+    @apply text-3xl;
+  }
+}
+
+/* "About <guest>" colour card. */
+.about-card {
+  --card-accent: var(--brand-accent-1);
+  @apply p-7 lg:p-9;
+  background: var(--card-accent);
+  color: var(--brand-on-accent);
+  border-radius: var(--radius-card);
+}
+.about-card-body,
+.about-card-body p,
+.about-card-body li,
+.about-card-body strong {
+  color: var(--brand-on-accent);
+}
+.about-card-body a {
+  color: var(--brand-ink);
+  text-decoration: underline;
+}
+.about-card-body ul {
+  @apply grid list-disc gap-2 pl-5;
+}
+
+/* Green topics card beside the notes. */
+.topics-card {
+  @apply p-7 lg:sticky lg:top-6;
+  background: var(--brand-primary);
+  color: var(--brand-ink);
+  border-radius: var(--radius-card);
+}
+.topics-card-heading {
+  @apply text-base font-bold;
+}
+.topics-card ul {
+  @apply mt-4 grid gap-3 pl-4;
+  list-style: square;
+}
+.topics-card li {
+  @apply text-[0.975rem] leading-snug font-medium;
+}
+
+/* Notes panel: its own scrolling surface, like a transcript. */
+.notes-panel {
+  @apply overflow-y-auto p-7 lg:px-14 lg:py-10;
+  max-height: 44rem;
+  background: var(--brand-ink-2);
+  border-radius: var(--radius-card);
+  scrollbar-width: thin;
+  scrollbar-color: var(--brand-primary) transparent;
+}
+.notes-panel-heading {
+  @apply text-heading mb-5 text-base font-bold;
+}
+.show-notes-body ul {
+  @apply grid list-disc gap-2 pl-5;
+}
+.show-notes-body li > p {
+  margin: 0;
+}
+
+/* Episode tiles, bare: only the photo sits on colour; text is on the page. */
+.episode-tile {
+  background: transparent;
+  color: var(--brand-heading);
+  padding: 0;
+  border-radius: 0;
+}
+.episode-tile-media {
+  aspect-ratio: 16 / 9;
+  background: var(--card-accent);
+  border-radius: var(--radius-card);
+}
+.episode-tile-media img {
+  object-position: center 20%;
+}
+.episode-tile-title {
+  @apply px-0 text-base;
+  color: var(--brand-heading);
+}
+.episode-tile-guest {
+  @apply px-0 text-sm;
+  color: var(--brand-text);
+}
+.episode-tile .episode-tile-play {
+  @apply order-last mt-3 px-0;
+}
+.person-card-media {
+  align-self: stretch;
+  aspect-ratio: auto;
+  min-height: 100%;
+}
+.person-card-media > * {
+  height: 100%;
+}
+.about-card .section-heading,
+.about-card .cms-prose,
+.about-card .cms-prose :is(p, li, strong, em, span) {
+  color: var(--brand-ink);
+}
+
+
+/* ── Batch 10: profile panel — name, role and bio left, photo right ─────── */
+.profile-panel {
+  @apply grid overflow-hidden;
+  background: var(--brand-ink-2);
+  border-radius: var(--radius-card);
+}
+.profile-panel-copy {
+  @apply p-7 sm:p-10 lg:py-12 lg:pr-6 lg:pl-20;
+}
+.profile-panel-name {
+  @apply font-display text-heading text-5xl leading-[1.05] font-semibold;
+}
+.profile-panel-bio {
+  @apply mt-6;
+}
+.profile-panel-bio ul {
+  @apply grid list-disc gap-2 pl-5;
+}
+.profile-panel-media {
+  @apply mx-auto w-full max-w-sm self-end;
+  aspect-ratio: 1;
+}
+.profile-panel-media > * {
+  height: 100%;
+}
+.profile-panel-media img,
+.profile-panel-media svg {
+  @apply block h-full w-full object-cover object-top;
+  border-radius: 0;
+}
+@media (min-width: 1024px) {
+  .profile-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.85fr);
+  }
+  .profile-panel-media {
+    @apply max-w-none self-stretch;
+    aspect-ratio: auto;
+    min-height: 26rem;
+  }
+}

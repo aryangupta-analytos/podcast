@@ -1,0 +1,62 @@
+---
+import Container from '../site/Container.astro';
+import NewsletterForm from '../site/NewsletterForm';
+
+export interface Props {
+  heading: string;
+  body?: string;
+  buttonText: string;
+  showTitle?: string;
+  tone?: 'accent-1' | 'accent-2' | 'accent-3' | 'accent-4';
+}
+
+const { heading, body, buttonText, showTitle = 'Newsletter', tone = 'accent-2' } = Astro.props;
+---
+
+<section id="newsletter" class="py-10 lg:py-14" aria-labelledby="newsletter-heading">
+  <Container>
+    <div class:list={['newsletter-band band', `band-${tone}`]}>
+      <div class="newsletter-band-grid">
+        <div>
+          <p class="section-heading">{showTitle} newsletter</p>
+          <h2 id="newsletter-heading" class="display mt-3 text-3xl sm:text-4xl lg:text-5xl">
+            {heading}
+          </h2>
+        </div>
+        <div class="newsletter-band-form">
+          {body && <p class="mb-5 text-base text-pretty">{body}</p>}
+          <NewsletterForm client:visible buttonText={buttonText} />
+        </div>
+      </div>
+
+      <!-- Clouds, a dotted flight path and a paper plane, like the reference. -->
+      <svg class="newsletter-band-art" viewBox="0 0 1200 420" fill="none" aria-hidden="true" preserveAspectRatio="xMidYMax slice">
+        <g fill="#e6f1e3">
+          <circle cx="120" cy="330" r="110" />
+          <circle cx="250" cy="380" r="140" />
+          <circle cx="420" cy="360" r="120" />
+          <circle cx="560" cy="400" r="130" />
+          <circle cx="700" cy="380" r="110" />
+          <circle cx="840" cy="410" r="120" />
+          <circle cx="980" cy="400" r="90" />
+          <circle cx="115" cy="120" r="42" />
+          <circle cx="410" cy="230" r="22" />
+          <circle cx="620" cy="255" r="26" />
+          <circle cx="1080" cy="300" r="14" />
+        </g>
+        <path
+          d="M0 200 C 140 160, 260 60, 330 110 S 250 260, 380 230 S 560 120, 700 150 S 620 320, 760 260 S 900 140, 1020 190"
+          stroke="#070b2b"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-dasharray="0 20"
+        />
+        <g transform="translate(1010 150) rotate(20)">
+          <path d="M0 0 L200 60 L60 100 Z" fill="#e6f1e3" />
+          <path d="M0 0 L60 100 L70 60 Z" fill="#070b2b" opacity="0.85" />
+          <path d="M0 0 L200 60 L70 60 Z" fill="#f7fbf5" />
+        </g>
+      </svg>
+    </div>
+  </Container>
+</section>

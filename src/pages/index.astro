@@ -1,14 +1,16 @@
 ---
-import EpisodeList from '../components/EpisodeList.astro';
-import AboutSection from '../components/home/AboutSection.astro';
-import FeaturedEpisode from '../components/home/FeaturedEpisode.astro';
-import Hero from '../components/home/Hero.astro';
-import PersonGrid from '../components/home/PersonGrid.astro';
+import AboutCta from '../components/home/AboutCta.astro';
+import FeaturedPeople from '../components/home/FeaturedPeople.astro';
+import HomeHero from '../components/home/HomeHero.astro';
+import LatestEpisodes from '../components/home/LatestEpisodes.astro';
+import LatestVideos from '../components/home/LatestVideos.astro';
+import NewsletterBand from '../components/home/NewsletterBand.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import {
   getFeaturedEpisode,
-  getLatestEpisodes
+  getLatestEpisodes,
+  getLatestVideos
 } from '../server/repo/episodes';
 import { listRecentGuests, listTeam } from '../server/repo/people';
 import { getSettings, getShowInfo } from '../server/repo/settings';
@@ -20,65 +22,60 @@ const show = await getShowInfo();
 // never pay for a query whose results are not rendered.
 const featured = settings.showFeatured ? await getFeaturedEpisode() : null;
 
-const [latest, team, guests] = await Promise.all([
+const [latest, team, guests, videos] = await Promise.all([
   // Only the configured number of episodes — never the whole archive.
-  getLatestEpisodes(settings.latestEpisodeCount, featured?.id),
-  settings.showTeam ? listTeam() : Promise.resolve([]),
-  settings.showGuests ? listRecentGuests(8) : Promise.resolve([])
+  getLatestEpisodes(settings.latestEpisodeCount),
+  settings.showPeople ? listTeam() : Promise.resolve([]),
+  settings.showPeople ? listRecentGuests(8) : Promise.resolve([]),
+  settings.showVideos ? getLatestVideos(settings.latestVideoCount) : Promise.resolve([])
 ]);
+
+// Hosts and team first, then recent guests, without repeats.
+const seen = new Set<string>();
+const people = [...team, ...guests].filter((p) => !seen.has(p.id) && seen.add(p.id));
+
+const ctaHeading = settings.ctaHeading || settings.aboutHeading;
+const ctaBody = settings.ctaBody || settings.tagline;
+const showCta = settings.showCta && Boolean(ctaHeading);
 
 const title = settings.metaTitle || `${show.title} — ${settings.tagline}`;
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
 
-<Layout title={title} description={settings.metaDescription || settings.description}>
-  {settings.showHero && <Hero settings={settings} />}
+<Layout title={title} description={settings.metaDescription || settings.description} hideBreadcrumbs>
+  {
+    settings.showHero && (
+      <HomeHero settings={settings} show={show} featured={featured} latest={latest} />
+    )
+  }
+
+  <LatestEpisodes episodes={latest} show={show} heading={settings.latestHeading} />
+
+  {settings.showPeople && <FeaturedPeople people={people} heading={settings.peopleHeading} />}
+
+  {settings.showVideos && <LatestVideos episodes={videos} heading={settings.videosHeading} />}
 
   {
-    featured && (
-      <FeaturedEpisode
-        episode={featured}
-        show={show}
-        heading={settings.featuredHeading}
+    settings.showNewsletter && (
+      <NewsletterBand
+        heading={settings.newsletterHeading}
+        body={settings.newsletterBody}
+        buttonText={settings.newsletterButtonText || "Subscribe"}
+        showTitle={show.title}
       />
     )
   }
 
-  <section
-    class="relative z-10 px-8 py-12 lg:px-18"
-    aria-labelledby="latest-heading"
-  >
-    <div class="mb-2 flex items-baseline justify-between gap-4">
-      <h2 id="latest-heading" class="section-heading">
-        {settings.latestHeading}
-      </h2>
-      <a
-        class="text-light-text-heading text-sm font-bold underline hover:no-underline dark:text-white"
-        href="/episodes"
-      >
-        All episodes
-      </a>
-    </div>
-
-    <EpisodeList episodes={latest} show={show} />
-  </section>
-
   {
-    settings.showAbout && (
-      <AboutSection
-        heading={settings.aboutHeading}
-        body={settings.aboutBody}
-        imageUrl={settings.aboutImageUrl}
+    showCta && (
+      <AboutCta
+        heading={ctaHeading}
+        body={ctaBody}
+        buttonText={settings.ctaButtonText || 'Learn more about us'}
+        buttonUrl={settings.ctaButtonUrl || '/about'}
+        imageUrl={settings.ctaImageUrl ?? settings.aboutImageUrl}
       />
     )
   }
-
-  <PersonGrid people={team} heading={settings.teamHeading} id="team-heading" />
-
-  <PersonGrid
-    people={guests}
-    heading={settings.guestsHeading}
-    id="guests-heading"
-  />
 </Layout>

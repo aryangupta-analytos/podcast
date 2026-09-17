@@ -1,15 +1,17 @@
 ---
+import { readFormData } from '../../server/read-form';
 import FileUpload from '../../components/admin/FileUpload';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { sanitizeHtml } from '../../server/sanitize';
 import { listEpisodesForAdmin } from '../../server/repo/episodes';
 import { getSettings, updateSettings } from '../../server/repo/settings';
+import { normalizeHex } from '../../lib/colors';
 
 const user = Astro.locals.user!;
 let errors: string[] = [];
 
 if (Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
+  const form = await readFormData(Astro.request);
   const text = (key: string) => String(form.get(key) ?? '').trim();
   const checked = (key: string) => form.get(key) === 'on';
 
@@ -17,6 +19,17 @@ if (Astro.request.method === 'POST') {
   if (!Number.isFinite(latestCount) || latestCount < 1 || latestCount > 24) {
     errors.push('Show between 1 and 24 latest episodes.');
   }
+
+  const videoCount = Number.parseInt(text('latestVideoCount'), 10);
+  if (!Number.isFinite(videoCount) || videoCount < 1 || videoCount > 12) {
+    errors.push('Show between 1 and 12 latest videos.');
+  }
+
+  const accents = (['accent1', 'accent2', 'accent3', 'accent4'] as const).map((key) => {
+    const value = normalizeHex(text(key));
+    if (!value) errors.push(`Brand colour ${key.slice(-1)} must be a hex colour like #ff6a3d.`);
+    return [key, value] as const;
+  });
 
   const featured = text('featuredEpisodeId');
 
@@ -53,6 +66,37 @@ if (Astro.request.method === 'POST') {
       showAbout: checked('showAbout'),
       showTeam: checked('showTeam'),
       showGuests: checked('showGuests'),
+
+      showPeople: checked('showPeople'),
+      peopleHeading: text('peopleHeading') || 'Guests & Hosts',
+
+      showVideos: checked('showVideos'),
+      videosHeading: text('videosHeading') || 'Latest Videos',
+      latestVideoCount: videoCount,
+
+      showNewsletter: checked('showNewsletter'),
+      newsletterHeading: text('newsletterHeading'),
+      newsletterBody: text('newsletterBody'),
+      newsletterButtonText: text('newsletterButtonText') || 'Subscribe',
+
+      showCta: checked('showCta'),
+      ctaHeading: text('ctaHeading'),
+      ctaBody: text('ctaBody'),
+      ctaButtonText: text('ctaButtonText'),
+      ctaButtonUrl: text('ctaButtonUrl'),
+      ctaImageUrl: text('ctaImageUrl') || null,
+
+      showBanner: checked('showBanner'),
+      bannerLabel: text('bannerLabel'),
+      bannerText: text('bannerText'),
+      bannerButtonText: text('bannerButtonText'),
+      bannerButtonUrl: text('bannerButtonUrl'),
+
+      episodesHeading: text('episodesHeading') || 'Episodes',
+      episodesIntro: text('episodesIntro'),
+      peopleIntro: text('peopleIntro'),
+
+      ...Object.fromEntries(accents.map(([key, value]) => [key, value!])),
 
       metaTitle: text('metaTitle'),
       metaDescription: text('metaDescription'),
@@ -95,7 +139,7 @@ const published = await listEpisodesForAdmin({
 
     <div class="admin-card">
       <h2>Show identity</h2>
-      <p class="hint">Shown in the sidebar on every page of the website.</p>
+      <p class="hint">Shown in the header and footer on every page of the website.</p>
 
       <div class="admin-field">
         <label for="showTitle">Podcast name</label>
@@ -118,7 +162,7 @@ const published = await listEpisodesForAdmin({
         name="artworkUrl"
         kind="image"
         label="Show artwork"
-        help="The square cover art. Used in the sidebar, the RSS feed and social previews."
+        help="The square cover art. Used in the header, the RSS feed and social previews."
         value={settings.artworkUrl ?? ''}
       />
     </div>
@@ -259,6 +303,198 @@ const published = await listEpisodesForAdmin({
         <input type="checkbox" name="showGuests" checked={settings.showGuests} />
         <span>Show recent guests</span>
       </label>
+    </div>
+
+    <div class="admin-card">
+      <h2>People grid</h2>
+      <p class="hint">Hosts, team and recent guests as photo tiles on the homepage.</p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showPeople" checked={settings.showPeople} />
+        <span>Show the people grid</span>
+      </label>
+
+      <div class="admin-field">
+        <label for="peopleHeading">Heading</label>
+        <input id="peopleHeading" name="peopleHeading" type="text" value={settings.peopleHeading} />
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Latest videos</h2>
+      <p class="hint">
+        Episodes that have a YouTube link appear here automatically. Add the link
+        on the episode's edit page.
+      </p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showVideos" checked={settings.showVideos} />
+        <span>Show latest videos</span>
+      </label>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="videosHeading">Heading</label>
+          <input id="videosHeading" name="videosHeading" type="text" value={settings.videosHeading} />
+        </div>
+        <div class="admin-field">
+          <label for="latestVideoCount">How many videos</label>
+          <input
+            id="latestVideoCount"
+            name="latestVideoCount"
+            type="number"
+            min="1"
+            max="12"
+            value={settings.latestVideoCount}
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Newsletter signup</h2>
+      <p class="hint">
+        Addresses are stored under Inbox → Subscribers and can be exported as CSV.
+      </p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showNewsletter" checked={settings.showNewsletter} />
+        <span>Show the newsletter box</span>
+      </label>
+
+      <div class="admin-field">
+        <label for="newsletterHeading">Heading</label>
+        <input id="newsletterHeading" name="newsletterHeading" type="text" value={settings.newsletterHeading} />
+      </div>
+
+      <div class="admin-field">
+        <label for="newsletterBody">Text</label>
+        <textarea id="newsletterBody" name="newsletterBody" style="min-height:70px">{settings.newsletterBody}</textarea>
+      </div>
+
+      <div class="admin-field">
+        <label for="newsletterButtonText">Button text</label>
+        <input id="newsletterButtonText" name="newsletterButtonText" type="text" value={settings.newsletterButtonText} />
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Call to action</h2>
+      <p class="hint">
+        The coloured block near the bottom of the homepage. Left empty, it uses
+        the About heading and tagline.
+      </p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showCta" checked={settings.showCta} />
+        <span>Show the call to action</span>
+      </label>
+
+      <div class="admin-field">
+        <label for="ctaHeading">Heading</label>
+        <input id="ctaHeading" name="ctaHeading" type="text" value={settings.ctaHeading} placeholder={settings.aboutHeading} />
+      </div>
+
+      <div class="admin-field">
+        <label for="ctaBody">Text</label>
+        <textarea id="ctaBody" name="ctaBody" style="min-height:70px">{settings.ctaBody}</textarea>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="ctaButtonText">Button text</label>
+          <input id="ctaButtonText" name="ctaButtonText" type="text" value={settings.ctaButtonText} placeholder="Learn more about us" />
+        </div>
+        <div class="admin-field">
+          <label for="ctaButtonUrl">Button link</label>
+          <input id="ctaButtonUrl" name="ctaButtonUrl" type="text" value={settings.ctaButtonUrl} placeholder="/about" />
+        </div>
+      </div>
+
+      <FileUpload
+        client:load
+        name="ctaImageUrl"
+        kind="image"
+        label="Image"
+        help="Optional. Falls back to the About image."
+        value={settings.ctaImageUrl ?? ''}
+      />
+    </div>
+
+    <div class="admin-card">
+      <h2>Announcement banner</h2>
+      <p class="hint">
+        The light strip above the header on every page. Visitors can close it;
+        it stays closed for the rest of their visit. Leave the text empty to hide it.
+      </p>
+
+      <label class="admin-check">
+        <input type="checkbox" name="showBanner" checked={settings.showBanner} />
+        <span>Show the banner</span>
+      </label>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="bannerLabel">Bold label</label>
+          <input id="bannerLabel" name="bannerLabel" type="text" value={settings.bannerLabel} placeholder="NEW EPISODE:" />
+        </div>
+        <div class="admin-field">
+          <label for="bannerText">Text</label>
+          <input id="bannerText" name="bannerText" type="text" value={settings.bannerText} />
+        </div>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="bannerButtonText">Button text</label>
+          <input id="bannerButtonText" name="bannerButtonText" type="text" value={settings.bannerButtonText} placeholder="Listen now" />
+        </div>
+        <div class="admin-field">
+          <label for="bannerButtonUrl">Button link</label>
+          <input id="bannerButtonUrl" name="bannerButtonUrl" type="text" value={settings.bannerButtonUrl} placeholder="/episodes" />
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Episodes and People pages</h2>
+      <p class="hint">The heading and short introduction at the top of each page.</p>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="episodesHeading">Episodes page heading</label>
+          <input id="episodesHeading" name="episodesHeading" type="text" value={settings.episodesHeading} />
+        </div>
+        <div class="admin-field">
+          <label for="episodesIntro">Episodes page introduction</label>
+          <input id="episodesIntro" name="episodesIntro" type="text" value={settings.episodesIntro} />
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label for="peopleIntro">People page introduction</label>
+        <input id="peopleIntro" name="peopleIntro" type="text" value={settings.peopleIntro} />
+        <p class="hint">The People page heading is the “Guests &amp; Hosts” heading above.</p>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Brand colours</h2>
+      <p class="hint">
+        The four accent colours used for the coloured blocks and people tiles.
+        The navy background and text colours are fixed so everything stays readable.
+      </p>
+
+      <div class="admin-row">
+        {
+          (['accent1', 'accent2', 'accent3', 'accent4'] as const).map((key, i) => (
+            <div class="admin-field">
+              <label for={key}>Accent {i + 1}</label>
+              <input id={key} name={key} type="color" value={settings[key]} style="height:44px; padding:4px; width:100%" />
+            </div>
+          ))
+        }
+      </div>
     </div>
 
     <div class="admin-card">

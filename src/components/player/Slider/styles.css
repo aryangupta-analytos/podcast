@@ -4,10 +4,10 @@
   @apply relative m-0 block h-1.5 w-full appearance-none rounded-none p-0 outline-none;
 
   &::-webkit-slider-runnable-track {
-    @apply h-1.5 w-full cursor-pointer border-none bg-gray-200 outline-none dark:bg-gray-700;
+    @apply h-1.5 w-full cursor-pointer border-none bg-white/15 outline-none;
   }
   &::before {
-    @apply h-1.5 bg-gradient-to-r from-[#D8CCFF] to-[#8A63FF] dark:from-[#42C8F3] dark:to-[#B6EDFF];
+    @apply from-primary to-accent-4 h-1.5 bg-gradient-to-r;
     position: absolute;
     content: '';
     top: 0;
@@ -23,10 +23,10 @@
     background-color: #0000;
   }
   &::-moz-range-track {
-    @apply h-1.5 w-full cursor-pointer border-none bg-gray-200 outline-none dark:bg-gray-700;
+    @apply h-1.5 w-full cursor-pointer border-none bg-white/15 outline-none;
   }
   &::-moz-range-progress {
-    @apply h-1.5 bg-gradient-to-r from-[#D8CCFF] to-[#8A63FF] dark:from-[#42C8F3] dark:to-[#B6EDFF];
+    @apply from-primary to-accent-4 h-1.5 bg-gradient-to-r;
   }
   &::-moz-focus-outer {
     border: 0;
@@ -35,15 +35,6 @@
     @apply h-4 w-4 cursor-pointer appearance-none border-0 bg-transparent bg-contain bg-no-repeat transition-opacity duration-300 outline-none lg:opacity-0;
     background-image: url('../../../assets/rocket-dark.svg');
     background-position: center center;
-  }
-
-  @media (prefers-color-scheme: light) {
-    &::-webkit-slider-thumb {
-      background-image: url('../../../assets/rocket-light.svg');
-    }
-    &::-moz-range-thumb {
-      background-image: url('../../../assets/rocket-light.svg');
-    }
   }
 
   &:hover {
@@ -69,12 +60,8 @@
       ship-particles-x 1s ease infinite,
       ship-particles-y 1s ease infinite;
     animation-composition: add;
-    background-color: #B0ECFF;
+    background-color: var(--brand-primary);
     opacity: 0;
-
-    @media (prefers-color-scheme: light) {
-      background-color: #906BFF;
-    }
 
     &:nth-child(1) {
       animation-delay: 0.4s;

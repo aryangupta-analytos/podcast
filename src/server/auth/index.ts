@@ -151,16 +151,44 @@ export function isSameOrigin(request: Request): boolean {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)) return true;
 
   const origin = request.headers.get('origin');
-  const target = request.headers.get('host');
-
   // No Origin header at all on a mutating request: reject rather than guess.
-  if (!origin || !target) return false;
+  if (!origin) return false;
 
+  let originHost: string;
   try {
-    return new URL(origin).host === target;
+    originHost = new URL(origin).host;
   } catch {
     return false;
   }
+
+  /*
+   * Behind a reverse proxy — Vercel, a Cloudflare tunnel, nginx, a container
+   * platform — the `Host` the application sees is often the internal address,
+   * not the one the browser used. Comparing against that alone rejects every
+   * legitimate form submission with a 403.
+   *
+   * Trusting `x-forwarded-host` here is safe for this check specifically: the
+   * threat is a victim's browser being made to submit a request cross-site,
+   * and a browser sets `Origin` itself and never sends `x-forwarded-host`. An
+   * attacker scripting both headers is not carrying the victim's cookies, so
+   * there is nothing to forge.
+   */
+  const candidates = [
+    request.headers.get('x-forwarded-host'),
+    request.headers.get('host')
+  ]
+    .filter((value): value is string => Boolean(value))
+    // A proxy chain can send a comma-separated list; the first is the client's.
+    .flatMap((value) => value.split(',').map((part) => part.trim()))
+    .filter(Boolean);
+
+  if (candidates.length === 0) return false;
+
+  return candidates.some((candidate) => {
+    if (candidate === originHost) return true;
+    // A proxy may drop the port when it terminates TLS on 443.
+    return candidate.split(':')[0] === originHost.split(':')[0];
+  });
 }
 
 export { env };

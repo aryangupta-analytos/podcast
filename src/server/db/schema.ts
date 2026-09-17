@@ -258,6 +258,54 @@ export const siteSettings = pgTable('site_settings', {
   showTeam: boolean('show_team').notNull().default(true),
   showGuests: boolean('show_guests').notNull().default(true),
 
+  // People grid on the homepage (hosts, team and recent guests together)
+  showPeople: boolean('show_people').notNull().default(true),
+  peopleHeading: text('people_heading').notNull().default('Guests & Hosts'),
+
+  // Latest videos: published episodes that carry a YouTube link
+  showVideos: boolean('show_videos').notNull().default(true),
+  videosHeading: text('videos_heading').notNull().default('Latest Videos'),
+  /** How many videos the homepage lists. */
+  latestVideoCount: integer('latest_video_count').notNull().default(4),
+
+  // Copy at the top of the Episodes and People pages
+  episodesHeading: text('episodes_heading').notNull().default('Episodes'),
+  episodesIntro: text('episodes_intro').notNull().default(''),
+  peopleIntro: text('people_intro').notNull().default(''),
+
+  // Newsletter signup band
+  showNewsletter: boolean('show_newsletter').notNull().default(true),
+  newsletterHeading: text('newsletter_heading')
+    .notNull()
+    .default('New episodes, straight to your inbox'),
+  newsletterBody: text('newsletter_body').notNull().default(''),
+  newsletterButtonText: text('newsletter_button_text').notNull().default('Subscribe'),
+
+  // Call-to-action band near the foot of the homepage
+  showCta: boolean('show_cta').notNull().default(true),
+  ctaHeading: text('cta_heading').notNull().default(''),
+  ctaBody: text('cta_body').notNull().default(''),
+  ctaButtonText: text('cta_button_text').notNull().default(''),
+  ctaButtonUrl: text('cta_button_url').notNull().default(''),
+  ctaImageUrl: text('cta_image_url'),
+
+  /**
+   * Brand accents, as hex. The ground, text and line colours are fixed in
+   * src/styles/theme.css; these four are the colourful blocks the owner may
+   * want to retune. Defaults must match theme.css.
+   */
+  accent1: text('accent_1').notNull().default('#ffd400'),
+  accent2: text('accent_2').notNull().default('#8f7bff'),
+  accent3: text('accent_3').notNull().default('#ff6a3d'),
+  accent4: text('accent_4').notNull().default('#23c4b1'),
+
+  // Announcement banner above the header. Hidden when switched off or empty.
+  showBanner: boolean('show_banner').notNull().default(true),
+  bannerLabel: text('banner_label').notNull().default(''),
+  bannerText: text('banner_text').notNull().default(''),
+  bannerButtonText: text('banner_button_text').notNull().default(''),
+  bannerButtonUrl: text('banner_button_url').notNull().default(''),
+
   // About page
   aboutTitle: text('about_title').notNull().default('About'),
   aboutBody: text('about_body').notNull().default(''),
@@ -322,6 +370,27 @@ export const contactMessages = pgTable(
 );
 
 /* ────────────────────────────────────────────────────────────────────────────
+ * Newsletter subscribers — collected by the signup band, exported as CSV
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export const newsletterSubscribers = pgTable(
+  'newsletter_subscribers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: text('email').notNull(),
+    /** Where the signup came from — 'site' for the public band. */
+    source: text('source').notNull().default('site'),
+    unsubscribedAt: timestamp('unsubscribed_at', { withTimezone: true }),
+    createdAt
+  },
+  (t) => [
+    // One row per address regardless of how it was capitalised.
+    uniqueIndex('newsletter_email_idx').on(sql`lower(${t.email})`),
+    index('newsletter_created_idx').on(t.createdAt)
+  ]
+);
+
+/* ────────────────────────────────────────────────────────────────────────────
  * Relations
  * ────────────────────────────────────────────────────────────────────────── */
 
@@ -366,3 +435,4 @@ export type NewEpisode = typeof episodes.$inferInsert;
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type LinkRow = typeof links.$inferSelect;
 export type ContactMessage = typeof contactMessages.$inferSelect;
+export type NewsletterSubscriber = typeof newsletterSubscribers.$inferSelect;

@@ -60,6 +60,30 @@ export default defineConfig({
       subsets: ['latin'],
       weights: ['300 900'],
       options: { experimental: { variableAxis: { opsz: ['14..32'] } } }
+    },
+    {
+      // Display serif for headlines. Variable weight and optical size so the
+      // same file serves a 14px card title and a 72px hero headline.
+      provider: fontProviders.google(),
+      name: 'Fraunces',
+      cssVariable: '--astro-font-fraunces',
+      formats: ['woff2'],
+      styles: ['normal', 'italic'],
+      subsets: ['latin'],
+      weights: ['300 900'],
+      fallbacks: ['Georgia', 'serif'],
+      options: { experimental: { variableAxis: { opsz: ['9..144'] } } }
+    },
+    {
+      // Condensed, heavy face for the header wordmark only.
+      provider: fontProviders.google(),
+      name: 'Oswald',
+      cssVariable: '--astro-font-oswald',
+      formats: ['woff2'],
+      styles: ['normal'],
+      subsets: ['latin'],
+      weights: ['700'],
+      fallbacks: ['Impact', 'Arial Narrow', 'sans-serif']
     }
   ],
   build: { inlineStylesheets: 'always' },

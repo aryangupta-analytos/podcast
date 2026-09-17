@@ -1,0 +1,43 @@
+---
+import Avatar from '../Avatar.astro';
+
+/**
+ * The host / guest card on an episode page: a wide colour block with the
+ * name in the display serif, the title, a "See full bio" pill and the photo
+ * standing on the right edge.
+ */
+export interface Props {
+  person: {
+    slug: string;
+    name: string;
+    title?: string | null;
+    imageUrl?: string | null;
+    placeholder?: string | null;
+  };
+  /** Small label above the name, e.g. "Show host". */
+  eyebrow?: string;
+  index?: number;
+}
+
+const { person, eyebrow, index = 0 } = Astro.props;
+const accent = (index % 4) + 1;
+---
+
+<article class="person-card" style={`--card-accent: var(--brand-accent-${accent})`}>
+  <div class="person-card-copy">
+    {eyebrow && <p class="section-heading">{eyebrow}</p>}
+    <h3 class="person-card-name">{person.name}</h3>
+    {person.title && <p class="person-card-title">{person.title}</p>}
+    <a class="pill pill-ink person-card-link" href={`/people/${person.slug}`}>
+      See full bio<span class="sr-only">: {person.name}</span>
+    </a>
+  </div>
+  <a href={`/people/${person.slug}`} class="person-card-media" aria-hidden="true" tabindex="-1">
+    <Avatar
+      name={person.name}
+      imageUrl={person.imageUrl}
+      placeholder={(person.placeholder ?? 'monogram') as 'monogram'}
+      size={320}
+    />
+  </a>
+</article>

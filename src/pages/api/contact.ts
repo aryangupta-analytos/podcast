@@ -1,26 +1,11 @@
 import type { APIRoute } from 'astro';
 
 import { jsonError } from '../../lib/api-errors';
+import { createRateLimiter, isEmail } from '../../server/rate-limit';
 import { saveContactMessage } from '../../server/repo/contact';
 
 /** Rough per-IP throttle so the form cannot be used to flood the inbox. */
-const recent = new Map<string, number[]>();
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 3;
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const hits = (recent.get(ip) ?? []).filter((at) => now - at < WINDOW_MS);
-  hits.push(now);
-  recent.set(ip, hits);
-
-  // Keep the map from growing without bound on a long-lived server.
-  if (recent.size > 5000) recent.clear();
-
-  return hits.length > MAX_PER_WINDOW;
-}
-
-const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
+const isRateLimited = createRateLimiter({ windowMs: 60_000, max: 3 });
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   if (isRateLimited(clientAddress ?? 'unknown')) {

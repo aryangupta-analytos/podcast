@@ -1,0 +1,104 @@
+---
+import type { Person } from '../../server/db/schema';
+import PersonTile from './PersonTile.astro';
+
+export interface Props {
+  hosts: Person[];
+  team: Person[];
+  guests: Person[];
+  /** Labels for the tabs. */
+  labels?: { hosts?: string; team?: string; guests?: string };
+}
+
+const { hosts, team, guests, labels = {} } = Astro.props;
+
+const everyone = [
+  ...hosts.map((p) => ({ ...p, group: 'hosts' as const })),
+  ...team.map((p) => ({ ...p, group: 'team' as const })),
+  ...guests.map((p) => ({ ...p, group: 'guests' as const }))
+];
+
+const tabs = [
+  { id: 'all', label: 'All', count: everyone.length },
+  { id: 'hosts', label: labels.hosts ?? 'Hosts', count: hosts.length },
+  { id: 'team', label: labels.team ?? 'Team', count: team.length },
+  { id: 'guests', label: labels.guests ?? 'Guests', count: guests.length }
+].filter((tab) => tab.count > 0);
+
+const roleLabel = { hosts: 'Host', team: 'Team', guests: 'Guest' } as const;
+---
+
+<div data-people-directory>
+  <div class="people-filters" role="tablist" aria-label="Filter people">
+    {
+      tabs.map((tab, index) => (
+        <button
+          class:list={['pill', index === 0 ? 'pill-primary' : 'pill-ghost']}
+          type="button"
+          role="tab"
+          id={`tab-${tab.id}`}
+          aria-selected={index === 0 ? 'true' : 'false'}
+          aria-controls="people-grid"
+          data-filter={tab.id}
+        >
+          {tab.label}
+          <span class="text-xs opacity-70">{tab.count}</span>
+        </button>
+      ))
+    }
+  </div>
+
+  <ul
+    id="people-grid"
+    class="people-grid"
+    role="list"
+    aria-live="polite"
+  >
+    {
+      everyone.map((person, index) => (
+        <li data-group={person.group}>
+          <PersonTile person={person} index={index} eyebrow={roleLabel[person.group]} />
+        </li>
+      ))
+    }
+  </ul>
+</div>
+
+<script>
+  function init() {
+    document.querySelectorAll<HTMLElement>('[data-people-directory]').forEach((root) => {
+      if (root.dataset.ready) return;
+      root.dataset.ready = '1';
+
+      const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-filter]'));
+      const items = Array.from(root.querySelectorAll<HTMLElement>('[data-group]'));
+
+      const apply = (filter: string) => {
+        tabs.forEach((tab) => {
+          const active = tab.dataset.filter === filter;
+          tab.setAttribute('aria-selected', active ? 'true' : 'false');
+          tab.classList.toggle('pill-primary', active);
+          tab.classList.toggle('pill-ghost', !active);
+        });
+        items.forEach((item) => {
+          item.hidden = filter !== 'all' && item.dataset.group !== filter;
+        });
+      };
+
+      tabs.forEach((tab) =>
+        tab.addEventListener('click', () => {
+          const filter = tab.dataset.filter ?? 'all';
+          apply(filter);
+          history.replaceState(null, '', filter === 'all' ? location.pathname : `#${filter}`);
+        })
+      );
+
+      // Deep links: /people#guests opens on the guests tab.
+      const initial = location.hash.slice(1);
+      if (initial && tabs.some((tab) => tab.dataset.filter === initial)) apply(initial);
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

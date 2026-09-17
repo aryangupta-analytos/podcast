@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { jsonError } from '../../../lib/api-errors';
+import { readUploadData } from '../../../server/read-form';
 import { env } from '../../../server/env';
 import { formatBytes, uploadAudio, uploadImage, UploadError } from '../../../server/storage';
 
@@ -21,7 +22,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   // Reject an oversized body before reading it into memory.
   const declaredLength = Number(request.headers.get('content-length') ?? '0');
-  const ceiling = env.maxAudioBytes + 1024 * 1024;
+  const isJson = (request.headers.get('content-type') ?? '')
+    .toLowerCase()
+    .includes('application/json');
+  // base64 costs four bytes for every three, so a JSON body is legitimately
+  // larger than the file it carries; judging it on the raw ceiling would
+  // reject uploads that are actually within the limit.
+  const ceiling =
+    (env.maxAudioBytes + 1024 * 1024) * (isJson ? 4 / 3 + 0.05 : 1);
   if (declaredLength > ceiling) {
     return jsonError(
       413,
@@ -32,7 +40,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
   let form: FormData;
   try {
-    form = await request.formData();
+    form = await readUploadData(request);
   } catch {
     return jsonError(400, 'invalid_body', 'Could not read the uploaded file.');
   }

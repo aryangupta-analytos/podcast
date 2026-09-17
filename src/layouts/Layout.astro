@@ -5,15 +5,13 @@ import { Schema } from 'astro-seo-schema';
 import SpeedInsights from '@vercel/speed-insights/astro';
 
 import Breadcrumbs from '../components/Breadcrumbs.astro';
-import Dots from '../components/Dots.astro';
-import Hosts from '../components/Hosts.astro';
-import InfoCard from '../components/InfoCard.astro';
-import Platforms from '../components/Platforms.astro';
 import Player from '../components/Player';
-import SearchButton from '../components/SearchButton';
 import SearchDialog from '../components/SearchDialog';
-import ShowArtwork from '../components/ShowArtwork.astro';
-import SocialLinks from '../components/SocialLinks.astro';
+import AnnouncementBar from '../components/site/AnnouncementBar.astro';
+import Container from '../components/site/Container.astro';
+import SiteFooter from '../components/site/SiteFooter.astro';
+import SiteHeader from '../components/site/SiteHeader.astro';
+import { isHexColor } from '../lib/colors';
 
 import { getLayoutData } from '../server/repo/layout';
 
@@ -39,7 +37,7 @@ const {
 } = Astro.props;
 
 // One round trip for everything the shell needs, shared by every page.
-const { settings, show, hosts, platforms, socials, navLinks } =
+const { settings, show, hosts, platforms, socials, navLinks, hasVideos } =
   await getLayoutData();
 
 const canonicalURL =
@@ -53,6 +51,23 @@ const absoluteOgImage = ogImage?.startsWith('http')
 const rssFeed = new URL('/rss.xml', Astro.site).toString();
 const isHome = Astro.url.pathname === '/';
 
+/*
+  The owner's accent colours, applied as custom properties on <html> so they
+  win over the defaults in src/styles/theme.css. Only well-formed hex values
+  are emitted; anything else falls back to the stylesheet default.
+*/
+const accentStyle = (
+  [
+    ['--brand-accent-1', settings.accent1],
+    ['--brand-accent-2', settings.accent2],
+    ['--brand-accent-3', settings.accent3],
+    ['--brand-accent-4', settings.accent4]
+  ] as const
+)
+  .filter(([, value]) => value && isHexColor(value))
+  .map(([name, value]) => `${name}:${value.trim()}`)
+  .join(';');
+
 // Speed Insights is served by Vercel's own edge; anywhere else its script 404s
 // and the browser logs a MIME-type error on every page. Only render it where it
 // can actually work.
@@ -62,7 +77,7 @@ const onVercel = Boolean(
 ---
 
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" style={accentStyle || undefined}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -82,16 +97,7 @@ const onVercel = Boolean(
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
-    <meta
-      name="theme-color"
-      content="#ffffff"
-      media="(prefers-color-scheme: light)"
-    />
-    <meta
-      name="theme-color"
-      content="#1a1a1a"
-      media="(prefers-color-scheme: dark)"
-    />
+    <meta name="theme-color" content="#070b2b" />
 
     <title>{title}</title>
     <meta content={description} name="description" />
@@ -110,9 +116,9 @@ const onVercel = Boolean(
     <meta content={description} name="twitter:description" />
     <meta content={absoluteOgImage} name="twitter:image" />
 
-    {show.image && <link rel="preload" as="image" href={show.image} />}
-
     <Font cssVariable="--astro-font-inter" preload />
+    <Font cssVariable="--astro-font-fraunces" preload />
+    <Font cssVariable="--astro-font-oswald" />
 
     <Schema
       slot="head"
@@ -141,224 +147,55 @@ const onVercel = Boolean(
     <slot name="head" />
     <ClientRouter />
   </head>
-  <body
-    class="font-inter text-light-text-body dark:bg-dark-background dark:text-dark-text-body antialiased"
-  >
+  <body class="font-inter bg-ink text-text min-h-screen antialiased">
     <a href="#main-content" class="skip-link">Skip to content</a>
 
-    <header
-      class="custom-scrollbar lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-112 lg:items-start lg:overflow-y-auto xl:w-120"
-      transition:persist="sidenav"
-    >
-      <div class="relative z-10 mx-auto lg:min-h-full lg:flex-auto">
-        <div
-          class="bg-light-card dark:bg-dark-card m-2 rounded-lg pt-10 pb-4 lg:pt-16 lg:pb-12"
-        >
-          <ShowArtwork image={show.image} title={show.title} />
+    <!--
+      The header is server-rendered on every request and deliberately NOT
+      `transition:persist`ed, so its active link is always right. Do not add
+      persist to it.
+    -->
+    {
+      settings.showBanner && settings.bannerText && (
+        <AnnouncementBar
+          label={settings.bannerLabel}
+          text={settings.bannerText}
+          buttonText={settings.bannerButtonText}
+          buttonUrl={settings.bannerButtonUrl}
+        />
+      )
+    }
 
-          <div class="px-4 sm:px-6 md:px-4 lg:px-16">
-            <p
-              class="text-light-text-heading mt-8 text-center text-2xl font-bold lg:text-left dark:text-white"
-            >
-              {show.title}
-            </p>
+    <SiteHeader show={show} platforms={platforms} navLinks={navLinks} hasVideos={hasVideos} />
 
-            {
-              settings.tagline && (
-                <p class="mt-2 text-center text-lg lg:text-left">
-                  {settings.tagline}
-                </p>
-              )
-            }
-          </div>
+    <main id="main-content" class="relative">
+      {
+        !isHome && !hideBreadcrumbs && (
+          <Container class="pt-6">
+            <Breadcrumbs title={title} />
+          </Container>
+        )
+      }
 
-          <div class="px-4 sm:px-6 md:px-4 lg:px-16">
-            <Platforms platforms={platforms} showTitle={show.title} />
-
-            {
-              socials.length > 0 && (
-                <>
-                  <h3 class="section-heading hidden pt-10 pb-4 lg:block">
-                    Follow
-                  </h3>
-                  <SocialLinks
-                    links={socials}
-                    class="mt-8 justify-center lg:mt-0 lg:justify-start"
-                  />
-                </>
-              )
-            }
-          </div>
-
-          <div class="hidden lg:block">
-            <Hosts hosts={hosts} />
-          </div>
-        </div>
-
-        <div class="hidden lg:block">
-          <InfoCard navLinks={navLinks} />
-        </div>
-      </div>
-    </header>
-
-    <main
-      id="main-content"
-      class="bg-light-card dark:bg-dark-card mx-2 mb-2 rounded-lg lg:relative lg:ml-112 lg:min-h-screen xl:ml-120"
-    >
-      <div class="absolute top-4 right-4 z-30">
-        <SearchButton client:load />
-      </div>
-
-      <div class="relative mt-2 pt-16">
-        <div
-          class="bg-gradient-light dark:bg-gradient-dark absolute top-0 right-0 left-0 z-0 h-80 w-full opacity-30"
-        >
-        </div>
-
-        <Dots />
-
-        <div class="max-w-4xl">
-          {
-            !isHome && !hideBreadcrumbs && (
-              <div class="dark:border-dark-border relative z-20 mb-12 border-b pb-6 lg:mb-16 lg:pb-10">
-                <div class="ml-8 lg:ml-18">
-                  <Breadcrumbs title={title} />
-                </div>
-              </div>
-            )
-          }
-
-          <slot />
-
-          <div class="relative z-10 px-8 pt-16 pb-20 lg:px-18">
-            <div
-              class="dark:border-dark-border flex flex-col gap-4 border-t pt-8 text-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <p>
-                {settings.footerText ||
-                  `© ${new Date().getFullYear()} ${show.title}`}
-              </p>
-              <SocialLinks links={socials} />
-            </div>
-          </div>
-        </div>
-      </div>
+      <slot />
     </main>
 
-    <footer class="block lg:hidden">
-      <Hosts hosts={hosts} />
-      <InfoCard navLinks={navLinks} />
-    </footer>
+    <SiteFooter
+      show={show}
+      settings={settings}
+      hosts={hosts}
+      platforms={platforms}
+      socials={socials}
+      navLinks={navLinks}
+      hasVideos={hasVideos}
+    />
 
     <div id="audio-player">
-      <Player client:only="preact" transition:persist="player" />
+      <Player client:load transition:persist="player" />
     </div>
 
     <SearchDialog client:load transition:persist="search-dialog" />
     {onVercel && <SpeedInsights />}
-
-    <!--
-      Sidebar state. `is:inline` for the same reason as the fallback below: it
-      must work even when a module fails to load.
-    -->
-    <script is:inline>
-      (function () {
-        var SCROLL_KEY = 'sidebar-scroll';
-
-        function sidebar() {
-          return document.querySelector('header.custom-scrollbar');
-        }
-
-        /*
-          The sidebar carries transition:persist, so on a client-side navigation
-          its DOM is reused verbatim — including the active link's styling,
-          which then describes whichever page happened to load first. Recompute
-          it from the current URL instead of trusting the markup.
-        */
-        function syncActiveLink() {
-          var path = location.pathname.replace(/\/+$/, '') || '/';
-
-          document.querySelectorAll('.site-nav-link').forEach(function (link) {
-            var href = link.getAttribute('href') || '';
-            // Same rule as the server: exact match, or a section parent.
-            var active =
-              href.indexOf('http') !== 0 &&
-              href !== '/' &&
-              (path === href || path.indexOf(href + '/') === 0);
-
-            link.classList.toggle('is-active', active);
-            if (active) link.setAttribute('aria-current', 'page');
-            else link.removeAttribute('aria-current');
-          });
-        }
-
-        /*
-          On a full page load the sidebar scrolls back to the top, which throws
-          the reader away from the links they were just using — they sit near
-          the bottom of a tall sidebar. Put it back where it was.
-        */
-        function saveScroll() {
-          var el = sidebar();
-          if (!el) return;
-          try {
-            sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop));
-          } catch (error) {
-            /* storage unavailable */
-          }
-        }
-
-        function restoreScroll() {
-          var el = sidebar();
-          if (!el) return;
-          var saved;
-          try {
-            saved = sessionStorage.getItem(SCROLL_KEY);
-          } catch (error) {
-            return;
-          }
-          if (saved === null) return;
-          var top = Number(saved);
-          if (!isFinite(top) || top <= 0) return;
-
-          /*
-            The sidebar is not scrollable until its images have laid out, so a
-            single frame is too early — the assignment silently does nothing.
-            Retry briefly until it takes, then stop.
-          */
-          var attempts = 0;
-          (function apply() {
-            attempts++;
-            if (el.scrollHeight > el.clientHeight) {
-              el.scrollTop = top;
-              if (Math.abs(el.scrollTop - top) < 2) return;
-            }
-            if (attempts < 30) requestAnimationFrame(apply);
-          })();
-        }
-
-        document.addEventListener('click', function (event) {
-          var link = event.target && event.target.closest && event.target.closest('a');
-          if (link && sidebar() && sidebar().contains(link)) saveScroll();
-        }, true);
-
-        window.addEventListener('pagehide', saveScroll);
-        window.addEventListener('beforeunload', saveScroll);
-
-        function init() {
-          syncActiveLink();
-          restoreScroll();
-        }
-
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', init);
-        } else {
-          init();
-        }
-
-        // Client-side navigations reuse the DOM, so re-run after each swap.
-        document.addEventListener('astro:page-load', syncActiveLink);
-      })();
-    </script>
 
     <!--
       Navigation fallback. `is:inline` on purpose: Astro would otherwise bundle
@@ -396,8 +233,11 @@ const onVercel = Boolean(
           page load.
         */
         var TAKES_CLICK_MS = 120;
-        var FETCHES_PAGE_MS = 500;
-        var BACKSTOP_MS = 2500;
+        // Fetching the next page includes rendering it on the server, which can
+        // legitimately take a few seconds on a cold dev server or a slow
+        // connection. A slow fetch is not a stall; only silence is.
+        var FETCHES_PAGE_MS = 6000;
+        var BACKSTOP_MS = 10000;
 
         var pending = null;
 

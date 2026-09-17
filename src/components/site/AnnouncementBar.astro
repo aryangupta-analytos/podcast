@@ -1,0 +1,75 @@
+---
+/**
+ * The light strip above the header: bold label, a line of text, a pill link
+ * and a close button. All copy comes from `site_settings`.
+ *
+ * Closing it hides it for the rest of the visit (sessionStorage), keyed by the
+ * text so a new announcement shows again. The inline script runs before paint
+ * so a dismissed bar never flashes, and it must be `is:inline` so it still
+ * runs after a client-side navigation re-inserts the markup.
+ */
+export interface Props {
+  label?: string;
+  text: string;
+  buttonText?: string;
+  buttonUrl?: string;
+}
+
+const { label = '', text, buttonText = '', buttonUrl = '' } = Astro.props;
+const hasButton = Boolean(buttonText && buttonUrl);
+// A short, stable key for this announcement.
+const key = `announce:${[...`${label}|${text}`].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7).toString(36)}`;
+---
+
+<div class="announce" data-announce data-key={key} role="region" aria-label="Announcement">
+  <div class="announce-inner">
+    <p class="announce-text">
+      {label && <strong class="announce-label">{label}</strong>}
+      <span>{text}</span>
+    </p>
+    {
+      hasButton && (
+        <a
+          class="pill pill-ink announce-cta"
+          href={buttonUrl}
+          {...(buttonUrl.startsWith('http') ? { rel: 'noopener noreferrer', target: '_blank' } : {})}
+        >
+          {buttonText}
+        </a>
+      )
+    }
+  </div>
+  <button class="announce-close" type="button" data-announce-close aria-label="Close announcement">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  </button>
+</div>
+
+<script is:inline>
+  (function () {
+    var bar = document.currentScript && document.currentScript.previousElementSibling;
+    if (!bar || !bar.hasAttribute('data-announce')) bar = document.querySelector('[data-announce]');
+    if (!bar) return;
+    var key = bar.getAttribute('data-key');
+    try {
+      if (sessionStorage.getItem(key) === '1') {
+        bar.hidden = true;
+        return;
+      }
+    } catch (error) {
+      /* storage unavailable: just show it */
+    }
+    var close = bar.querySelector('[data-announce-close]');
+    if (close) {
+      close.addEventListener('click', function () {
+        bar.hidden = true;
+        try {
+          sessionStorage.setItem(key, '1');
+        } catch (error) {
+          /* nothing to do */
+        }
+      });
+    }
+  })();
+</script>

@@ -1,4 +1,5 @@
 ---
+import { readFormData } from '../../../server/read-form';
 import PersonForm from '../../../components/admin/PersonForm.astro';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { parsePersonForm } from '../../../server/forms/person';
@@ -23,7 +24,7 @@ if (!person) {
 let errors: string[] = [];
 
 if (Astro.request.method === 'POST') {
-  const form = await Astro.request.formData();
+  const form = await readFormData(Astro.request);
 
   if (form.get('intent') === 'delete') {
     const name = person.name;
@@ -66,7 +67,7 @@ const episodes = await getEpisodesForPerson(person.id);
         <ul style="margin:0; padding-left:18px; line-height:1.9">
           {episodes.map((episode) => (
             <li>
-              <a href={`/episodes/${episode.slug}`} target="_blank" rel="noopener">
+              <a href={`/episodes/${episode.episodeSlug}`} target="_blank" rel="noopener">
                 {episode.episodeNumber ? `${episode.episodeNumber}. ` : ''}
                 {episode.title}
               </a>

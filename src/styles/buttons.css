@@ -5,12 +5,12 @@
 }
 
 .btn {
-  @apply dark:bg-dark-button relative box-border flex cursor-pointer rounded-full border border-transparent bg-white bg-clip-padding p-[1px] text-sm font-bold shadow-sm shadow-[#D9E4F0E5] dark:shadow-md dark:shadow-[rgba(0,0,0,0.25)];
+  @apply bg-surface-2 relative box-border flex cursor-pointer rounded-full border border-transparent bg-clip-padding p-[1px] text-sm font-bold shadow-md shadow-[rgba(0,0,0,0.25)];
   @apply before:absolute before:-inset-[1px] before:-z-[1] before:rounded-[inherit] before:content-[''];
   @apply after:absolute after:-inset-[1px] after:-z-[1] after:rounded-[inherit] after:content-[''];
 
   &:after {
-    @apply bg-gradient-to-br from-[#D8CCFF] to-[#8A63FF] dark:from-[#42C8F3] dark:to-[#B6EDFF];
+    @apply from-primary to-accent-4 bg-gradient-to-br;
     mask: conic-gradient(
       from calc(var(--from, 0) * 1deg),
       #000 calc(var(--complete) * 1%),

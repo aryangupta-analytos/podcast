@@ -64,6 +64,11 @@ live in object storage.
 Episode numbers are deliberately **not** unique: the real back catalogue reuses
 a few. The slug is the canonical identity.
 
+`newsletter_subscribers` holds signups from the homepage band (`POST
+/api/newsletter`); the owner views and exports them at `/admin/subscribers`.
+`site_settings.accent1..4` are the owner-editable brand accents; every other
+colour is fixed in `src/styles/theme.css`.
+
 ## Uploads
 
 Two paths, chosen by the server in `src/server/storage/direct.ts`:
@@ -100,16 +105,48 @@ never by filename or the browser's content type.
   origin. The image service fetches the file itself, and a bare `/media/...`
   path is not fetchable from a server process. Use the request origin, not
   `Astro.site` — they differ on any non-canonical port or host.
-- **The sidebar carries `transition:persist`, so its DOM survives navigation.**
-  Anything in it derived from the current URL — the active nav link above all —
-  is therefore stale after a client-side navigation and has to be recomputed on
-  `astro:page-load`. Server-rendered state alone is not enough. The same script
-  saves and restores the sidebar's own scroll position, because a full page load
-  resets it and the nav links sit near the bottom of a tall column.
+- **The header is server-rendered on every request and must not be
+  `transition:persist`ed.** Its active nav link is computed from
+  `Astro.url.pathname` in `SiteHeader.astro`; persisting the header across
+  client-side navigations would freeze that state on whichever page loaded
+  first. Only the audio player and the search dialog persist.
+- **One theme, no `dark:`.** The public site is a single navy theme. Colours
+  come from the tokens in `src/styles/theme.css` (bridged into Tailwind as
+  `bg-ink`, `text-heading`, `bg-accent-2`, …). Never reintroduce `dark:`
+  variants or `prefers-color-scheme` blocks outside `admin.css`; the four
+  accents are the only colours the owner can change, via `site_settings`.
+- **A new `site_settings` column must also be added to the homepage form.** The
+  handler in `src/pages/admin/homepage.astro` writes every field on every save,
+  so a column that exists in the schema but not in that form is silently reset
+  to its empty value the next time the owner clicks Save.
+- **Videos are episodes.** There is no videos table: `/videos` and the homepage
+  row list published episodes whose `youtubeUrl` parses (`src/lib/youtube.ts`),
+  and `LiteYouTube.tsx` embeds them on click. The YouTube thumbnail is the one
+  sanctioned bare `<img>` — it is a remote asset, not CMS media.
+- **Bundled carousel/tab scripts re-init on `astro:page-load`** and guard with a
+  `data-ready` flag, because the ClientRouter swaps the DOM without reloading
+  scripts. Any new interactive Astro component must do the same.
 - **The nav fallback in `Layout.astro` must stay `is:inline`.** Astro would
   bundle it otherwise, and its whole job is to survive a module that fails to
   load. It only cancels on `astro:before-swap` / `astro:page-load`; cancelling
   on `astro:before-preparation` disarms it before the failure it guards against.
+- **Admin forms post JSON, not form encodings.** Every admin form is submitted
+  by `fetch` as `application/json` (`src/components/admin/FormTransport.astro`),
+  and handlers read it with `readFormData()` / `readUploadData()` from
+  `src/server/read-form.ts` rather than `request.formData()` directly. This is
+  not decoration: Cloudflare's free quick tunnels reject a POST carrying
+  `application/x-www-form-urlencoded` or `multipart/form-data` at their edge
+  ("Cross-site POST form submissions are forbidden") so it never reaches the
+  origin, and the whole admin panel becomes unusable through a shared URL. JSON
+  is forwarded untouched. A new admin page must use the helper; calling
+  `request.formData()` works locally and fails through a tunnel, which is the
+  worst way for it to fail. The CSRF Origin check in `src/middleware.ts` is
+  unaffected and still rejects cross-site posts of any encoding.
+- **A file input inside an admin form must stay unnamed** unless the form really
+  should post the bytes. The upload islands leave theirs unnamed on purpose —
+  they upload to `/api/admin/upload` and write the id into a hidden field — and
+  `FormTransport` falls back to a native (tunnel-blocked) submit the moment it
+  sees a *named* file input holding a file.
 - **When dev behaves oddly, check the production build before debugging.** The
   Vite dev server re-optimises dependencies mid-session and invalidates chunks
   a loaded page still holds; `pnpm build:node && pnpm preview:prod` answers
@@ -121,3 +158,16 @@ never by filename or the browser's content type.
 `STORAGE_LOCAL_DIR`, `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`,
 `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`, `MAX_AUDIO_BYTES`,
 `MAX_IMAGE_BYTES`, `DISCORD_WEBHOOK`. All documented in `.env.example`.
+- **`X-Frame-Options` must stay `SAMEORIGIN`, not `DENY`.** In development the
+  ClientRouter loads the next page in a hidden same-origin iframe whenever that
+  page has a `client:only` island (the audio player is one). `DENY` blocks the
+  frame, the router's navigation never completes, and the fallback in
+  `Layout.astro` turns every click into a full reload — which also drops the
+  playing episode. `SAMEORIGIN` keeps third-party framing blocked.
+- **Do not use `client:only` on anything in `Layout.astro`.** In development the
+  ClientRouter loads the *next* page a second time in a hidden iframe whenever
+  that page contains a `client:only` island, and waits up to a second for it to
+  hydrate before swapping. With the audio player as `client:only`, every
+  navigation on the site paid that cost. It is `client:load` now (it renders
+  nothing on the server until an episode is chosen) and still persists across
+  navigation.

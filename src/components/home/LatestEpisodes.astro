@@ -1,0 +1,30 @@
+---
+import type { Episode, Show } from '../../lib/types';
+import EmptyState from '../EmptyState.astro';
+import EpisodeCard from '../episode/EpisodeCard.astro';
+import Carousel from '../site/Carousel.astro';
+import Section from '../site/Section.astro';
+
+export interface Props {
+  episodes: Episode[];
+  show: Show;
+  heading: string;
+  id?: string;
+}
+
+const { episodes, show, heading, id = 'latest' } = Astro.props;
+---
+
+<Section id={id} heading={heading} moreHref="/episodes" moreLabel="See all episodes">
+  {
+    episodes.length === 0 ? (
+      <EmptyState message="No episodes yet. Check back soon!" />
+    ) : (
+      <Carousel label={heading} arrows="below" itemClass="w-[58vw] sm:w-52 lg:w-60">
+        {episodes.map((episode, index) => (
+          <EpisodeCard episode={episode} show={show} variant="card" index={index} />
+        ))}
+      </Carousel>
+    )
+  }
+</Section>

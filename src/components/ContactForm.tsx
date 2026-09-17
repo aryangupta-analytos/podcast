@@ -36,7 +36,7 @@ export default function ContactForm() {
       ) : (
         <form class="flex flex-col gap-2" onSubmit={submit}>
           {responseMessage && (
-            <p class="text-sm text-red-600 dark:text-red-400" role="alert">
+            <p class="text-sm text-red-400" role="alert">
               {responseMessage}
             </p>
           )}
@@ -77,10 +77,8 @@ export default function ContactForm() {
           />
 
           <div class="my-6 flex w-full justify-end">
-            <button class="btn w-full justify-center lg:w-auto">
-              <span class="text-light-text-heading rounded-full px-12 py-3 text-center text-sm dark:text-white">
-                Submit
-              </span>
+            <button class="pill pill-primary w-full lg:w-auto" type="submit">
+              Send message
             </button>
           </div>
         </form>

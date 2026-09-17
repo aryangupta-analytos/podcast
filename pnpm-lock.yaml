@@ -47,9 +47,6 @@ importers:
       astro-seo-schema:
         specifier: ^5.2.0
         version: 5.2.0(astro@6.4.2(@types/node@24.13.4)(@vercel/functions@3.9.7(@aws-sdk/credential-provider-web-identity@3.972.77))(jiti@2.7.0)(lightningcss@1.32.0)(rollup@4.63.1)(tsx@4.23.13)(yaml@2.9.0))(schema-dts@1.1.5)
-      atropos:
-        specifier: ^2.0.2
-        version: 2.0.2
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(postgres@3.4.9)
@@ -1935,10 +1932,6 @@ packages:
 
   async-sema@3.1.1:
     resolution: {integrity: sha512-tLRNUXati5MFePdAk8dw7Qt7DpxPB60ofAgn8WRhW6a2rcimZnYBP9oxHiv0OHy+Wz7kPMG+t4LGdt31+4EmGg==}
-
-  atropos@2.0.2:
-    resolution: {integrity: sha512-8f0u0hEOlBTWTSvzY17TcHuQjxUIpkTBq70/I4+UF5B43ORtOoRjm8TPBYEgLM8Ba9AWf6PDtkagbYoybdjaKg==}
-    engines: {node: '>= 12.0.0'}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -5831,8 +5824,6 @@ snapshots:
       synckit: 0.11.13
 
   async-sema@3.1.1: {}
-
-  atropos@2.0.2: {}
 
   axobject-query@4.1.0: {}
 

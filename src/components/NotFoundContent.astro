@@ -1,42 +1,40 @@
 ---
 import FourZeroFourIllustration from './illustrations/404Illustration.astro';
+import Container from './site/Container.astro';
 ---
 
-<div
-  class="relative z-10 flex flex-col items-center justify-center px-8 lg:px-18"
->
-  <FourZeroFourIllustration />
-
-  <div class="mt-12 flex justify-center">
-    <button class="btn" onclick="history.back()">
-      <span
-        class="text-light-text-heading rounded-full px-10 py-3 text-center text-sm dark:text-white"
-      >
-        Go back
-      </span>
-    </button>
+<Container class="flex flex-col items-center justify-center py-16 text-center">
+  <div class="w-full max-w-md">
+    <FourZeroFourIllustration />
   </div>
 
-  <nav class="mt-10 pb-16 text-center text-sm" aria-label="Helpful links">
+  <h1 class="display mt-10 text-4xl lg:text-5xl">Sorry, this page cannot be found.</h1>
+  <p class="text-text-muted mt-4 max-w-md">
+    The link may be out of date, or the page may have moved.
+  </p>
+
+  <div class="mt-8 flex justify-center">
+    <a class="pill pill-primary" href="/">Back to the homepage</a>
+  </div>
+
+  <nav class="mt-10 pb-8 text-sm" aria-label="Helpful links">
     <p class="mb-3">Looking for something? Try one of these:</p>
     <ul class="flex flex-wrap justify-center gap-x-6 gap-y-2">
       <li>
-        <a class="underline hover:no-underline" href="/">Home</a>
+        <a class="text-primary underline hover:no-underline" href="/episodes">Episodes</a>
       </li>
       <li>
-        <a class="underline hover:no-underline" href="/about">About</a>
+        <a class="text-primary underline hover:no-underline" href="/videos">Videos</a>
       </li>
       <li>
-        <a class="underline hover:no-underline" href="/contact">Contact</a>
+        <a class="text-primary underline hover:no-underline" href="/people">Guests & hosts</a>
       </li>
       <li>
-        <a class="underline hover:no-underline" href="/episodes">Episode archive</a>
+        <a class="text-primary underline hover:no-underline" href="/about">About</a>
       </li>
       <li>
-        <a class="underline hover:no-underline" href="/sitemap-index.xml">
-          Sitemap
-        </a>
+        <a class="text-primary underline hover:no-underline" href="/contact">Contact</a>
       </li>
     </ul>
   </nav>
-</div>
+</Container>

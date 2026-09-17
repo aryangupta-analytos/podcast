@@ -23,6 +23,7 @@ export const GET: APIRoute = async ({ site }) => {
   const urls: Array<{ loc: string; lastmod?: Date; priority: string }> = [
     { loc: '/', priority: '1.0' },
     { loc: '/episodes', priority: '0.9' },
+    { loc: '/videos', priority: '0.7' },
     { loc: '/people', priority: '0.6' },
     { loc: '/about', priority: '0.7' },
     { loc: '/contact', priority: '0.5' },

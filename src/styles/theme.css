@@ -1,0 +1,43 @@
+/*
+  Design tokens — the single source of truth for the site's look.
+
+  One fixed theme: deep navy ground, lime-green primary, and saturated colour
+  blocks (yellow, violet, orange, teal). There is no light mode and no `dark:`
+  variant anywhere in the public site; colours are read from these custom
+  properties (through the Tailwind bridge in tailwind.css).
+
+  The four accents are the colour blocks — hero cards, episode tiles, people
+  tiles, the newsletter and CTA bands. `site_settings.accent1..4` can override
+  them: Layout.astro writes the saved values as inline custom properties on
+  <html>, which win over the defaults below.
+*/
+:root {
+  /* Overridable accents. Defaults must match scripts/lib/migrate-content.ts. */
+  --brand-accent-1: #ffd400; /* yellow */
+  --brand-accent-2: #8f7bff; /* violet */
+  --brand-accent-3: #ff6a3d; /* orange */
+  --brand-accent-4: #23c4b1; /* teal */
+  --brand-accent-5: #ff5da2; /* pink */
+  --brand-accent-6: #38b6ff; /* sky */
+
+  /* Fixed palette. */
+  --brand-primary: #3ddc0a; /* lime green: links, arrows, buttons */
+  --brand-on-primary: #070b2b;
+  --brand-ink: #070b2b; /* page ground */
+  --brand-ink-2: #0d1240; /* header, footer, hero bands */
+  --brand-surface: #121850; /* cards */
+  --brand-surface-2: #1a2160; /* inputs, hover states */
+  --brand-line: rgb(255 255 255 / 0.12);
+  --brand-text: #d7dbf3;
+  --brand-text-muted: #9aa1cc;
+  --brand-heading: #ffffff;
+
+  /* Text placed on an accent block. */
+  --brand-on-accent: #070b2b;
+
+  /* Solid navy pill with green text (the reference's "Go to Episode"). */
+  --brand-contrast: #070b2b;
+  --brand-on-contrast: #3ddc0a;
+
+  --radius-card: 20px;
+}

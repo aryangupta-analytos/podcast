@@ -1,0 +1,154 @@
+---
+import type { LinkRow, Person, SiteSettings } from '../../server/db/schema';
+import type { Show } from '../../lib/types';
+import Avatar from '../Avatar.astro';
+import SmartImage from '../SmartImage.astro';
+import SocialLinks from '../SocialLinks.astro';
+import Container from './Container.astro';
+
+export interface Props {
+  show: Show;
+  settings: SiteSettings;
+  hosts: Person[];
+  platforms: LinkRow[];
+  socials: LinkRow[];
+  navLinks?: LinkRow[];
+  hasVideos?: boolean;
+}
+
+const { show, settings, hosts, platforms, socials, navLinks = [], hasVideos = false } = Astro.props;
+
+const explore = [
+  { label: 'Home', href: '/' },
+  { label: 'Episodes', href: '/episodes' },
+  ...(hasVideos ? [{ label: 'Videos', href: '/videos' }] : []),
+  { label: 'Guests & Hosts', href: '/people' },
+  { label: 'About', href: '/about' },
+  { label: 'Contact', href: '/contact' },
+  ...navLinks.map((link) => ({ label: link.label, href: link.url }))
+];
+
+const hasArtwork = show.image && !show.image.endsWith('artwork-placeholder.svg');
+const rssFeed = '/rss.xml';
+const year = new Date().getFullYear();
+---
+
+<footer class="bg-ink-2 border-line mt-16 border-t">
+  <Container class="py-14 lg:py-20">
+    <div class="grid gap-12 lg:grid-cols-12">
+      <div class="lg:col-span-5">
+        <a class="flex items-center gap-3" href="/">
+          {
+            hasArtwork && (
+              <SmartImage
+                class="h-12 w-12 rounded-xl object-cover"
+                src={show.image}
+                alt=""
+                width={48}
+                height={48}
+              />
+            )
+          }
+          <span class="font-display text-heading text-2xl font-bold tracking-tight">
+            {show.title}
+          </span>
+        </a>
+        {settings.tagline && <p class="text-heading mt-4 font-semibold">{settings.tagline}</p>}
+        {show.description && <p class="text-text-muted mt-2 max-w-md text-sm">{show.description}</p>}
+        <SocialLinks links={socials} class="mt-6 -ml-3" />
+      </div>
+
+      <div class="grid gap-10 sm:grid-cols-3 lg:col-span-7">
+        <div>
+          <h3 class="section-heading text-heading mb-4">Explore</h3>
+          <ul class="space-y-2.5 text-sm">
+            {
+              explore.map((link) => (
+                <li>
+                  <a
+                    class="text-text hover:text-heading font-semibold transition-colors"
+                    href={link.href}
+                    {...(link.href.startsWith('http')
+                      ? { rel: 'noopener noreferrer', target: '_blank' }
+                      : {})}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div>
+          <h3 class="section-heading text-heading mb-4">Listen</h3>
+          <ul class="space-y-2.5 text-sm">
+            {
+              platforms.map((link) => (
+                <li>
+                  <a
+                    class="text-text hover:text-heading font-semibold transition-colors"
+                    href={link.url}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))
+            }
+            <li>
+              <a class="text-text hover:text-heading font-semibold transition-colors" href={rssFeed}>
+                RSS feed
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        {
+          hosts.length > 0 && (
+            <div>
+              <h3 class="section-heading text-heading mb-4">Hosted by</h3>
+              <ul class="space-y-3">
+                {hosts.map((host) => (
+                  <li>
+                    <a class="group flex items-center gap-3" href={`/people/${host.slug}`}>
+                      <Avatar
+                        class="h-10 w-10 shrink-0 rounded-lg object-cover"
+                        name={host.name}
+                        imageUrl={host.imageUrl}
+                        placeholder={host.placeholder as 'monogram'}
+                        size={40}
+                      />
+                      <span class="text-sm">
+                        <span class="text-heading block font-semibold group-hover:underline">
+                          {host.name}
+                        </span>
+                        {host.title && (
+                          <span class="text-text-muted block text-xs">{host.title}</span>
+                        )}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )
+        }
+      </div>
+    </div>
+
+    <div class="border-line text-text-muted mt-12 flex flex-col gap-3 border-t pt-8 text-sm sm:flex-row sm:items-center sm:justify-between">
+      <p>{settings.footerText || `© ${year} ${show.title}. All rights reserved.`}</p>
+      <p>
+        {
+          settings.contactEmail && (
+            <a class="hover:text-heading font-semibold" href={`mailto:${settings.contactEmail}`}>
+              {settings.contactEmail}
+            </a>
+          )
+        }
+      </p>
+    </div>
+  </Container>
+</footer>

@@ -5,6 +5,7 @@ import {
   eq,
   gt,
   inArray,
+  isNotNull,
   lt,
   ne,
   or,
@@ -28,7 +29,7 @@ import { slugify, uniqueSlug } from '../slug';
  * Mapping
  * ────────────────────────────────────────────────────────────────────────── */
 
-function toEpisode(row: EpisodeRow, guests: EpisodeGuest[] = []): Episode {
+export function toEpisode(row: EpisodeRow, guests: EpisodeGuest[] = []): Episode {
   return {
     id: row.id,
     title: row.title,
@@ -63,7 +64,7 @@ function toEpisode(row: EpisodeRow, guests: EpisodeGuest[] = []): Episode {
  * The alternative — a query per episode — is the classic N+1 that makes a
  * listing page slow as the archive grows, so the list endpoints always batch.
  */
-async function guestsFor(episodeIds: string[]): Promise<Map<string, EpisodeGuest[]>> {
+export async function guestsFor(episodeIds: string[]): Promise<Map<string, EpisodeGuest[]>> {
   const map = new Map<string, EpisodeGuest[]>();
   if (episodeIds.length === 0) return map;
 
@@ -167,6 +168,59 @@ export async function getPublishedEpisodes({
 /** The N most recent published episodes, for the homepage. */
 export async function getLatestEpisodes(limit = 6, excludeId?: string): Promise<Episode[]> {
   const { items } = await getPublishedEpisodes({ page: 1, perPage: limit, excludeId });
+  return items;
+}
+
+/** Live episodes that carry a YouTube link. */
+const HAS_VIDEO: SQL = and(
+  LIVE,
+  isNotNull(episodes.youtubeUrl),
+  ne(episodes.youtubeUrl, '')
+)!;
+
+/**
+ * One page of episodes that have a video — the /videos archive and the
+ * homepage "latest videos" row. Same cost profile as `getPublishedEpisodes`.
+ */
+export async function getEpisodesWithVideo({
+  page = 1,
+  perPage = 12
+}: { page?: number; perPage?: number } = {}): Promise<Paginated<Episode>> {
+  const db = getDb();
+
+  const [rows, [{ count }]] = await Promise.all([
+    db
+      .select()
+      .from(episodes)
+      .where(HAS_VIDEO)
+      .orderBy(desc(episodes.publishDate))
+      .limit(perPage)
+      .offset((page - 1) * perPage),
+    db.select({ count: sql<number>`count(*)::int` }).from(episodes).where(HAS_VIDEO)
+  ]);
+
+  const guests = await guestsFor(rows.map((r) => r.id));
+
+  return {
+    items: rows.map((row) => toEpisode(row, guests.get(row.id) ?? [])),
+    page,
+    perPage,
+    total: count,
+    totalPages: Math.max(1, Math.ceil(count / perPage))
+  };
+}
+
+/** How many live episodes have a video — the header hides "Videos" at zero. */
+export async function countVideos(): Promise<number> {
+  const [row] = await getDb()
+    .select({ count: sql<number>`count(*)::int` })
+    .from(episodes)
+    .where(HAS_VIDEO);
+  return row?.count ?? 0;
+}
+
+export async function getLatestVideos(limit = 4): Promise<Episode[]> {
+  const { items } = await getEpisodesWithVideo({ page: 1, perPage: limit });
   return items;
 }
 

@@ -1,8 +1,12 @@
 ---
 import Avatar from '../../components/Avatar.astro';
-import SmartImage from '../../components/SmartImage.astro';
+import EpisodeCard from '../../components/episode/EpisodeCard.astro';
+import VideoCard from '../../components/video/VideoCard.astro';
+import Container from '../../components/site/Container.astro';
 import Layout from '../../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { introFrom } from '../../lib/episode-intro';
+import { youtubeId } from '../../lib/youtube';
 import { getEpisodesForPerson, getPersonBySlug } from '../../server/repo/people';
 import { getShowInfo } from '../../server/repo/settings';
 
@@ -28,91 +32,114 @@ const socials = [
   { label: 'GitHub', url: person.github }
 ].filter((link): link is { label: string; url: string } => Boolean(link.url));
 
+// With no bio of their own, a guest's profile opens with the introduction the
+// show already published about them in their episode's notes.
+const sourceEpisode = !person.bio ? episodes.find((e) => introFrom(e.content)) : undefined;
+const fallbackBio = sourceEpisode ? introFrom(sourceEpisode.content) : '';
+
+const hasVideo = episodes.some((e) => youtubeId(e.links.youtube));
+
+// A stable accent per person so their page matches their tile in the grid.
+const accent = (person.name.length % 4) + 1;
+
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
 
 <Layout
   title={`${person.name} — ${show.title}`}
-  description={person.bio?.slice(0, 300) ||
+  description={person.bio?.replace(/<[^>]+>/g, '').slice(0, 300) ||
     `${person.name}${person.title ? `, ${person.title}` : ''} on ${show.title}.`}
   imageUrl={person.imageUrl ?? undefined}
 >
-  <div class="relative z-10 px-8 pb-16 lg:px-18">
-    <div class="flex flex-col gap-6 sm:flex-row sm:items-start">
-      <Avatar
-        class="h-32 w-32 shrink-0 rounded-xl object-cover"
-        name={person.name}
-        imageUrl={person.imageUrl}
-        placeholder={person.placeholder as 'monogram'}
-        size={128}
-        loading="eager"
-      />
+  <Container class="py-10 lg:py-16">
+    <section class="profile-panel" aria-labelledby="person-name">
+      <div class="profile-panel-copy">
+        <h1 id="person-name" class="profile-panel-name">{person.name}</h1>
+        <p class="text-heading mt-5 font-bold">{person.title ?? roleLabel}</p>
+        {person.title && <p class="text-text">{roleLabel}, {show.title}</p>}
 
-      <div>
-        <p class="section-heading text-light-icon dark:text-dark-icon">
-          {roleLabel}
-        </p>
-        <h1
-          class="text-light-text-heading mt-2 text-2xl font-bold lg:text-4xl dark:text-white"
-        >
-          {person.name}
-        </h1>
-        {person.title && <p class="mt-1 text-lg">{person.title}</p>}
+        {person.bio && <div class="cms-prose profile-panel-bio" set:html={person.bio} />}
+
+        {
+          !person.bio && fallbackBio && sourceEpisode && (
+            <Fragment>
+              <div class="cms-prose profile-panel-bio" set:html={fallbackBio} />
+              <p class="text-text-muted mt-4 text-sm">
+                From the show notes of{' '}
+                <a class="text-primary hover:underline" href={`/episodes/${sourceEpisode.episodeSlug}`}>
+                  {sourceEpisode.title}
+                </a>
+              </p>
+            </Fragment>
+          )
+        }
+
+        {
+          !person.bio && !fallbackBio && person.title && (
+            <p class="profile-panel-bio text-text">
+              {person.name} is {person.title} {person.kind === 'guest' ? 'and a guest on' : 'at'} {show.title}.
+            </p>
+          )
+        }
 
         {
           socials.length > 0 && (
-            <div class="mt-4 flex flex-wrap gap-4 text-sm">
+            <ul class="mt-7 flex flex-wrap gap-3">
               {socials.map((link) => (
-                <a
-                  class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-                  href={link.url}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  {link.label}
-                </a>
+                <li>
+                  <a class="pill pill-ghost px-5 py-2.5" href={link.url} rel="noopener noreferrer" target="_blank">
+                    {link.label}
+                  </a>
+                </li>
               ))}
-            </div>
+            </ul>
           )
         }
       </div>
-    </div>
 
-    {person.bio && <div class="cms-prose mt-8 max-w-2xl" set:html={person.bio} />}
+      <div class="profile-panel-media" style={`--tile-bg: var(--brand-accent-${accent})`}>
+        <Avatar
+          name={person.name}
+          imageUrl={person.imageUrl}
+          placeholder={person.placeholder as 'monogram'}
+          size={480}
+          loading="eager"
+        />
+      </div>
+    </section>
 
     {
       episodes.length > 0 && (
-        <>
-          <h2 class="section-heading-underlined mt-16 mb-8">
-            {episodes.length} episode{episodes.length === 1 ? '' : 's'}
-          </h2>
+        <section class="mt-14 lg:mt-20" aria-labelledby="person-episodes">
+          <div class="mb-8 flex items-center justify-between gap-4">
+            <h2 id="person-episodes" class="section-heading text-heading">
+              Featured in these episodes{hasVideo && ' and videos'}
+            </h2>
+            <a class="text-primary inline-flex items-center gap-1 text-sm font-bold hover:underline" href="/episodes">
+              See all episodes
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </a>
+          </div>
 
-          <ul class="space-y-6">
-            {episodes.map((episode) => (
-              <li class="flex gap-4">
-                {episode.thumbnailUrl && (
-                  <SmartImage
-                    class="h-16 w-16 shrink-0 rounded-md object-cover"
-                    src={episode.thumbnailUrl}
-                    alt=""
-                    width={64}
-                    height={64}
-                  />
+          <ul
+            class:list={['grid gap-x-8 gap-y-12', hasVideo ? 'md:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3']}
+            role="list"
+          >
+            {episodes.map((episode, index) => (
+              <Fragment>
+                <li>
+                  <EpisodeCard episode={episode} show={show} variant="card" index={index} />
+                </li>
+                {hasVideo && (
+                  <li>{youtubeId(episode.links.youtube) && <VideoCard episode={episode} />}</li>
                 )}
-                <div>
-                  <h3 class="text-light-text-heading font-bold dark:text-white">
-                    <a href={`/episodes/${episode.slug}`}>
-                      {episode.episodeNumber && `${episode.episodeNumber}: `}
-                      {episode.title}
-                    </a>
-                  </h3>
-                  <p class="mt-1 text-sm">{episode.description}</p>
-                </div>
-              </li>
+              </Fragment>
             ))}
           </ul>
-        </>
+        </section>
       )
     }
-  </div>
+  </Container>
 </Layout>

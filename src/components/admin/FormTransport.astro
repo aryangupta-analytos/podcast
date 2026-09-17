@@ -1,0 +1,131 @@
+---
+/**
+ * Submits every admin form as JSON rather than as a native form post.
+ *
+ * Why: some proxies refuse to forward HTML form submissions. Cloudflare's free
+ * quick tunnels reject a POST carrying `application/x-www-form-urlencoded` or
+ * `multipart/form-data` at their edge — "Cross-site POST form submissions are
+ * forbidden" — and it never reaches the origin, so signing in or saving an
+ * episode through a shared tunnel URL is impossible. The same POST sent as
+ * `application/json` by `fetch` is forwarded untouched.
+ *
+ * The server accepts both encodings (`readFormData()` in
+ * `src/server/read-form.ts`), so this changes transport only: the same fields
+ * reach the same handler and the same redirect or re-render comes back.
+ *
+ * `is:inline` deliberately, matching the nav fallback in `Layout.astro`: a
+ * bundled module that fails to load would leave every admin form submitting
+ * natively again, which is the exact failure this exists to prevent.
+ *
+ * Degrades honestly — if `fetch` throws, the form is submitted the normal way.
+ */
+---
+
+<script is:inline>
+  (function () {
+    if (window.__adminFormTransport) return;
+    window.__adminFormTransport = true;
+
+    /* A file cannot be represented in JSON, so a form that genuinely posts one
+       must submit natively rather than silently lose it.
+
+       Only a *named* file input counts. The upload islands (FileUpload.tsx,
+       MediaUploader.tsx) deliberately leave their `<input type="file">`
+       unnamed — it is a picker that uploads via /api/admin/upload and writes
+       the resulting id into a hidden field — so the browser never submits it
+       either. Treating those as blocking would force a native post on every
+       episode and person form, which is exactly what cannot get through. */
+    function hasFile(form) {
+      return Array.from(form.elements).some(function (el) {
+        return el.type === 'file' && el.name && el.files && el.files.length > 0;
+      });
+    }
+
+    function serialise(form, submitter) {
+      var data = new FormData(form);
+      /* The button that submitted carries its own name/value — that is how a
+         list distinguishes "save" from "delete". FormData omits it. */
+      if (submitter && submitter.name) data.append(submitter.name, submitter.value);
+
+      var out = {};
+      data.forEach(function (value, key) {
+        if (typeof value !== 'string') return;
+        if (key in out) {
+          if (!Array.isArray(out[key])) out[key] = [out[key]];
+          out[key].push(value);
+        } else {
+          out[key] = value;
+        }
+      });
+      return out;
+    }
+
+    function setBusy(form, busy) {
+      Array.from(form.elements).forEach(function (el) {
+        if (el.type === 'submit' || el.tagName === 'BUTTON') el.disabled = busy;
+      });
+      form.setAttribute('aria-busy', busy ? 'true' : 'false');
+    }
+
+    document.addEventListener('submit', function (event) {
+      var form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      if (event.defaultPrevented) return;
+      if ((form.method || 'get').toLowerCase() !== 'post') return;
+      if (form.dataset.nativeSubmit === 'true') return;
+      if (hasFile(form)) return;
+
+      var submitter = event.submitter;
+      var action =
+        (submitter && submitter.getAttribute('formaction')) ||
+        form.getAttribute('action') ||
+        window.location.pathname + window.location.search;
+
+      event.preventDefault();
+      setBusy(form, true);
+
+      fetch(action, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/html'
+        },
+        body: JSON.stringify(serialise(form, submitter))
+      })
+        .then(function (response) {
+          /* Redirect after a successful save: fetch has already followed it, so
+             response.url is where the handler sent us. Load it properly rather
+             than painting the redirected body at the old URL. */
+          if (response.redirected && response.url !== window.location.href) {
+            window.location.assign(response.url);
+            return null;
+          }
+          return response.text();
+        })
+        .then(function (html) {
+          if (html === null) return;
+          /* A re-render — validation failed, or the page shows a saved banner.
+             Replace the document so scripts in the new HTML run and the islands
+             hydrate, which innerHTML assignment would not do. */
+          document.open();
+          document.write(html);
+          document.close();
+        })
+        .catch(function () {
+          /* Offline, blocked, or anything else unexpected: fall back to the
+             browser's own submission so the owner is never simply stuck. */
+          setBusy(form, false);
+          form.dataset.nativeSubmit = 'true';
+          if (submitter && submitter.name) {
+            var carry = document.createElement('input');
+            carry.type = 'hidden';
+            carry.name = submitter.name;
+            carry.value = submitter.value;
+            form.appendChild(carry);
+          }
+          form.submit();
+        });
+    });
+  })();
+</script>

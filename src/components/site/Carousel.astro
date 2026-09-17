@@ -1,0 +1,387 @@
+---
+/**
+ * A horizontal row of slides.
+ *
+ * Two looks, matching the reference site:
+ *   · `arrows="sides"`  — green circular arrows either side, the active slide
+ *     centred with its neighbours peeking in, dots underneath (the hero).
+ *   · `arrows="below"`  — a small pair of green arrows centred under the row
+ *     (episode, people and video rows).
+ *
+ * Motion follows the fluid-interface rules: the row tracks the pointer 1:1
+ * from where it was grabbed, resists past its edges, and on release a spring
+ * carries the finger's velocity to the stop nearest the *projected* resting
+ * place. Every spring starts from the live scroll position, so a new drag or
+ * arrow press interrupts and redirects it at any instant. Touch keeps the
+ * browser's native scrolling and snapping.
+ *
+ * The script is bundled once per page and re-runs on `astro:page-load`, so
+ * carousels keep working after a client-side navigation.
+ */
+export interface Props {
+  label: string;
+  class?: string;
+  /** Width classes for each slide, e.g. `w-72 lg:w-80`. Applied to the slot's children. */
+  itemClass?: string;
+  arrows?: 'sides' | 'below';
+  /** Centre the active slide and show the neighbours at the edges. */
+  centered?: boolean;
+  dots?: boolean;
+  /**
+   * Advance one slide every N milliseconds, looping back to the start. Pauses
+   * while the pointer or keyboard focus is on the carousel, while it is being
+   * dragged, and while the tab is hidden; off entirely for reduced motion.
+   */
+  autoplay?: number;
+}
+
+const {
+  label,
+  class: className = '',
+  itemClass = '',
+  arrows = 'below',
+  centered = false,
+  dots = false,
+  autoplay = 0
+} = Astro.props;
+---
+
+<div
+  class:list={['carousel', `carousel-${arrows}`, centered && 'carousel-centered', className]}
+  data-carousel
+  data-item-class={itemClass}
+  data-dots={dots ? '1' : undefined}
+  data-autoplay={autoplay > 0 ? String(autoplay) : undefined}
+>
+  {
+    arrows === 'sides' && (
+      <button class="carousel-btn carousel-btn-side carousel-btn-prev" type="button" data-carousel-prev aria-label="Previous">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+      </button>
+    )
+  }
+
+  <div class="carousel-track" role="list" aria-label={label} tabindex="0">
+    <slot />
+  </div>
+
+  {
+    arrows === 'sides' && (
+      <button class="carousel-btn carousel-btn-side carousel-btn-next" type="button" data-carousel-next aria-label="Next">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+      </button>
+    )
+  }
+
+  {dots && <div class="carousel-dots" data-carousel-dots aria-hidden="true" />}
+
+  {
+    arrows === 'below' && (
+      <div class="mt-6 flex justify-center gap-3">
+        <button class="carousel-btn" type="button" data-carousel-prev aria-label="Previous">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6" /></svg>
+        </button>
+        <button class="carousel-btn" type="button" data-carousel-next aria-label="Next">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+        </button>
+      </div>
+    )
+  }
+</div>
+
+<script>
+  /** Apple's projection for a flick, exponential-decay form. */
+  function project(velocity: number, decelerationRate = 0.998) {
+    return ((velocity / 1000) * decelerationRate) / (1 - decelerationRate);
+  }
+
+  /** Progressive resistance past a boundary; `dimension` is the track width. */
+  function rubberband(overshoot: number, dimension: number, constant = 0.55) {
+    return (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+  }
+
+  const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function init() {
+    document.querySelectorAll<HTMLElement>('[data-carousel]').forEach((root) => {
+      if (root.dataset.ready) return;
+      root.dataset.ready = '1';
+
+      const track = root.querySelector<HTMLElement>('.carousel-track');
+      const prev = root.querySelector<HTMLButtonElement>('[data-carousel-prev]');
+      const next = root.querySelector<HTMLButtonElement>('[data-carousel-next]');
+      if (!track || !prev || !next) return;
+
+      const items = Array.from(track.children) as HTMLElement[];
+      const itemClass = root.dataset.itemClass;
+      if (itemClass) {
+        items.forEach((child) => child.classList.add(...itemClass.split(/\s+/).filter(Boolean)));
+      }
+
+      const centered = root.classList.contains('carousel-centered');
+      const maxScroll = () => Math.max(0, track.scrollWidth - track.clientWidth);
+
+      const targetLeft = (i: number) => {
+        const item = items[i];
+        if (!item) return 0;
+        const raw = centered
+          ? item.offsetLeft - (track.clientWidth - item.offsetWidth) / 2
+          : item.offsetLeft - parseFloat(getComputedStyle(track).paddingLeft || '0');
+        return Math.max(0, Math.min(maxScroll(), raw));
+      };
+
+      const nearestTo = (x: number) => {
+        let best = 0;
+        let bestDist = Infinity;
+        items.forEach((_item, i) => {
+          const d = Math.abs(x - targetLeft(i));
+          if (d < bestDist) {
+            bestDist = d;
+            best = i;
+          }
+        });
+        return best;
+      };
+      const current = () => nearestTo(track.scrollLeft);
+
+      /* ── Spring: damping ratio + response, interruptible ───────────────── */
+      let raf = 0;
+      let springVelocity = 0;
+
+      const stopSpring = () => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = 0;
+        track.classList.remove('is-animating');
+      };
+
+      const springTo = (
+        target: number,
+        { velocity = 0, damping = 1, response = 0.4 }: { velocity?: number; damping?: number; response?: number } = {}
+      ) => {
+        if (reducedMotion()) {
+          stopSpring();
+          track.scrollLeft = target;
+          update();
+          return;
+        }
+        // Start from the presentation value and carry the running velocity so
+        // an interrupted spring keeps moving smoothly instead of jumping.
+        const wasRunning = raf !== 0;
+        if (raf) cancelAnimationFrame(raf);
+        let x = track.scrollLeft;
+        let v = wasRunning ? springVelocity : velocity;
+        const omega = (2 * Math.PI) / response;
+        const k = omega * omega;
+        const c = 2 * damping * omega;
+        let last = performance.now();
+        track.classList.add('is-animating');
+
+        const step = (now: number) => {
+          const dt = Math.min(0.064, (now - last) / 1000);
+          last = now;
+          const a = -k * (x - target) - c * v;
+          v += a * dt;
+          x += v * dt;
+          springVelocity = v;
+          track.scrollLeft = x;
+          if (Math.abs(x - target) < 0.5 && Math.abs(v) < 20) {
+            track.scrollLeft = target;
+            raf = 0;
+            springVelocity = 0;
+            track.classList.remove('is-animating');
+            update();
+            return;
+          }
+          raf = requestAnimationFrame(step);
+        };
+        raf = requestAnimationFrame(step);
+      };
+
+      const goTo = (i: number, opts?: { velocity?: number; damping?: number }) => {
+        const clamped = Math.max(0, Math.min(items.length - 1, i));
+        springTo(targetLeft(clamped), opts);
+      };
+
+      /* ── Dots and arrows ───────────────────────────────────────────────── */
+      const dotsHost = root.querySelector<HTMLElement>('[data-carousel-dots]');
+      const dots: HTMLButtonElement[] = [];
+      if (dotsHost) {
+        items.forEach((_item, i) => {
+          const dot = document.createElement('button');
+          dot.type = 'button';
+          dot.className = 'carousel-dot';
+          dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
+          dot.addEventListener('click', () => goTo(i));
+          dotsHost.appendChild(dot);
+          dots.push(dot);
+        });
+      }
+
+      const update = () => {
+        const max = maxScroll() - 2;
+        if (centered) {
+          const active = current();
+          prev.disabled = active <= 0;
+          next.disabled = active >= items.length - 1;
+        } else {
+          prev.disabled = track.scrollLeft <= 2;
+          next.disabled = track.scrollLeft >= max;
+        }
+        root.classList.toggle('is-static', max <= 4);
+        if (dots.length) {
+          const active = current();
+          dots.forEach((dot, i) => dot.classList.toggle('is-active', i === active));
+        }
+      };
+
+      prev.addEventListener('click', () => goTo(current() - 1));
+      next.addEventListener('click', () => goTo(current() + 1));
+      track.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+
+      /* ── Mouse drag: 1:1, velocity history, projection, rubber-band ───── */
+      let dragging = false;
+      let moved = false;
+      let grabX = 0;
+      let grabLeft = 0;
+      let history: Array<{ x: number; t: number }> = [];
+
+      // The browser's own drag-and-drop of an <img> would steal the pointer.
+      track.addEventListener('dragstart', (event) => event.preventDefault());
+
+      /*
+        A press is only a *possible* drag. Nothing that interferes with a click
+        may happen until the pointer has actually moved: capturing the pointer
+        on press retargets the eventual click to the track, and the dragging
+        class disables pointer events on the slides — either one silently kills
+        every link and button inside the carousel.
+      */
+      const DRAG_THRESHOLD = 6;
+      let pressed = false;
+
+      track.addEventListener('pointerdown', (event) => {
+        if (event.pointerType !== 'mouse' || event.button !== 0) return;
+        stopSpring(); // grab it mid-flight
+        pressed = true;
+        dragging = false;
+        moved = false;
+        grabX = event.clientX;
+        grabLeft = track.scrollLeft;
+        history = [{ x: event.clientX, t: performance.now() }];
+      });
+
+      track.addEventListener('pointermove', (event) => {
+        if (!pressed) return;
+        const dx = event.clientX - grabX;
+
+        if (!dragging) {
+          if (Math.abs(dx) < DRAG_THRESHOLD) return;
+          // Now it is a drag: take the pointer and switch the slides off.
+          dragging = true;
+          moved = true;
+          track.setPointerCapture(event.pointerId);
+          track.classList.add('is-dragging');
+        }
+
+        history.push({ x: event.clientX, t: performance.now() });
+        if (history.length > 6) history.shift();
+
+        let left = grabLeft - dx;
+        const max = maxScroll();
+        if (left < 0) left = rubberband(left, track.clientWidth);
+        else if (left > max) left = max + rubberband(left - max, track.clientWidth);
+        track.scrollLeft = left;
+      });
+
+      const release = () => {
+        pressed = false;
+        // A plain click never became a drag: leave it entirely to the browser.
+        if (!dragging) return;
+        dragging = false;
+        track.classList.remove('is-dragging');
+
+        // Release velocity from the last ~120ms of samples, in scroll terms.
+        const now = performance.now();
+        const recent = history.filter((h) => now - h.t < 120);
+        const a = recent[0] ?? history[0];
+        const b = history[history.length - 1];
+        const dt = a && b ? (b.t - a.t) / 1000 : 0;
+        const velocity = dt > 0 ? -((b.x - a.x) / dt) : 0;
+
+        // Land where the gesture is going, then snap to the nearest stop.
+        const projected = track.scrollLeft + project(velocity);
+        let target = nearestTo(projected);
+        if (centered) {
+          // One big slide per view: a flick moves one, never skips a neighbour.
+          const from = current();
+          if (Math.abs(velocity) > 200 && target === from) target = from + (velocity > 0 ? 1 : -1);
+          target = Math.max(from - 1, Math.min(from + 1, target));
+        }
+
+        // Bounce only when the gesture itself carried momentum.
+        const flicked = Math.abs(velocity) > 400;
+        goTo(target, { velocity, damping: flicked ? 0.8 : 1 });
+        history = [];
+      };
+      track.addEventListener('pointerup', release);
+      track.addEventListener('pointercancel', release);
+      // Without capture a press can end outside the row.
+      window.addEventListener('pointerup', release);
+
+      // A drag is not a click on whatever ended up under the pointer.
+      track.addEventListener(
+        'click',
+        (event) => {
+          if (moved) {
+            event.preventDefault();
+            event.stopPropagation();
+            moved = false;
+          }
+        },
+        true
+      );
+
+      track.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowRight') next.click();
+        if (event.key === 'ArrowLeft') prev.click();
+      });
+
+      /* ── Auto-advance ──────────────────────────────────────────────────── */
+      const interval = Number(root.dataset.autoplay ?? 0);
+      if (interval > 0 && items.length > 1 && !reducedMotion()) {
+        let timer = 0;
+        let hovering = false;
+
+        const tick = () => {
+          // Never fight the user: skip while they hold, hover or focus it.
+          if (dragging || hovering || document.hidden || root.contains(document.activeElement)) return;
+          const at = current();
+          goTo(at >= items.length - 1 ? 0 : at + 1);
+        };
+        const start = () => {
+          window.clearInterval(timer);
+          timer = window.setInterval(tick, interval);
+        };
+
+        root.addEventListener('pointerenter', () => (hovering = true));
+        root.addEventListener('pointerleave', () => {
+          hovering = false;
+          start(); // a full interval after the pointer leaves, not a partial one
+        });
+        // Any manual move restarts the clock so it does not advance right after.
+        [prev, next, ...dots].forEach((el) => el.addEventListener('click', start));
+        track.addEventListener('pointerup', start);
+        // The carousel is torn down with the page on a client-side navigation.
+        document.addEventListener('astro:before-swap', () => window.clearInterval(timer), { once: true });
+
+        start();
+      }
+
+      update();
+      if (centered) requestAnimationFrame(() => (track.scrollLeft = targetLeft(0)));
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

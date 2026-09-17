@@ -29,16 +29,22 @@ import { getSettings, updateSettings } from '../src/server/repo/settings';
 import { uploadImage } from '../src/server/storage';
 import {
   ABOUT_BODY,
+  ACCENTS,
+  BANNER,
   CONTACT,
+  CTA,
   HERO,
   IMAGES,
   LINKS,
+  NEWSLETTER,
   PEOPLE,
+  PEOPLE_HEADING,
   PODBEAN_FEED,
   parseGuestFromTitle,
   SHOW_DESCRIPTION,
   SHOW_TITLE,
-  TAGLINE
+  TAGLINE,
+  VIDEOS_HEADING
 } from './lib/migrate-content';
 import { fetchFeed } from './lib/rss-import';
 
@@ -135,6 +141,25 @@ async function main() {
       teamHeading: 'The Team',
       guestsHeading: 'Recent Guests',
       aboutHeading: 'About The Show',
+      peopleHeading: PEOPLE_HEADING,
+      peopleIntro: 'Everyone who has been behind the microphone on the show.',
+      videosHeading: VIDEOS_HEADING,
+
+      newsletterHeading: NEWSLETTER.heading,
+      newsletterBody: NEWSLETTER.body,
+      newsletterButtonText: NEWSLETTER.buttonText,
+
+      ctaHeading: CTA.heading,
+      ctaBody: CTA.body,
+      ctaButtonText: CTA.buttonText,
+      ctaButtonUrl: CTA.buttonUrl,
+
+      ...ACCENTS,
+
+      bannerLabel: BANNER.label,
+      bannerText: BANNER.text,
+      bannerButtonText: BANNER.buttonText,
+      bannerButtonUrl: BANNER.buttonUrl,
 
       aboutTitle: 'About the show',
       aboutBody: ABOUT_BODY,

@@ -1,19 +1,23 @@
 ---
 import { Schema } from 'astro-seo-schema';
 
-import CreatorsAndGuests from '../../components/episode/CreatorsAndGuests.astro';
+import EpisodePlayer from '../../components/episode/EpisodePlayer';
 import FormattedDate from '../../components/FormattedDate';
-import FullPlayButton from '../../components/FullPlayButton';
-import PlayButton from '../../components/player/PlayButton';
+import LatestEpisodes from '../../components/home/LatestEpisodes.astro';
+import PersonCard from '../../components/people/PersonCard.astro';
+import Container from '../../components/site/Container.astro';
+import PlatformIcons from '../../components/site/PlatformIcons.astro';
+import SmartImage from '../../components/SmartImage.astro';
+import LiteYouTube from '../../components/video/LiteYouTube';
 import Layout from '../../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
-import { formatDuration } from '../../lib/format';
-import {
-  getAdjacentEpisodes,
-  getEpisodeBySlug
-} from '../../server/repo/episodes';
-import { listPeople } from '../../server/repo/people';
-import { getShowInfo } from '../../server/repo/settings';
+import { introFrom } from '../../lib/episode-intro';
+import { topicsFrom } from '../../lib/episode-topics';
+import { prettifyLinks } from '../../lib/prettify-links';
+import { youtubeId } from '../../lib/youtube';
+import { getEpisodeBySlug, getLatestEpisodes } from '../../server/repo/episodes';
+import { getPeopleByIds, listPeople } from '../../server/repo/people';
+import { getLinks, getShowInfo } from '../../server/repo/settings';
 import { dasherize } from '../../utils/dasherize';
 
 const { slug } = Astro.params;
@@ -29,50 +33,88 @@ if (episode.episodeSlug !== slug) {
   return Astro.redirect(`/episodes/${episode.episodeSlug}`, 301);
 }
 
-const [show, hosts, adjacent] = await Promise.all([
+const [show, hosts, showPlatforms, more, guestRows] = await Promise.all([
   getShowInfo(),
   listPeople('host'),
-  getAdjacentEpisodes(episode)
+  getLinks('platform'),
+  getLatestEpisodes(8, episode.id),
+  // Full rows for the bios; the list shape on `episode.guests` is kept lean.
+  getPeopleByIds(episode.guests.map((g) => g.id))
 ]);
 
-const canonicalURL = new URL(`/episodes/${episode.episodeSlug}`, Astro.site);
+const guests = episode.guests.map((guest) => guestRows.find((row) => row.id === guest.id) ?? guest);
 
-const credits = [
-  ...hosts.map((host) => ({
-    slug: host.slug,
-    name: host.name,
-    title: host.title,
-    imageUrl: host.imageUrl,
-    placeholder: host.placeholder,
-    isHost: true
-  })),
-  ...episode.guests.map((guest) => ({
-    slug: guest.slug,
-    name: guest.name,
-    title: guest.title,
-    imageUrl: guest.imageUrl,
-    placeholder: guest.placeholder,
-    isHost: false
-  }))
+// Host first, then guests — the row of colour cards under the player.
+const people = [
+  ...hosts.map((person) => ({ person, eyebrow: 'Show host' })),
+  ...guests.map((person) => ({ person, eyebrow: 'Guest' }))
 ];
 
-const playerEpisode = {
-  audio: episode.audio,
-  episodeNumber: episode.episodeNumber,
-  id: episode.id,
-  title: episode.title
-};
+// "About" cards: a guest's own bio, or — for the first guest without one — the
+// introduction the show notes open with.
+const intro = introFrom(episode.content);
+let introUsed = false;
+const aboutCards = guestRows.flatMap((guest) => {
+  if (guest.bio) return [{ name: guest.name, html: guest.bio }];
+  if (intro && !introUsed) {
+    introUsed = true;
+    return [{ name: guest.name, html: intro }];
+  }
+  return [];
+});
+
+const topics = topicsFrom(episode.content);
+
+const canonicalURL = new URL(`/episodes/${episode.episodeSlug}`, Astro.site);
 
 const title = episode.episodeNumber
   ? `${episode.title} — ${show.title} — Episode ${episode.episodeNumber}`
   : `${episode.title} — ${show.title}`;
 
-const externalLinks = [
-  { label: 'Spotify', url: episode.links.spotify },
-  { label: 'Apple Podcasts', url: episode.links.apple },
-  { label: 'YouTube', url: episode.links.youtube },
-  { label: 'Listen elsewhere', url: episode.links.other }
-].filter((link): link is { label: string; url: string } => Boolean(link.url));
+const videoId = youtubeId(episode.links.youtube);
+
+// "Guest Name, Title" under the headline.
+const guestLine = episode.guests
+  .map((g) => (g.title ? `${g.name}, ${g.title}` : g.name))
+  .join(' · ');
+
+// "with Guest and Host" for the inline player.
+const names = [...episode.guests.map((g) => g.name), ...hosts.map((h) => h.name)];
+const withLine =
+  names.length > 1
+    ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
+    : (names[0] ?? '');
+
+/*
+  The platform row on the hero: the episode's own links first (YouTube, Spotify,
+  Apple, other), falling back to the show-level link for a platform the episode
+  has no direct link for.
+*/
+const sameHost = (a: string, b: string) => {
+  try {
+    return new URL(a).hostname.replace(/^www\./, '') === new URL(b).hostname.replace(/^www\./, '');
+  } catch {
+    return false;
+  }
+};
+const key = (platform: string) => platform.toLowerCase().replace(/[^a-z]/g, '');
+const showLink = (name: string) => showPlatforms.find((p) => key(p.platform) === name);
+const heroPlatforms = [
+  { platform: 'youtube', label: 'YouTube', url: episode.links.youtube ?? showLink('youtube')?.url },
+  { platform: 'spotify', label: 'Spotify', url: episode.links.spotify ?? showLink('spotify')?.url },
+  { platform: 'apple', label: 'Apple Podcasts', url: episode.links.apple ?? showLink('apple')?.url },
+  ...showPlatforms
+    .filter((p) => !['youtube', 'spotify', 'apple'].includes(key(p.platform)))
+    .map((p) => ({ platform: p.platform, label: p.label, url: p.url })),
+  // A generic "listen elsewhere" link, unless it points at a platform already listed.
+  ...(episode.links.other && !showPlatforms.some((p) => sameHost(p.url, episode.links.other!))
+    ? [{ platform: 'link', label: 'Listen elsewhere', url: episode.links.other }]
+    : [])
+]
+  .filter((p): p is { platform: string; label: string; url: string } => Boolean(p.url))
+  .map((p, i) => ({ id: String(i), group: 'platform' as const, sortOrder: i, isVisible: true, ...p }));
+
+const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
@@ -82,6 +124,7 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
   description={episode.description}
   imageUrl={episode.episodeImage ?? show.image}
   title={title}
+  hideBreadcrumbs
 >
   <Schema
     slot="head"
@@ -91,15 +134,11 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
       name: episode.title,
       datePublished: new Date(episode.published).toISOString(),
       description: episode.description,
-      ...(episode.episodeNumber
-        ? { episodeNumber: Number(episode.episodeNumber) }
-        : {}),
+      ...(episode.episodeNumber ? { episodeNumber: Number(episode.episodeNumber) } : {}),
       url: canonicalURL.toString(),
       image: episode.episodeImage || show.image,
       ...(episode.duration
-        ? {
-            duration: `PT${Math.floor(episode.duration / 60)}M${episode.duration % 60}S`
-          }
+        ? { duration: `PT${Math.floor(episode.duration / 60)}M${episode.duration % 60}S` }
         : {}),
       ...(episode.audio.src
         ? {
@@ -125,100 +164,118 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
     content={new Date(episode.published).toISOString()}
   />
 
-  <div class="relative z-10 px-8 lg:px-18">
-    <div class="block lg:flex">
-      {
-        episode.audio.src && (
-          <div class="mt-4 mr-11 hidden h-14 w-14 shrink-0 lg:block">
-            <PlayButton client:only="preact" episode={playerEpisode} />
-          </div>
-        )
-      }
+  <!-- Hero: dark band, copy on the left, video or artwork on the right -->
+  <section class="episode-hero" aria-labelledby="episode-title">
+    <Container>
+      <div class="grid items-center gap-10 lg:grid-cols-12 lg:gap-14">
+        <div class="lg:col-span-6">
+          <p class="episode-hero-eyebrow">
+            <span>{show.title}</span>
+            <span class="opacity-50">|</span>
+            <FormattedDate date={new Date(episode.published)} />
+          </p>
 
-      <div class="overflow-hidden break-words">
-        <div class="flex flex-wrap items-center gap-3 text-sm">
-          <FormattedDate date={new Date(episode.published)} />
-          {episode.duration > 0 && <span>· {formatDuration(episode.duration)}</span>}
-          {episode.season && <span>· Season {episode.season}</span>}
+          <h1
+            id="episode-title"
+            class="episode-hero-title"
+            style={'view-transition-name: vt-' + dasherize(episode.title)}
+          >
+            {episode.title}
+          </h1>
+
+          {guestLine && <p class="episode-hero-guest">{guestLine}</p>}
+
+          {episode.description && <p class="episode-hero-copy">{episode.description}</p>}
+
+          <PlatformIcons platforms={heroPlatforms} showTitle={show.title} size="lg" dark class="mt-8" />
         </div>
 
-        <h1
-          class="text-light-text-heading mt-2 mb-4 text-2xl font-bold text-balance lg:mb-6 lg:text-5xl dark:text-white"
-          style={'view-transition-name: vt-' + dasherize(episode.title)}
-        >
-          {episode.episodeNumber && `${episode.episodeNumber}: `}{episode.title}
-        </h1>
-
-        {episode.description && <p class="mb-8 text-pretty lg:mb-12">{episode.description}</p>}
-
-        {
-          episode.audio.src && (
-            <div class="mb-8 block lg:hidden">
-              <FullPlayButton client:only="preact" episode={playerEpisode} />
-            </div>
-          )
-        }
-
-        {
-          externalLinks.length > 0 && (
-            <div class="mb-12 flex flex-wrap gap-6 text-sm">
-              {externalLinks.map((link) => (
-                <a
-                  class="animated-bottom-border text-light-text-heading font-bold after:mt-1 dark:text-white"
-                  href={link.url}
-                  rel="noopener noreferrer"
-                  target="_blank"
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-          )
-        }
-
-        <CreatorsAndGuests people={credits} />
-
-        {
-          episode.content && (
-            <>
-              <h2 class="section-heading-underlined mt-16 mb-8">Show Notes</h2>
-              <div class="cms-prose mb-5" set:html={episode.content} />
-            </>
-          )
-        }
-
-        <nav
-          class="dark:border-dark-border mt-16 flex flex-col gap-4 border-t pt-8 pb-16 text-sm sm:flex-row sm:justify-between"
-          aria-label="More episodes"
-        >
+        <div class="lg:col-span-6">
           {
-            adjacent.older ? (
-              <a
-                class="text-light-text-heading font-bold underline hover:no-underline dark:text-white"
-                href={`/episodes/${adjacent.older.slug}`}
-                rel="prev"
-              >
-                ← {adjacent.older.title}
-              </a>
+            videoId ? (
+              <LiteYouTube client:load videoId={videoId} title={episode.title} />
             ) : (
-              <span />
+              <SmartImage
+                class="mx-auto aspect-square w-full max-w-md rounded-[var(--radius-card)] object-cover shadow-2xl lg:max-w-none"
+                src={episode.episodeImage ?? show.image}
+                alt=""
+                width={560}
+                height={560}
+                sizes="(min-width: 1024px) 560px, 90vw"
+                loading="eager"
+                fetchpriority="high"
+              />
             )
           }
-          {
-            adjacent.newer ? (
-              <a
-                class="text-light-text-heading text-right font-bold underline hover:no-underline dark:text-white"
-                href={`/episodes/${adjacent.newer.slug}`}
-                rel="next"
-              >
-                {adjacent.newer.title} →
-              </a>
-            ) : (
-              <span />
-            )
-          }
-        </nav>
+        </div>
       </div>
-    </div>
-  </div>
+    </Container>
+  </section>
+
+  <Container class="py-10 lg:py-14">
+    {
+      episode.audio.src && (
+        <EpisodePlayer
+          client:load
+          episode={{
+            id: episode.id,
+            title: episode.title,
+            episodeNumber: episode.episodeNumber,
+            audio: episode.audio,
+            duration: episode.duration
+          }}
+          subtitle={withLine ? `${episode.title} — with ${withLine}` : undefined}
+        />
+      )
+    }
+
+    {
+      people.length > 0 && (
+        <section class="mt-12 grid gap-6 md:grid-cols-2 lg:mt-16 lg:gap-7" aria-label="Host and guests">
+          {people.map(({ person, eyebrow }, index) => (
+            <PersonCard person={person} eyebrow={eyebrow} index={index + 1} />
+          ))}
+        </section>
+      )
+    }
+
+    {
+      aboutCards.length > 0 && (
+        <section class="mt-8 grid gap-6 md:grid-cols-2 lg:gap-7" aria-label="About the guests">
+          {aboutCards.map((card, index) => (
+            <article
+              class:list={['about-card', aboutCards.length === 1 && 'md:col-span-2']}
+              style={`--card-accent: var(--brand-accent-${((index + 1) % 4) + 1})`}
+            >
+              <h2 class="section-heading">About {firstName(card.name)}</h2>
+              <div class="cms-prose about-card-body mt-4" set:html={card.html} />
+            </article>
+          ))}
+        </section>
+      )
+    }
+
+    {
+      episode.content && (
+        <section class="mt-12 grid items-start gap-6 lg:mt-16 lg:grid-cols-12 lg:gap-8" aria-label="Show notes">
+          {topics.length > 0 && (
+            <aside class="topics-card lg:col-span-4">
+              <h2 class="topics-card-heading">In this episode:</h2>
+              <ul>
+                {topics.map((topic) => (
+                  <li>{topic}</li>
+                ))}
+              </ul>
+            </aside>
+          )}
+          <div class:list={['notes-panel', topics.length > 0 ? 'lg:col-span-8' : 'lg:col-span-12']} tabindex="0">
+            <h2 class="notes-panel-heading">{episode.title}</h2>
+            <div class="cms-prose show-notes-body" set:html={prettifyLinks(episode.content)} />
+          </div>
+        </section>
+      )
+    }
+  </Container>
+
+  {more.length > 0 && <LatestEpisodes episodes={more} show={show} heading="Latest episodes" id="more" />}
 </Layout>

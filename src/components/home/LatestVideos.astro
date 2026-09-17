@@ -1,0 +1,27 @@
+---
+import type { Episode } from '../../lib/types';
+import { youtubeId } from '../../lib/youtube';
+import Carousel from '../site/Carousel.astro';
+import Section from '../site/Section.astro';
+import VideoCard from '../video/VideoCard.astro';
+
+export interface Props {
+  episodes: Episode[];
+  heading: string;
+}
+
+const { episodes, heading } = Astro.props;
+const withVideo = episodes.filter((e) => youtubeId(e.links.youtube));
+---
+
+{
+  withVideo.length > 0 && (
+    <Section id="videos" heading={heading} moreHref="/videos" moreLabel="See all videos">
+      <Carousel label={heading} arrows="below" itemClass="w-[85vw] sm:w-96 lg:w-[400px]">
+        {withVideo.map((episode) => (
+          <VideoCard episode={episode} />
+        ))}
+      </Carousel>
+    </Section>
+  )
+}

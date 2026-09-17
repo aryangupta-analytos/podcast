@@ -1,9 +1,8 @@
+@import './theme.css';
 @import './tailwind.css';
 @import './gradient-icon.css';
 @import './buttons.css';
 @import './search-icon.css';
-
-@import 'atropos/css';
 
 /* Site-specific additions (see VENDORED.md). Imported here rather than as a
    separate stylesheet so its `@apply` rules resolve against the theme. */
@@ -13,70 +12,36 @@
   navigation: auto;
 }
 
-main:has(+ * + #audio-player .player) {
-  @media (min-width: 1024px) {
-    @apply mb-28;
+/* Keep the page's last content clear of the fixed audio player. */
+body:has(#audio-player .player) {
+  padding-bottom: 7rem;
+  @media (max-width: 767px) {
+    padding-bottom: 9rem;
   }
 }
 
 html {
-  color-scheme: light dark;
+  color-scheme: dark;
+  background-color: var(--brand-ink);
 }
 
 html,
 .custom-scrollbar {
-  scrollbar-color: var(--color-light-input-border) transparent;
-
-  @media (prefers-color-scheme: dark) {
-    scrollbar-color: var(--color-dark-input-border) transparent;
-  }
-}
-
-footer:has(+ #audio-player .player) {
-  @media (max-width: 1024px) {
-    @apply mb-40;
-  }
-}
-
-[aria-label='EpisodeList'] li {
-  > div {
-    content-visibility: auto;
-    contain-intrinsic-block-size: auto 400px;
-  }
-
-  @media (width >= 1024px) {
-    & h2 > a {
-      animation: toggle-vt-names linear both;
-      animation-timeline: view();
-    }
-  }
-}
-
-@keyframes toggle-vt-names {
-  entry 0% {
-    --should-vt: none;
-  }
-  entry 1%,
-  exit 99% {
-    --should-vt: var(--vt-name);
-  }
-  exit 100% {
-    --should-vt: none;
-  }
+  scrollbar-color: var(--brand-surface-2) transparent;
 }
 
 .animated-bottom-border {
-  @apply dark:border-dark-border border-b after:block after:h-[1px] after:w-0 after:bg-gradient-to-r after:from-[#C6B2FF] after:to-[#8D67FF] after:transition-all after:duration-500 after:ease-in-out hover:after:w-full dark:after:from-[#43C9F5] dark:after:to-[#B4EDFF];
+  @apply border-line border-b after:block after:h-[1px] after:w-0 after:bg-gradient-to-r after:from-primary after:to-accent-4 after:transition-all after:duration-500 after:ease-in-out hover:after:w-full;
 }
 
 .input {
-  @apply border-light-input-border bg-light-input-bg focus:border-light-input-border-focused dark:border-dark-input-border dark:bg-dark-input-bg dark:focus:border-dark-input-border-focused rounded border p-4 !ring-0 transition-colors !outline-none;
+  @apply border-line bg-surface-2 text-heading placeholder:text-text-muted focus:border-primary rounded-xl border p-4 !ring-0 transition-colors !outline-none;
 }
 
 @utility section-heading {
-  @apply text-xs font-bold tracking-wide uppercase;
+  @apply text-xs font-bold tracking-[0.14em] uppercase;
 }
 
 @utility section-heading-underlined {
-  @apply section-heading dark:border-dark-border border-b pb-4;
+  @apply section-heading border-line border-b pb-4;
 }

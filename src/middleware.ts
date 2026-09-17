@@ -18,7 +18,12 @@ const PUBLIC_ADMIN_PATHS = new Set(['/admin/login', '/api/admin/login']);
 function applySecurityHeaders(headers: Headers, isAdmin: boolean): void {
   headers.set('X-Content-Type-Options', 'nosniff');
   headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  headers.set('X-Frame-Options', 'DENY');
+  // SAMEORIGIN rather than DENY: in development Astro's ClientRouter loads the
+  // next page in a hidden same-origin iframe whenever it contains a
+  // `client:only` island (the audio player), and DENY blocks that frame, so
+  // every client-side navigation hangs and falls back to a full reload.
+  // SAMEORIGIN still stops other sites framing the site.
+  headers.set('X-Frame-Options', 'SAMEORIGIN');
   headers.set(
     'Permissions-Policy',
     'camera=(), microphone=(), geolocation=(), interest-cohort=()'

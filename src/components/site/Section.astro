@@ -1,0 +1,90 @@
+---
+import Container from './Container.astro';
+
+export interface Props {
+  id?: string;
+  /** Small uppercase label above the heading. */
+  eyebrow?: string;
+  heading?: string;
+  /** Rendered to the right of the heading — usually a "See all" link. */
+  moreHref?: string;
+  moreLabel?: string;
+  /**
+   * `ink` is the page ground; `surface` a raised panel; `accent-N` one of the
+   * owner-configurable colour blocks. Coloured tones are rendered as a rounded
+   * band inside the container rather than edge to edge, matching the reference
+   * layout's card-like blocks.
+   */
+  tone?: 'ink' | 'surface' | 'accent-1' | 'accent-2' | 'accent-3' | 'accent-4';
+  class?: string;
+  /** Extra classes on the inner band when `tone` is not `ink`. */
+  bandClass?: string;
+}
+
+const {
+  id,
+  eyebrow,
+  heading,
+  moreHref,
+  moreLabel = 'See all',
+  tone = 'ink',
+  class: className = '',
+  bandClass = ''
+} = Astro.props;
+
+const headingId = id ? `${id}-heading` : undefined;
+const banded = tone !== 'ink';
+---
+
+<section
+  id={id}
+  class:list={['py-10 lg:py-14', className]}
+  aria-labelledby={heading ? headingId : undefined}
+>
+  <Container>
+    <div
+      class:list={[
+        banded && ['band', `band-${tone}`, 'px-6 py-10 sm:px-10 lg:px-14 lg:py-16', bandClass]
+      ]}
+    >
+      {
+        (heading || eyebrow) && (
+          <div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              {eyebrow && <p class="section-heading mb-2 opacity-80">{eyebrow}</p>}
+              {heading && (
+                <h2 id={headingId} class="section-heading text-sm">
+                  {heading}
+                </h2>
+              )}
+            </div>
+            {moreHref && (
+              <a
+                class:list={[
+                  'inline-flex items-center gap-1 text-sm font-bold hover:underline',
+                  banded ? 'on-accent' : 'text-primary'
+                ]}
+                href={moreHref}
+              >
+                {moreLabel}
+                <svg
+                  class="h-4 w-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M9 6l6 6-6 6" />
+                </svg>
+              </a>
+            )}
+          </div>
+        )
+      }
+      <slot />
+    </div>
+  </Container>
+</section>

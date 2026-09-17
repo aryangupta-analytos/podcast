@@ -1,71 +1,38 @@
 ---
-import Avatar from '../../components/Avatar.astro';
+import PeopleDirectory from '../../components/people/PeopleDirectory.astro';
+import Container from '../../components/site/Container.astro';
 import Layout from '../../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
 import { listPeople, listRecentGuests } from '../../server/repo/people';
-import { getShowInfo } from '../../server/repo/settings';
+import { getSettings, getShowInfo } from '../../server/repo/settings';
 
-const [show, hosts, team, guests] = await Promise.all([
+const [settings, show, hosts, team, guests] = await Promise.all([
+  getSettings(),
   getShowInfo(),
   listPeople('host'),
   listPeople('team'),
   listRecentGuests(200)
 ]);
 
-const GROUPS = [
-  { id: 'hosts', title: 'Hosts', people: hosts },
-  { id: 'team', title: 'The team', people: team },
-  { id: 'guests', title: 'Guests', people: guests }
-].filter((group) => group.people.length > 0);
+const heading = settings.peopleHeading || 'Guests & Hosts';
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
 
 <Layout
-  title={`People — ${show.title}`}
+  title={`${heading} — ${show.title}`}
   description={`The hosts, team and guests of ${show.title}.`}
+  hideBreadcrumbs
 >
-  <div class="relative z-10 px-8 pb-16 lg:px-18">
-    <h1
-      class="text-light-text-heading mb-4 text-2xl font-bold lg:mb-6 lg:text-5xl dark:text-white"
-    >
-      People
-    </h1>
+  <section class="page-hero-band about-hero">
+    <Container class="text-center">
+      <p class="section-heading text-primary">People</p>
+      <h1 class="display about-hero-title">{heading}</h1>
+      {settings.peopleIntro && <p class="about-hero-tagline people-hero-lede">{settings.peopleIntro}</p>}
+    </Container>
+  </section>
 
-    <p class="mb-4 max-w-2xl">
-      Everyone who has been behind the microphone on {show.title}.
-    </p>
-
-    {
-      GROUPS.map((group) => (
-        <section aria-labelledby={group.id}>
-          <h2 id={group.id} class="section-heading-underlined mt-12 mb-8">
-            {group.title}
-          </h2>
-
-          <ul class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
-            {group.people.map((person) => (
-              <li>
-                <a class="person-card block" href={`/people/${person.slug}`}>
-                  <Avatar
-                    class="mb-3 aspect-square w-full rounded-xl object-cover"
-                    name={person.name}
-                    imageUrl={person.imageUrl}
-                    placeholder={person.placeholder as 'monogram'}
-                    size={200}
-                  />
-                  <p class="text-light-text-heading text-sm font-bold dark:text-white">
-                    {person.name}
-                  </p>
-                  {person.title && (
-                    <p class="text-xs opacity-80">{person.title}</p>
-                  )}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ))
-    }
-  </div>
+  <Container class="pb-20 lg:pb-28">
+    <PeopleDirectory hosts={hosts} team={team} guests={guests} />
+  </Container>
 </Layout>

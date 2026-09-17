@@ -50,6 +50,41 @@ export const ABOUT_BODY = `<p>The quarterback may get the glory for the win, but
 <p>On the Silicon Valley Tech Podcast, we talk to the real heroes that make businesses run. Let's together find out what goes on "behind the scenes" of a company: how decisions are made and executed to create the thriving businesses of tomorrow.</p>
 <p><em>"Nibble BITES. To Go Stories."</em></p>`;
 
+export const PEOPLE_HEADING = 'Guests & Hosts';
+export const VIDEOS_HEADING = 'Latest Videos';
+
+export const NEWSLETTER = {
+  heading: 'New episodes, straight to your inbox',
+  body:
+    'Subscribe for a note whenever a new episode drops — plus the best moments ' +
+    'and lessons from our guests.',
+  buttonText: 'Subscribe'
+};
+
+export const CTA = {
+  heading: 'Real operators. Real lessons.',
+  body:
+    'The stories behind the decisions that build Silicon Valley companies — ' +
+    'and the people who make them.',
+  buttonText: 'Learn more about the show',
+  buttonUrl: '/about'
+};
+
+export const BANNER = {
+  label: 'New on the show:',
+  text: 'Hear the latest conversations with the people who make Silicon Valley run.',
+  buttonText: 'Listen now',
+  buttonUrl: '/episodes'
+};
+
+/** Brand accents. Must match the defaults in src/styles/theme.css. */
+export const ACCENTS = {
+  accent1: '#ffd400',
+  accent2: '#8f7bff',
+  accent3: '#ff6a3d',
+  accent4: '#23c4b1'
+};
+
 export const CONTACT = {
   email: 'info@svtechpodcast.com',
   phone: '(650) 701-3468',

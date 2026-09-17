@@ -1,5 +1,6 @@
-import { and, asc, count, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 
+import type { Episode } from '../../lib/types';
 import { getDb } from '../db';
 import {
   episodePeople,
@@ -9,6 +10,7 @@ import {
   type Person
 } from '../db/schema';
 import { slugify, uniqueSlug } from '../slug';
+import { guestsFor, toEpisode } from './episodes';
 
 export type PersonKind = 'host' | 'team' | 'guest';
 
@@ -228,16 +230,9 @@ export async function getPersonEpisodeCounts(): Promise<Map<string, number>> {
 }
 
 /** Live episodes a guest appeared on, for their public page. */
-export async function getEpisodesForPerson(personId: string) {
-  return getDb()
-    .select({
-      slug: episodes.slug,
-      title: episodes.title,
-      publishDate: episodes.publishDate,
-      thumbnailUrl: episodes.thumbnailUrl,
-      episodeNumber: episodes.episodeNumber,
-      description: episodes.description
-    })
+export async function getEpisodesForPerson(personId: string): Promise<Episode[]> {
+  const rows = await getDb()
+    .select({ episode: episodes })
     .from(episodePeople)
     .innerJoin(episodes, eq(episodes.id, episodePeople.episodeId))
     .where(
@@ -248,4 +243,13 @@ export async function getEpisodesForPerson(personId: string) {
       )
     )
     .orderBy(desc(episodes.publishDate));
+
+  const guests = await guestsFor(rows.map((r) => r.episode.id));
+  return rows.map((r) => toEpisode(r.episode, guests.get(r.episode.id) ?? []));
+}
+
+/** Full rows (including bios) for a set of people, in one query. */
+export async function getPeopleByIds(ids: string[]): Promise<Person[]> {
+  if (ids.length === 0) return [];
+  return getDb().select().from(people).where(inArray(people.id, ids));
 }

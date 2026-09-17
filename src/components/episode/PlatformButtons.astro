@@ -1,0 +1,44 @@
+---
+import type { Episode } from '../../lib/types';
+import type { LinkRow } from '../../server/db/schema';
+
+export interface Props {
+  episode: Episode;
+  /** Show-level platform links, used when the episode has no link of its own. */
+  platforms: LinkRow[];
+  class?: string;
+}
+
+const { episode, platforms, class: className = '' } = Astro.props;
+
+const key = (platform: string) =>
+  platform.toLowerCase().replace(/[^a-z]/g, '-').replace(/-+/g, '-');
+
+const showLink = (name: string) => platforms.find((p) => key(p.platform) === name)?.url;
+
+const links = [
+  { label: 'YouTube', url: episode.links.youtube ?? showLink('youtube') },
+  { label: 'Spotify', url: episode.links.spotify ?? showLink('spotify') },
+  { label: 'Apple Podcasts', url: episode.links.apple ?? showLink('apple') },
+  { label: 'Listen elsewhere', url: episode.links.other }
+].filter((link): link is { label: string; url: string } => Boolean(link.url));
+---
+
+{
+  links.length > 0 && (
+    <ul class:list={['flex flex-wrap gap-3', className]} aria-label="Listen on">
+      {links.map((link) => (
+        <li>
+          <a
+            class="pill pill-ghost px-5 py-2.5"
+            href={link.url}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            {link.label}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}
