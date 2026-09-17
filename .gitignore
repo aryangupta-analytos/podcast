@@ -36,7 +36,7 @@ src/data/collections.generated.ts
 
 # Project-specific
 .reference/
-storage/
+/storage/
 dev*.log
 prod*.log
 drizzle/meta/_journal.json.bak
