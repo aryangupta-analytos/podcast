@@ -21,11 +21,14 @@ import {
   episodes,
   links,
   mediaAssets,
-  people
+  people,
+  series
 } from '../src/server/db/schema';
 import { createPerson, findOrCreateGuest, updatePerson } from '../src/server/repo/people';
 import { createEpisode, updateEpisode } from '../src/server/repo/episodes';
 import { getSettings, updateSettings } from '../src/server/repo/settings';
+import { createSeries } from '../src/server/repo/series';
+import { sanitizeHtml } from '../src/server/sanitize';
 import { uploadImage } from '../src/server/storage';
 import {
   ABOUT_BODY,
@@ -38,6 +41,7 @@ import {
   LINKS,
   NEWSLETTER,
   PEOPLE,
+  SERIES,
   PEOPLE_HEADING,
   PODBEAN_FEED,
   parseGuestFromTitle,
@@ -242,6 +246,23 @@ async function main() {
   }
 
   /* ── Episodes ────────────────────────────────────────────────────────── */
+
+  /* ── Series ──────────────────────────────────────────────────────────── */
+
+  step('Seeding series');
+  for (const item of SERIES) {
+    const found = await db
+      .select({ id: series.id })
+      .from(series)
+      .where(eq(series.name, item.name))
+      .limit(1);
+    if (found[0]) {
+      log(`· ${item.name} already present`);
+      continue;
+    }
+    await createSeries({ ...item, description: sanitizeHtml(item.description) });
+    log(`✓ ${item.name}`);
+  }
 
   step(`Importing episodes from ${PODBEAN_FEED}`);
   const feed = await fetchFeed(PODBEAN_FEED);

@@ -54,7 +54,8 @@ export function toEpisode(row: EpisodeRow, guests: EpisodeGuest[] = []): Episode
       other: row.otherUrl ?? undefined
     },
     status: row.status,
-    isFeatured: row.isFeatured
+    isFeatured: row.isFeatured,
+    seriesId: row.seriesId ?? undefined
   };
 }
 
@@ -436,6 +437,7 @@ export interface EpisodeInput {
   status?: 'draft' | 'published' | 'unpublished';
   isFeatured?: boolean;
   guestIds?: string[];
+  seriesId?: string | null;
 }
 
 export async function createEpisode(input: EpisodeInput): Promise<Episode> {
@@ -463,7 +465,8 @@ export async function createEpisode(input: EpisodeInput): Promise<Episode> {
     appleUrl: input.appleUrl ?? null,
     otherUrl: input.otherUrl ?? null,
     status: input.status ?? 'draft',
-    isFeatured: input.isFeatured ?? false
+    isFeatured: input.isFeatured ?? false,
+    seriesId: input.seriesId ?? null
   };
 
   const [row] = await db.insert(episodes).values(values).returning();
@@ -501,6 +504,7 @@ export async function updateEpisode(
   if (input.otherUrl !== undefined) patch.otherUrl = input.otherUrl;
   if (input.status !== undefined) patch.status = input.status;
   if (input.isFeatured !== undefined) patch.isFeatured = input.isFeatured;
+  if (input.seriesId !== undefined) patch.seriesId = input.seriesId;
 
   // Changing the slug breaks existing links, so it only changes when the owner
   // edits the field explicitly — never as a side effect of retitling.

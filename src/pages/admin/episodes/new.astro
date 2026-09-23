@@ -5,6 +5,7 @@ import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { createEpisode } from '../../../server/repo/episodes';
 import { listPeople } from '../../../server/repo/people';
 import { parseEpisodeForm } from '../../../server/forms/episode';
+import { listSeries } from '../../../server/repo/series';
 
 const user = Astro.locals.user!;
 let errors: string[] = [];
@@ -49,5 +50,5 @@ const guestOptions = await listPeople('guest', { includeHidden: true });
   user={user}
   back={{ label: 'All episodes', href: '/admin/episodes' }}
 >
-  <EpisodeForm guestOptions={guestOptions} errors={errors} />
+  <EpisodeForm seriesOptions={await listSeries({ includeHidden: true })} guestOptions={guestOptions} errors={errors} />
 </AdminLayout>

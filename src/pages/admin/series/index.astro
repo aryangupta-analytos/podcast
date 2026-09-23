@@ -1,0 +1,110 @@
+---
+import { readFormData } from '../../../server/read-form';
+import Icon from '../../../components/admin/Icon.astro';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import {
+  countEpisodesBySeries,
+  createSeries,
+  deleteSeries,
+  listSeries,
+  reorderSeries,
+  updateSeries
+} from '../../../server/repo/series';
+
+const user = Astro.locals.user!;
+let error = '';
+
+if (Astro.request.method === 'POST') {
+  const form = await readFormData(Astro.request);
+  const id = String(form.get('id') ?? '');
+  const action = String(form.get('action') ?? '');
+
+  if (action === 'create') {
+    const name = String(form.get('name') ?? '').trim();
+    if (!name) error = 'Give the series a name.';
+    else {
+      const created = await createSeries({ name, tagline: String(form.get('tagline') ?? '') });
+      return Astro.redirect(`/admin/series/${created.id}?saved=${encodeURIComponent(`${created.name} added — now write its pitch.`)}`, 303);
+    }
+  } else if (id) {
+    if (action === 'up' || action === 'down') await reorderSeries(id, action);
+    else if (action === 'hide') await updateSeries(id, { isVisible: false });
+    else if (action === 'show') await updateSeries(id, { isVisible: true });
+    else if (action === 'delete') await deleteSeries(id);
+  }
+
+  if (!error) return Astro.redirect(`/admin/series?saved=${encodeURIComponent('Updated.')}`, 303);
+}
+
+const [all, counts] = await Promise.all([listSeries({ includeHidden: true }), countEpisodesBySeries()]);
+---
+
+<AdminLayout title="Series" description="Themed runs of episodes — announce one before its first episode to start inviting guests." user={user}>
+  {error && (
+    <p class="admin-flash is-error" role="alert">
+      <Icon name="close" size={16} />
+      <span>{error}</span>
+    </p>
+  )}
+
+  <div class="admin-card">
+    <h2><Icon name="mic" size={17} /> Series</h2>
+    <p class="hint">Shown on the homepage and at /series. Assign episodes to a series on the episode form.</p>
+
+    {all.length === 0 ? (
+      <p class="admin-empty" style="padding:22px">No series yet — add the first one below.</p>
+    ) : (
+      <div class="admin-table-wrap" style="margin-bottom:18px">
+        <table class="admin-table">
+          <thead>
+            <tr><th>Order</th><th>Series</th><th>Episodes</th><th>Status</th><th></th></tr>
+          </thead>
+          <tbody>
+            {all.map((s, i) => (
+              <tr>
+                <td class="row-actions" style="width:90px">
+                  <form method="POST"><input type="hidden" name="id" value={s.id} /><input type="hidden" name="action" value="up" /><button class="btn-admin is-small" type="submit" disabled={i === 0} aria-label="Move up">↑</button></form>
+                  <form method="POST"><input type="hidden" name="id" value={s.id} /><input type="hidden" name="action" value="down" /><button class="btn-admin is-small" type="submit" disabled={i === all.length - 1} aria-label="Move down">↓</button></form>
+                </td>
+                <td class="title-cell">
+                  <a href={`/admin/series/${s.id}`}>{s.name}</a>
+                  <span class="meta">{s.tagline || `/series/${s.slug}`}</span>
+                </td>
+                <td>{counts.get(s.id) ?? 0}</td>
+                <td><span class:list={['badge', s.isVisible ? 'published' : 'draft']}>{s.isVisible ? 'visible' : 'hidden'}</span></td>
+                <td class="row-actions">
+                  <a class="btn-admin is-small" href={`/admin/series/${s.id}`}><Icon name="edit" size={14} /> Edit</a>
+                  <form method="POST">
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="action" value={s.isVisible ? 'hide' : 'show'} />
+                    <button class="btn-admin is-small" type="submit"><Icon name={s.isVisible ? 'eye-off' : 'eye'} size={14} /> {s.isVisible ? 'Hide' : 'Show'}</button>
+                  </form>
+                  <form method="POST" onsubmit="return confirm('Remove this series? Its episodes stay, just without a series.')">
+                    <input type="hidden" name="id" value={s.id} />
+                    <input type="hidden" name="action" value="delete" />
+                    <button class="btn-admin is-small is-danger" type="submit"><Icon name="trash" size={14} /> Remove</button>
+                  </form>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <form method="POST" class="admin-row" style="align-items:end">
+      <input type="hidden" name="action" value="create" />
+      <div class="admin-field">
+        <label for="name">New series name</label>
+        <input id="name" name="name" type="text" placeholder="e.g. Manufacturing" required />
+      </div>
+      <div class="admin-field">
+        <label for="tagline">One-line pitch</label>
+        <input id="tagline" name="tagline" type="text" placeholder="Optional — you can write it next" />
+      </div>
+      <div class="admin-field">
+        <button class="btn-admin is-primary" type="submit"><Icon name="plus" size={16} /> Add series</button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>

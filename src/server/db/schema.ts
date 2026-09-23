@@ -179,6 +179,8 @@ export const episodes = pgTable(
     isFeatured: boolean('is_featured').notNull().default(false),
     /** Manual ordering override for the archive; null = order by publishDate. */
     sortOrder: integer('sort_order'),
+    /** The series this episode belongs to, if any. */
+    seriesId: uuid('series_id').references(() => series.id, { onDelete: 'set null' }),
 
     createdAt,
     updatedAt
@@ -196,6 +198,31 @@ export const episodes = pgTable(
 );
 
 /** Links guests (and per-episode hosts) to an episode, in display order. */
+/**
+ * A themed run of episodes — "Technology", "Manufacturing" — announced on the
+ * site before its first episode exists, so guests can be invited to it.
+ */
+export const series = pgTable('series', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  /** One line under the name. */
+  tagline: text('tagline').notNull().default(''),
+  /** Longer pitch on the series page. Sanitized HTML. */
+  description: text('description').notNull().default(''),
+  /** Which of the four brand accents colours its cards (1–4). */
+  accent: integer('accent').notNull().default(1),
+  imageUrl: text('image_url'),
+  /** Label on the "be a guest" button; empty hides the invitation. */
+  ctaText: text('cta_text').notNull().default('Be a guest on this series'),
+  isVisible: boolean('is_visible').notNull().default(true),
+  sortOrder: integer('sort_order').notNull().default(0),
+  createdAt,
+  updatedAt
+});
+
+export type Series = typeof series.$inferSelect;
+
 export const episodePeople = pgTable(
   'episode_people',
   {
@@ -267,6 +294,10 @@ export const siteSettings = pgTable('site_settings', {
   videosHeading: text('videos_heading').notNull().default('Latest Videos'),
   /** How many videos the homepage lists. */
   latestVideoCount: integer('latest_video_count').notNull().default(4),
+
+  // Series band on the homepage
+  showSeries: boolean('show_series').notNull().default(true),
+  seriesHeading: text('series_heading').notNull().default('Our series'),
 
   // Copy at the top of the Episodes and People pages
   episodesHeading: text('episodes_heading').notNull().default('Episodes'),

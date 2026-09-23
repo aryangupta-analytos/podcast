@@ -1,0 +1,27 @@
+---
+import type { Series } from '../../server/db/schema';
+import SeriesCard from '../series/SeriesCard.astro';
+import Section from '../site/Section.astro';
+
+export interface Props {
+  series: Series[];
+  counts: Map<string, number>;
+  heading: string;
+}
+
+const { series, counts, heading } = Astro.props;
+---
+
+{
+  series.length > 0 && (
+    <Section id="series" heading={heading} moreHref="/series" moreLabel="About the series">
+      <ul class="series-grid" role="list">
+        {series.map((item) => (
+          <li>
+            <SeriesCard series={item} count={counts.get(item.id) ?? 0} />
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}

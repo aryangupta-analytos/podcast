@@ -3,6 +3,7 @@ import { readFormData } from '../../../server/read-form';
 import EpisodeForm from '../../../components/admin/EpisodeForm.astro';
 import AdminLayout from '../../../layouts/AdminLayout.astro';
 import { parseEpisodeForm } from '../../../server/forms/episode';
+import { listSeries } from '../../../server/repo/series';
 import {
   deleteEpisode,
   getEpisodeById,
@@ -74,7 +75,7 @@ const guestOptions = await listPeople('guest', { includeHidden: true });
   user={user}
   back={{ label: 'All episodes', href: '/admin/episodes' }}
 >
-  <EpisodeForm episode={episode} guestOptions={guestOptions} errors={errors} />
+  <EpisodeForm seriesOptions={await listSeries({ includeHidden: true })} episode={episode} guestOptions={guestOptions} errors={errors} />
 
   <div class="admin-card" style="border-color: var(--ad-danger)">
     <h2>Delete this episode</h2>

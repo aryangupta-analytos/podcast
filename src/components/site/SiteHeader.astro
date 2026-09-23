@@ -23,6 +23,7 @@ const { pathname } = Astro.url;
 const builtIn = [
   { label: 'Home', href: '/' },
   { label: 'Episodes', href: '/episodes' },
+  { label: 'Series', href: '/series' },
   ...(hasVideos ? [{ label: 'Videos', href: '/videos' }] : []),
   { label: 'People', href: '/people' },
   { label: 'About', href: '/about' },

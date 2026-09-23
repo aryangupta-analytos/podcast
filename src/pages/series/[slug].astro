@@ -1,0 +1,113 @@
+---
+import EpisodeCard from '../../components/episode/EpisodeCard.astro';
+import SmartImage from '../../components/SmartImage.astro';
+import Container from '../../components/site/Container.astro';
+import Layout from '../../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { getEpisodesForSeries, getSeriesBySlug, listSeries } from '../../server/repo/series';
+import { getShowInfo } from '../../server/repo/settings';
+
+const { slug } = Astro.params;
+const series = slug ? await getSeriesBySlug(slug) : null;
+
+if (!series || !series.isVisible) {
+  return new Response(null, { status: 404, statusText: 'Not Found' });
+}
+
+const [show, episodes, others] = await Promise.all([
+  getShowInfo(),
+  getEpisodesForSeries(series.id),
+  listSeries()
+]);
+const otherSeries = others.filter((s) => s.id !== series.id);
+const invite = `/contact?series=${encodeURIComponent(series.slug)}`;
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout
+  title={`${series.name} series — ${show.title}`}
+  description={series.tagline || series.description.replace(/<[^>]+>/g, '').slice(0, 300)}
+  imageUrl={series.imageUrl ?? undefined}
+  hideBreadcrumbs
+>
+  <section class="series-hero" style={`--card-accent: var(--brand-accent-${series.accent})`}>
+    <Container>
+      <div class="series-hero-card">
+        <div class="series-hero-copy">
+          <p class="section-heading">A {show.title} series</p>
+          <h1 class="series-hero-title">{series.name}</h1>
+          {series.tagline && <p class="series-hero-tagline">{series.tagline}</p>}
+          <p class="series-card-status">
+            {episodes.length === 0
+              ? 'First episodes coming soon'
+              : `${episodes.length} episode${episodes.length === 1 ? '' : 's'} so far`}
+          </p>
+          {
+            series.ctaText && (
+              <a class="pill pill-ink mt-6" href={invite}>
+                {series.ctaText}
+              </a>
+            )
+          }
+        </div>
+        {
+          series.imageUrl && (
+            <div class="series-hero-media">
+              <SmartImage src={series.imageUrl} alt="" width={520} height={520} sizes="(min-width: 1024px) 420px, 80vw" loading="eager" />
+            </div>
+          )
+        }
+      </div>
+    </Container>
+  </section>
+
+  <Container class="py-12 lg:py-16">
+    {
+      series.description && (
+        <section class="max-w-3xl" aria-label="About this series">
+          <h2 class="section-heading text-heading mb-5">About the series</h2>
+          <div class="cms-prose" set:html={series.description} />
+        </section>
+      )
+    }
+
+    <section class="mt-14" aria-labelledby="series-episodes">
+      <h2 id="series-episodes" class="section-heading-underlined mb-8">Episodes in this series</h2>
+      {
+        episodes.length === 0 ? (
+          <div class="series-empty">
+            <p class="text-heading text-lg font-semibold">We are lining up the first guests now.</p>
+            <p class="text-text mt-2">
+              Know someone with a story from this world, or have one yourself? We would love to hear it.
+            </p>
+            <a class="pill pill-primary mt-5" href={invite}>{series.ctaText || 'Get in touch'}</a>
+          </div>
+        ) : (
+          <ul class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
+            {episodes.map((episode, index) => (
+              <li>
+                <EpisodeCard episode={episode} show={show} variant="card" index={index} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </section>
+
+    {
+      otherSeries.length > 0 && (
+        <section class="mt-16" aria-label="Other series">
+          <h2 class="section-heading text-heading mb-5">Other series</h2>
+          <ul class="flex flex-wrap gap-3" role="list">
+            {otherSeries.map((s) => (
+              <li>
+                <a class="pill pill-ghost" href={`/series/${s.slug}`}>{s.name}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+  </Container>
+</Layout>

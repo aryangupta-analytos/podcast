@@ -277,3 +277,38 @@ export function parseGuestFromTitle(title: string): ParsedGuest | null {
     title: role && role.length <= 200 ? role : role ? role.slice(0, 200) : null
   };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Series — announced ahead of their first episodes so guests can be invited
+ * ────────────────────────────────────────────────────────────────────────── */
+
+export interface SeedSeries {
+  name: string;
+  tagline: string;
+  description: string;
+  accent: number;
+}
+
+export const SERIES: SeedSeries[] = [
+  {
+    name: 'Technology',
+    tagline: 'The builders, investors and operators shaping what Silicon Valley ships next.',
+    description:
+      '<p>Conversations with founders, engineers and investors about how technology companies are really built: the product bets, the funding rounds, the hires and the mistakes.</p><p>We are inviting founders, CTOs, product leaders and investors with a story worth telling.</p>',
+    accent: 2
+  },
+  {
+    name: 'Finance & Accounting',
+    tagline: 'How the numbers get made: CFOs, controllers and the people who keep companies honest.',
+    description:
+      '<p>A series on the finance side of growing a business: fundraising, forecasting, audits, controls and the moments where the books decide the strategy.</p><p>We are inviting CFOs, finance leaders, accountants and advisors who have been through it.</p>',
+    accent: 1
+  },
+  {
+    name: 'Manufacturing',
+    tagline: 'From factory floor to global supply chain: the people making physical things at scale.',
+    description:
+      '<p>Manufacturing is where technology meets the physical world. This series follows the operators, engineers and executives running plants, supply chains and hardware businesses.</p><p>We are inviting plant leaders, supply-chain heads, hardware founders and manufacturing executives to share how they do it.</p>',
+    accent: 3
+  }
+];

@@ -11,10 +11,11 @@ export interface Props {
   episode?: Episode;
   /** Every existing guest, for the picker's autocomplete. */
   guestOptions: Person[];
+  seriesOptions?: Array<{ id: string; name: string }>;
   errors?: string[];
 }
 
-const { episode, guestOptions, errors = [] } = Astro.props;
+const { episode, guestOptions, seriesOptions = [], errors = [] } = Astro.props;
 const isNew = !episode;
 
 const options = guestOptions.map((person) => ({
@@ -272,6 +273,19 @@ const publishDate = episode
           </div>
         )
       }
+    </div>
+
+    <div class="admin-field">
+      <label for="seriesId">Series</label>
+      <select id="seriesId" name="seriesId">
+        <option value="">Not part of a series</option>
+        {seriesOptions.map((s) => (
+          <option value={s.id} selected={episode?.seriesId === s.id}>
+            {s.name}
+          </option>
+        ))}
+      </select>
+      <p class="help">Series are managed under Series in the menu.</p>
     </div>
 
     <label class="admin-check">

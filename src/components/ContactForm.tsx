@@ -1,6 +1,8 @@
 import { useState } from 'preact/hooks';
 
-export default function ContactForm() {
+type Props = { initialMessage?: string };
+
+export default function ContactForm({ initialMessage = '' }: Props) {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [responseMessage, setResponseMessage] = useState('');
 
@@ -74,7 +76,7 @@ export default function ContactForm() {
             name="message"
             placeholder="Write a message"
             required
-          />
+          >{initialMessage}</textarea>
 
           <div class="my-6 flex w-full justify-end">
             <button class="pill pill-primary w-full lg:w-auto" type="submit">

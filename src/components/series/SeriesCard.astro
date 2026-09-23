@@ -1,0 +1,45 @@
+---
+import type { Series } from '../../server/db/schema';
+import SmartImage from '../SmartImage.astro';
+
+/**
+ * A colour card for one series: name in the display serif, its one-line
+ * pitch, how many episodes exist (or "first episodes coming soon"), and an
+ * invitation to take part.
+ */
+export interface Props {
+  series: Series;
+  count: number;
+}
+
+const { series, count } = Astro.props;
+const href = `/series/${series.slug}`;
+const status =
+  count === 0 ? 'First episodes coming soon' : `${count} episode${count === 1 ? '' : 's'} so far`;
+---
+
+<article class="series-card" style={`--card-accent: var(--brand-accent-${series.accent})`}>
+  <div class="series-card-copy">
+    <p class="section-heading">Series</p>
+    <h3 class="series-card-name">
+      <a href={href}>{series.name}</a>
+    </h3>
+    {series.tagline && <p class="series-card-tagline">{series.tagline}</p>}
+    <p class="series-card-status">{status}</p>
+    <div class="series-card-actions">
+      <a class="pill pill-ink" href={href}>Explore the series</a>
+      {series.ctaText && (
+        <a class="pill pill-light" href={`/contact?series=${encodeURIComponent(series.slug)}`}>
+          {series.ctaText}
+        </a>
+      )}
+    </div>
+  </div>
+  {
+    series.imageUrl && (
+      <a href={href} class="series-card-media" aria-hidden="true" tabindex="-1">
+        <SmartImage src={series.imageUrl} alt="" width={360} height={360} sizes="200px" />
+      </a>
+    )
+  }
+</article>

@@ -127,8 +127,11 @@ export async function parseEpisodeForm(form: FormData): Promise<ParsedEpisodeFor
     guestIds.push(person.id);
   }
 
+  const seriesId = optionalStr(form, 'seriesId');
+
   const input: EpisodeInput = {
     title,
+    seriesId: seriesId && /^[0-9a-f-]{36}$/i.test(seriesId) ? seriesId : null,
     slug: optionalStr(form, 'slug') ?? undefined,
     description,
     // Show notes are owner-authored HTML, sanitized so a pasted snippet can

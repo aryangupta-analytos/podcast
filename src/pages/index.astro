@@ -5,6 +5,7 @@ import HomeHero from '../components/home/HomeHero.astro';
 import LatestEpisodes from '../components/home/LatestEpisodes.astro';
 import LatestVideos from '../components/home/LatestVideos.astro';
 import NewsletterBand from '../components/home/NewsletterBand.astro';
+import SeriesBand from '../components/home/SeriesBand.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import {
@@ -14,6 +15,7 @@ import {
 } from '../server/repo/episodes';
 import { listRecentGuests, listTeam } from '../server/repo/people';
 import { getSettings, getShowInfo } from '../server/repo/settings';
+import { countEpisodesBySeries, listSeries } from '../server/repo/series';
 
 const settings = await getSettings();
 const show = await getShowInfo();
@@ -22,12 +24,14 @@ const show = await getShowInfo();
 // never pay for a query whose results are not rendered.
 const featured = settings.showFeatured ? await getFeaturedEpisode() : null;
 
-const [latest, team, guests, videos] = await Promise.all([
+const [latest, team, guests, videos, allSeries, seriesCounts] = await Promise.all([
   // Only the configured number of episodes — never the whole archive.
   getLatestEpisodes(settings.latestEpisodeCount),
   settings.showPeople ? listTeam() : Promise.resolve([]),
   settings.showPeople ? listRecentGuests(8) : Promise.resolve([]),
-  settings.showVideos ? getLatestVideos(settings.latestVideoCount) : Promise.resolve([])
+  settings.showVideos ? getLatestVideos(settings.latestVideoCount) : Promise.resolve([]),
+  settings.showSeries ? listSeries() : Promise.resolve([]),
+  settings.showSeries ? countEpisodesBySeries() : Promise.resolve(new Map<string, number>())
 ]);
 
 // Hosts and team first, then recent guests, without repeats.
@@ -51,6 +55,8 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
   }
 
   <LatestEpisodes episodes={latest} show={show} heading={settings.latestHeading} />
+
+  {settings.showSeries && <SeriesBand series={allSeries} counts={seriesCounts} heading={settings.seriesHeading} />}
 
   {settings.showPeople && <FeaturedPeople people={people} heading={settings.peopleHeading} />}
 

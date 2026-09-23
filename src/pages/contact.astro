@@ -4,8 +4,19 @@ import Container from '../components/site/Container.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import { getSettings, getShowInfo } from '../server/repo/settings';
+import { getSeriesBySlug } from '../server/repo/series';
 
 const [settings, show] = await Promise.all([getSettings(), getShowInfo()]);
+
+// "/contact?series=manufacturing" opens the form with an invitation to that
+// series already written, so a would-be guest only has to add their details.
+const seriesSlug = Astro.url.searchParams.get('series');
+const invitedTo = seriesSlug ? await getSeriesBySlug(seriesSlug) : null;
+const initialMessage = invitedTo
+  ? `I would like to be a guest on the ${invitedTo.name} series. Here is a little about me and what I could talk about:
+
+`
+  : '';
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
@@ -58,7 +69,7 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 
       <div class="lg:col-span-7">
         <div class="card p-6 sm:p-8">
-          <ContactForm client:load />
+          <ContactForm client:load initialMessage={initialMessage} />
         </div>
       </div>
     </div>

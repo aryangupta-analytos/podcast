@@ -18,6 +18,7 @@ import { youtubeId } from '../../lib/youtube';
 import { getEpisodeBySlug, getLatestEpisodes } from '../../server/repo/episodes';
 import { getPeopleByIds, listPeople } from '../../server/repo/people';
 import { getLinks, getShowInfo } from '../../server/repo/settings';
+import { getSeriesById } from '../../server/repo/series';
 import { dasherize } from '../../utils/dasherize';
 
 const { slug } = Astro.params;
@@ -114,6 +115,8 @@ const heroPlatforms = [
   .filter((p): p is { platform: string; label: string; url: string } => Boolean(p.url))
   .map((p, i) => ({ id: String(i), group: 'platform' as const, sortOrder: i, isVisible: true, ...p }));
 
+const inSeries = episode.seriesId ? await getSeriesById(episode.seriesId) : null;
+
 const firstName = (name: string) => name.trim().split(/\s+/)[0] ?? name;
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
@@ -174,6 +177,11 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
             <span class="opacity-50">|</span>
             <FormattedDate date={new Date(episode.published)} />
           </p>
+          {inSeries && inSeries.isVisible && (
+            <a class="series-chip" href={`/series/${inSeries.slug}`} style={`--card-accent: var(--brand-accent-${inSeries.accent})`}>
+              {inSeries.name} series
+            </a>
+          )}
 
           <h1
             id="episode-title"

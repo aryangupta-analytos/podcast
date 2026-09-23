@@ -1,0 +1,41 @@
+---
+import SeriesCard from '../../components/series/SeriesCard.astro';
+import Container from '../../components/site/Container.astro';
+import Layout from '../../layouts/Layout.astro';
+import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
+import { countEpisodesBySeries, listSeries } from '../../server/repo/series';
+import { getSettings, getShowInfo } from '../../server/repo/settings';
+
+const [settings, show, series, counts] = await Promise.all([
+  getSettings(),
+  getShowInfo(),
+  listSeries(),
+  countEpisodesBySeries()
+]);
+
+const heading = settings.seriesHeading || 'Our series';
+
+Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
+---
+
+<Layout title={`${heading} — ${show.title}`} description={`The themed series running on ${show.title}: ${series.map((s) => s.name).join(', ')}.`} hideBreadcrumbs>
+  <section class="page-hero-band about-hero">
+    <Container class="text-center">
+      <p class="section-heading text-primary">Series</p>
+      <h1 class="display about-hero-title">{heading}</h1>
+      <p class="about-hero-tagline people-hero-lede">
+        Focused runs of conversations, each on one world of business. Know someone who should be on one? Invite them.
+      </p>
+    </Container>
+  </section>
+
+  <Container class="pb-20 lg:pb-28">
+    <ul class="series-grid series-grid-page" role="list">
+      {series.map((item) => (
+        <li>
+          <SeriesCard series={item} count={counts.get(item.id) ?? 0} />
+        </li>
+      ))}
+    </ul>
+  </Container>
+</Layout>

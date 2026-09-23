@@ -70,6 +70,9 @@ if (Astro.request.method === 'POST') {
       showPeople: checked('showPeople'),
       peopleHeading: text('peopleHeading') || 'Guests & Hosts',
 
+      showSeries: checked('showSeries'),
+      seriesHeading: text('seriesHeading') || 'Our series',
+
       showVideos: checked('showVideos'),
       videosHeading: text('videosHeading') || 'Latest Videos',
       latestVideoCount: videoCount,
@@ -453,6 +456,19 @@ const published = await listEpisodesForAdmin({
           <label for="bannerButtonUrl">Button link</label>
           <input id="bannerButtonUrl" name="bannerButtonUrl" type="text" value={settings.bannerButtonUrl} placeholder="/episodes" />
         </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Series band</h2>
+      <p class="hint">The row of series cards on the homepage. The series themselves are edited under Series.</p>
+      <label class="admin-check">
+        <input type="checkbox" name="showSeries" checked={settings.showSeries} />
+        <span>Show the series band</span>
+      </label>
+      <div class="admin-field">
+        <label for="seriesHeading">Heading</label>
+        <input id="seriesHeading" name="seriesHeading" type="text" value={settings.seriesHeading} />
       </div>
     </div>
 

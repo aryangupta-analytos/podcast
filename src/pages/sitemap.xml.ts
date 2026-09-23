@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { CACHE_FEED } from '../lib/cache';
 import { getAllLiveEpisodesForFeed } from '../server/repo/episodes';
 import { listPeople } from '../server/repo/people';
+import { listSeries } from '../server/repo/series';
 
 const escape = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -15,15 +16,17 @@ const escape = (value: string) =>
 export const GET: APIRoute = async ({ site }) => {
   const base = site ?? new URL('http://localhost:4321');
 
-  const [episodes, people] = await Promise.all([
+  const [episodes, people, allSeries] = await Promise.all([
     getAllLiveEpisodesForFeed(),
-    listPeople()
+    listPeople(),
+    listSeries()
   ]);
 
   const urls: Array<{ loc: string; lastmod?: Date; priority: string }> = [
     { loc: '/', priority: '1.0' },
     { loc: '/episodes', priority: '0.9' },
     { loc: '/videos', priority: '0.7' },
+    { loc: '/series', priority: '0.7' },
     { loc: '/people', priority: '0.6' },
     { loc: '/about', priority: '0.7' },
     { loc: '/contact', priority: '0.5' },
@@ -32,6 +35,7 @@ export const GET: APIRoute = async ({ site }) => {
       lastmod: episode.updatedAt,
       priority: '0.8'
     })),
+    ...allSeries.map((s) => ({ loc: `/series/${s.slug}`, lastmod: s.updatedAt, priority: '0.6' })),
     ...people.map((person) => ({
       loc: `/people/${person.slug}`,
       lastmod: person.updatedAt,

@@ -56,6 +56,7 @@ export interface Episode {
   };
   status: 'draft' | 'published' | 'unpublished';
   isFeatured: boolean;
+  seriesId?: string;
 }
 
 export interface Paginated<T> {

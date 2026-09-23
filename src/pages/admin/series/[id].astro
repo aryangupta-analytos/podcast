@@ -1,0 +1,118 @@
+---
+import { readFormData } from '../../../server/read-form';
+import FileUpload from '../../../components/admin/FileUpload';
+import Icon from '../../../components/admin/Icon.astro';
+import RichText from '../../../components/admin/RichText';
+import AdminLayout from '../../../layouts/AdminLayout.astro';
+import { sanitizeHtml } from '../../../server/sanitize';
+import { getEpisodesForSeries, getSeriesById, updateSeries } from '../../../server/repo/series';
+
+const user = Astro.locals.user!;
+const { id } = Astro.params;
+const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id ?? '');
+const found = isUuid ? await getSeriesById(id!) : null;
+if (!found) return new Response(null, { status: 404, statusText: 'Not Found' });
+
+let errors: string[] = [];
+
+if (Astro.request.method === 'POST') {
+  const form = await readFormData(Astro.request);
+  const text = (key: string) => String(form.get(key) ?? '').trim();
+  const name = text('name');
+  if (!name) errors.push('The series needs a name.');
+  const accent = Number.parseInt(text('accent'), 10);
+  const imageUrl = text('imageUrl');
+  if (imageUrl && !imageUrl.startsWith('/') && !/^https?:\/\//.test(imageUrl)) {
+    errors.push('The image must be an uploaded file or a full web address.');
+  }
+
+  if (errors.length === 0) {
+    await updateSeries(found.id, {
+      name,
+      slug: text('slug') || undefined,
+      tagline: text('tagline'),
+      description: sanitizeHtml(String(form.get('description') ?? '')),
+      accent: Number.isFinite(accent) ? accent : found.accent,
+      imageUrl: imageUrl || null,
+      ctaText: text('ctaText'),
+      isVisible: form.get('isVisible') === 'on'
+    });
+    return Astro.redirect(`/admin/series/${found.id}?saved=${encodeURIComponent('Saved — the series page is live.')}`, 303);
+  }
+}
+
+const series = (await getSeriesById(found.id))!;
+const episodes = await getEpisodesForSeries(series.id, 50);
+---
+
+<AdminLayout title={series.name} user={user} back={{ label: 'Series', href: '/admin/series' }}>
+  <a class="btn-admin" href={`/series/${series.slug}`} target="_blank" rel="noopener" slot="actions">View page ↗</a>
+
+  <form method="POST">
+    {errors.length > 0 && (
+      <div class="admin-flash is-error" role="alert">
+        <ul style="margin:0; padding-left:18px">{errors.map((m) => <li>{m}</li>)}</ul>
+      </div>
+    )}
+
+    <div class="admin-card">
+      <h2><Icon name="mic" size={17} /> Series</h2>
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="name">Name</label>
+          <input id="name" name="name" type="text" value={series.name} required />
+        </div>
+        <div class="admin-field">
+          <label for="slug">Web address</label>
+          <input id="slug" name="slug" type="text" value={series.slug} />
+          <p class="help">/series/{series.slug} — changing it breaks links already shared.</p>
+        </div>
+      </div>
+      <div class="admin-field">
+        <label for="tagline">One-line pitch</label>
+        <input id="tagline" name="tagline" type="text" value={series.tagline} placeholder="What this series is about, in a sentence." />
+      </div>
+      <div class="admin-field">
+        <label>Longer description</label>
+        <RichText client:load name="description" value={series.description} placeholder="Who it is for, what you cover, and who you are looking to interview." />
+      </div>
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="accent">Card colour</label>
+          <select id="accent" name="accent">
+            {[1, 2, 3, 4].map((n) => (
+              <option value={n} selected={series.accent === n}>Brand colour {n}</option>
+            ))}
+          </select>
+        </div>
+        <div class="admin-field">
+          <label for="ctaText">Invitation button text</label>
+          <input id="ctaText" name="ctaText" type="text" value={series.ctaText} placeholder="Be a guest on this series" />
+          <p class="help">Leave empty to hide the invitation.</p>
+        </div>
+      </div>
+      <FileUpload client:load name="imageUrl" kind="image" label="Image" help="Optional. Square works best." value={series.imageUrl ?? ''} />
+      <label class="admin-check">
+        <input type="checkbox" name="isVisible" checked={series.isVisible} />
+        <span>Visible on the website</span>
+      </label>
+    </div>
+
+    <div class="admin-card">
+      <h2><Icon name="mic" size={17} /> Episodes in this series</h2>
+      {episodes.length === 0 ? (
+        <p class="hint">None yet. Open an episode and pick this series in its Series field.</p>
+      ) : (
+        <ul style="margin:0; padding-left:18px">
+          {episodes.map((e) => (
+            <li><a href={`/admin/episodes/${e.id}`}>{e.title}</a></li>
+          ))}
+        </ul>
+      )}
+    </div>
+
+    <div class="admin-actions is-sticky">
+      <button class="btn-admin is-primary" type="submit"><Icon name="check" size={16} /> Save changes</button>
+    </div>
+  </form>
+</AdminLayout>
