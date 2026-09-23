@@ -1857,3 +1857,20 @@ header details[open] > nav {
 .home-hero .carousel-dots {
   margin-top: 0.5rem;
 }
+
+
+/* ── "Where to listen" on a colour card: dark text and icons, not green ── */
+.about-card-listen .section-heading,
+.about-card-listen .platform-chip,
+.about-card-listen .platform-chip span,
+.about-card-listen .about-listen-rss {
+  color: var(--brand-ink);
+}
+.about-card-listen .platform-chip svg {
+  color: var(--brand-ink) !important;
+}
+.about-card-listen .platform-chip:hover,
+.about-card-listen .about-listen-rss:hover {
+  color: var(--brand-ink);
+  background: rgb(7 11 43 / 0.1);
+}
