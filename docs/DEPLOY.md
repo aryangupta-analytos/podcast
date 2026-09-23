@@ -181,3 +181,24 @@ database — run `pnpm db:seed` against it.
 
 **Uploaded files disappear.** `STORAGE_DRIVER` is still `local`. The app logs a
 warning about this on boot.
+
+## Self-hosted (current production): svtechpodcast.com on the EC2 box
+
+The site runs as a Docker container behind the shared nginx on
+`3.147.113.64` (ubuntu@, key `new-analytos.pem`). The database is the Neon
+project `podcast`; uploads live in the Docker volume `svtechpodcast_svtech_uploads`.
+
+- Code: `~/svtechpodcast` (clone of github.com/aryangupta-analytos/podcast, `main`)
+- Secrets: `~/svtechpodcast/.env.production` (DATABASE_URL, SESSION_SECRET, …)
+- nginx: `/etc/nginx/sites-enabled/svtechpodcast`; certificate by certbot, auto-renewed
+- App port: `127.0.0.1:4321` (container `svtech-podcast`, restarts automatically)
+
+Deploy a new version:
+
+```bash
+ssh -i new-analytos.pem ubuntu@3.147.113.64
+cd ~/svtechpodcast && git pull && docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Logs: `docker logs -f svtech-podcast`. The Vercel deployment at
+podcast-weld-alpha.vercel.app is a preview only and shares the same database.
