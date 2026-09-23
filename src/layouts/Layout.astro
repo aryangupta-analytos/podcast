@@ -148,6 +148,14 @@ const onVercel = Boolean(
     <ClientRouter />
   </head>
   <body class="font-inter bg-ink text-text min-h-screen antialiased">
+    <!-- Ambient aurora: slow-drifting colour fields behind everything. Pure
+         transform animation on blurred blobs, so it stays on the compositor. -->
+    <div class="site-aurora" aria-hidden="true">
+      <span class="site-aurora-blob is-1"></span>
+      <span class="site-aurora-blob is-2"></span>
+      <span class="site-aurora-blob is-3"></span>
+      <span class="site-aurora-blob is-4"></span>
+    </div>
     <a href="#main-content" class="skip-link">Skip to content</a>
 
     <!--

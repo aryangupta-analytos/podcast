@@ -1990,3 +1990,153 @@ header details[open] > nav {
 .series-chip:hover {
   text-decoration: underline;
 }
+
+/* ── Aurora background ──────────────────────────────────────────────────── */
+/* Four blurred colour fields drifting slowly on their own paths. Only
+   `transform` animates, so the compositor does the work; the blur is baked
+   into the element. Behind everything, never interactive. */
+.site-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.site-aurora-blob {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+  will-change: transform;
+  animation: aurora-drift 26s ease-in-out infinite alternate;
+}
+.site-aurora-blob.is-1 {
+  top: -25vmax;
+  left: -18vmax;
+  background: radial-gradient(circle, rgb(143 123 255 / 0.55), transparent 62%);
+  animation-duration: 28s;
+}
+.site-aurora-blob.is-2 {
+  top: -20vmax;
+  right: -22vmax;
+  background: radial-gradient(circle, rgb(35 196 177 / 0.45), transparent 62%);
+  animation-duration: 34s;
+  animation-delay: -9s;
+}
+.site-aurora-blob.is-3 {
+  bottom: -28vmax;
+  left: 20vw;
+  background: radial-gradient(circle, rgb(255 93 162 / 0.38), transparent 62%);
+  animation-duration: 31s;
+  animation-delay: -17s;
+}
+.site-aurora-blob.is-4 {
+  bottom: -22vmax;
+  right: -10vmax;
+  background: radial-gradient(circle, rgb(56 182 255 / 0.4), transparent 62%);
+  animation-duration: 38s;
+  animation-delay: -5s;
+}
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(9vw, 6vh, 0) scale(1.12);
+  }
+  66% {
+    transform: translate3d(-6vw, 11vh, 0) scale(0.94);
+  }
+  100% {
+    transform: translate3d(4vw, -8vh, 0) scale(1.06);
+  }
+}
+/* Page content sits above the aurora. */
+body > header,
+body > main,
+body > footer,
+body > #audio-player {
+  position: relative;
+  z-index: 1;
+}
+body > header {
+  z-index: 40;
+}
+body > #audio-player {
+  z-index: 50;
+}
+@media (prefers-reduced-motion: reduce) {
+  .site-aurora-blob {
+    animation: none;
+  }
+}
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .site-aurora {
+    display: none;
+  }
+}
+
+/* ── Platform logos: brand colours with a soft glow that breathes ───────── */
+.platform-chip {
+  --brand: var(--brand-primary);
+  position: relative;
+  color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--brand) 35%, transparent),
+    0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent);
+  animation: chip-float 5.5s ease-in-out infinite;
+  transition:
+    transform 320ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    background-color 200ms ease,
+    box-shadow 300ms ease,
+    color 200ms ease;
+}
+.platform-chip svg {
+  color: var(--brand);
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--brand) 55%, transparent));
+  transition: filter 300ms ease, transform 300ms ease;
+}
+.platform-chip:hover {
+  color: #fff;
+  background: var(--brand);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--brand) 60%, #fff),
+    0 8px 28px color-mix(in srgb, var(--brand) 55%, transparent);
+  transform: translateY(-2px);
+  animation-play-state: paused;
+}
+.platform-chip:hover svg {
+  color: #fff;
+  filter: drop-shadow(0 0 10px rgb(255 255 255 / 0.6));
+  transform: scale(1.1);
+}
+/* Each chip bobs on its own beat. */
+li:nth-child(2) > .platform-chip { animation-delay: -1.3s; }
+li:nth-child(3) > .platform-chip { animation-delay: -2.6s; }
+li:nth-child(4) > .platform-chip { animation-delay: -3.9s; }
+li:nth-child(5) > .platform-chip { animation-delay: -5.2s; }
+@keyframes chip-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+/* Header keeps the brand colours too now (overrides the earlier green rule). */
+.site-header .platform-chip svg {
+  color: var(--brand) !important;
+}
+.site-header .platform-chip:hover svg {
+  color: #fff !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .platform-chip {
+    animation: none;
+  }
+}
