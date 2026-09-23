@@ -394,7 +394,7 @@ const {
           // Never fight the user: skip while they hold, hover or focus it.
           if (dragging || hovering || document.hidden || root.contains(document.activeElement)) return;
           const at = current();
-          goTo(at >= items.length - 1 ? 0 : at + 1, { response: 1.1 });
+          goTo(at >= items.length - 1 ? 0 : at + 1, { response: 0.8 });
         };
         const start = () => {
           window.clearInterval(timer);
