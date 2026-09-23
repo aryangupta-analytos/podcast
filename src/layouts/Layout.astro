@@ -52,6 +52,18 @@ const rssFeed = new URL('/rss.xml', Astro.site).toString();
 const isHome = Astro.url.pathname === '/';
 
 /*
+  The browser tab shows only the first ~25 characters of a title, so the page
+  name goes first and the show is reduced to a short tag. The full title is
+  kept for search engines and link previews (og:title, twitter:title).
+*/
+const shortShow = show.title
+  .replace(/^the\s+/i, '')
+  .replace(/silicon valley/i, 'SV')
+  .replace(/\s+podcast$/i, ' Podcast');
+const pageName = title.split(' — ')[0].trim();
+const tabTitle = isHome ? show.title : `${pageName} | ${shortShow}`;
+
+/*
   The owner's accent colours, applied as custom properties on <html> so they
   win over the defaults in src/styles/theme.css. Only well-formed hex values
   are emitted; anything else falls back to the stylesheet default.
@@ -101,7 +113,7 @@ const onVercel = Boolean(
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#070b2b" />
 
-    <title>{title}</title>
+    <title>{tabTitle}</title>
     <meta content={description} name="description" />
 
     <!-- Open Graph -->
