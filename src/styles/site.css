@@ -1874,3 +1874,24 @@ header details[open] > nav {
   color: var(--brand-ink);
   background: rgb(7 11 43 / 0.1);
 }
+
+
+/* ── Hero: no scroll-snap (the script positions slides; snap was pulling the
+   first slide into the gutter and freezing the glide), and the square artwork
+   is shown whole rather than cropped. ── */
+.home-hero .carousel-track {
+  scroll-snap-type: none !important;
+}
+.home-hero .carousel-track > * {
+  scroll-snap-align: none !important;
+}
+.hero-card-media img {
+  object-fit: contain !important;
+  object-position: center !important;
+  padding: 0.75rem;
+}
+.hero-card-media.is-portrait img {
+  object-fit: cover !important;
+  object-position: top !important;
+  padding: 0;
+}
