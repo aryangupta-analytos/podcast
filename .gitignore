@@ -47,3 +47,6 @@ tunnel.log
 prod.log
 lt.log
 .claude/
+
+# Source artwork PNGs (converted copies live in public/media/images/artwork)
+/new-artwork/
