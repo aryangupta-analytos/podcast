@@ -3,6 +3,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import { contactMessages, type ContactMessage } from '../db/schema';
 import { env } from '../env';
+import { sendToLeadsSheet } from '../leads-sheet';
 
 export async function saveContactMessage(input: {
   name: string;
@@ -34,32 +35,13 @@ export async function saveContactMessage(input: {
     }).catch(() => {});
   }
 
-  // Copy to the team's Google Sheet. Awaited (with a timeout) because a
-  // serverless function may be frozen the moment the response is sent, which
-  // would drop a fire-and-forget request; a failure still never fails the form.
-  const leads = env.leadsWebhookUrl;
-  if (leads && env.leadsWebhookSecret) {
-    try {
-      await fetch(leads, {
-        method: 'POST',
-        // text/plain: Apps Script parses the JSON body itself.
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({
-          secret: env.leadsWebhookSecret,
-          product: 'podcast',
-          source: 'podcast-website',
-          name: row.name,
-          email: row.email,
-          message: row.message,
-          page_url: `${env.siteUrl}/contact`
-        }),
-        redirect: 'follow',
-        signal: AbortSignal.timeout(8000)
-      });
-    } catch {
-      // Stored and visible in the admin either way.
-    }
-  }
+  await sendToLeadsSheet('podcast', {
+    source: 'podcast-website',
+    name: row.name,
+    email: row.email,
+    message: row.message,
+    page_url: `/contact`
+  });
 
   return row;
 }

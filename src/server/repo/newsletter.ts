@@ -3,6 +3,8 @@ import { desc, eq, isNull, sql } from 'drizzle-orm';
 import type { Paginated } from '../../lib/types';
 import { getDb } from '../db';
 import { newsletterSubscribers, type NewsletterSubscriber } from '../db/schema';
+import { env } from '../env';
+import { sendToLeadsSheet } from '../leads-sheet';
 
 /** Postgres error code for a unique-constraint violation. */
 const UNIQUE_VIOLATION = '23505';
@@ -21,6 +23,11 @@ export async function subscribe(
 
   try {
     await db.insert(newsletterSubscribers).values({ email: clean, source });
+    await sendToLeadsSheet('podcast-newsletter', {
+      email: clean,
+      source: `podcast-`,
+      page_url: env.siteUrl
+    });
     return { created: true };
   } catch (error) {
     const code = (error as { code?: string })?.code;
