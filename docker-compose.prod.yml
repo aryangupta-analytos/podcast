@@ -3,7 +3,10 @@
 # Secrets come from .env.production on the server (never committed).
 services:
   web:
-    build: .
+    build:
+      context: .
+      args:
+        PUBLIC_SITE_URL: https://svtechpodcast.com
     container_name: svtech-podcast
     restart: unless-stopped
     env_file: .env.production

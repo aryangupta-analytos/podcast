@@ -3,6 +3,7 @@ import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 
 import { srcsetWidths } from '../lib/image-sizes.mjs';
+import { env } from '../server/env';
 
 export interface Props {
   /**
@@ -81,10 +82,18 @@ const isOptimizableUrl = !!url && !url.startsWith('data:');
   so using the canonical site URL breaks the moment the two differ (a dev server
   on another port, a preview deployment, a container behind a proxy).
 */
+// Behind nginx the app only sees plain http, so when the request is for the
+// canonical host the configured site URL supplies the scheme instead.
+const siteOrigin = (() => {
+  try {
+    const configured = new URL(env.siteUrl);
+    return configured.host === Astro.url.host ? configured.origin : Astro.url.origin;
+  } catch {
+    return Astro.url.origin;
+  }
+})();
 const absoluteSrc =
-  isOptimizableUrl && url!.startsWith('/')
-    ? new URL(url!, Astro.url.origin).toString()
-    : url;
+  isOptimizableUrl && url!.startsWith('/') ? new URL(url!, siteOrigin).toString() : url;
 
 const shared = {
   width,

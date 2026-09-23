@@ -7,7 +7,9 @@ RUN corepack enable && corepack prepare pnpm@10 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
-ENV ADAPTER=node
+# `site` is baked in at build time (feed links, sitemap, canonical URLs).
+ARG PUBLIC_SITE_URL=http://localhost:4321
+ENV ADAPTER=node PUBLIC_SITE_URL=$PUBLIC_SITE_URL
 RUN pnpm exec astro build
 
 FROM node:22-bookworm-slim
