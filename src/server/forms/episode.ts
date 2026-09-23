@@ -117,9 +117,10 @@ export async function parseEpisodeForm(form: FormData): Promise<ParsedEpisodeFor
       continue;
     }
 
-    const photo = safeUrl(
+    // A media URL, not a plain URL: uploads land at a site-relative /media path.
+    const photo = safeMediaUrl(
       optionalStr(form, `guestPhoto:${name}`),
-      `${name}'s photo URL`,
+      `${name}'s photo`,
       errors
     );
 

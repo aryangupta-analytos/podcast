@@ -82,7 +82,9 @@ export const ACCENTS = {
   accent1: '#ffd400',
   accent2: '#8f7bff',
   accent3: '#ff6a3d',
-  accent4: '#23c4b1'
+  accent4: '#23c4b1',
+  accent5: '#ff5da2',
+  accent6: '#38b6ff'
 };
 
 export const CONTACT = {

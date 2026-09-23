@@ -38,7 +38,7 @@ const cards = [featured, ...latest]
               show={show}
               variant="hero"
               index={index}
-              eyebrow={index === 0 ? settings.featuredHeading : undefined}
+              eyebrow={index === 0 ? settings.featuredHeading || undefined : undefined}
               loading={index === 0 ? 'eager' : 'lazy'}
             />
           ))}

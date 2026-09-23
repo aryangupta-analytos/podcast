@@ -61,7 +61,9 @@ const accentStyle = (
     ['--brand-accent-1', settings.accent1],
     ['--brand-accent-2', settings.accent2],
     ['--brand-accent-3', settings.accent3],
-    ['--brand-accent-4', settings.accent4]
+    ['--brand-accent-4', settings.accent4],
+    ['--brand-accent-5', settings.accent5],
+    ['--brand-accent-6', settings.accent6]
   ] as const
 )
   .filter(([, value]) => value && isHexColor(value))

@@ -62,6 +62,11 @@ const roleLabel = { hosts: 'Host', team: 'Team', guests: 'Guest' } as const;
       ))
     }
   </ul>
+  {
+    everyone.length === 0 && (
+      <p class="text-text-muted py-10 text-center">No one to show yet. Check back soon!</p>
+    )
+  }
 </div>
 
 <script>

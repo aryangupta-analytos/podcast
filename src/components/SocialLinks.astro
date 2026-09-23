@@ -1,6 +1,6 @@
 ---
 import type { LinkRow } from '../server/db/schema';
-import { ICON_PATHS as PATHS } from '../lib/icon-paths';
+import { ICON_PATHS as PATHS, iconKey } from '../lib/icon-paths';
 
 export interface Props {
   links: LinkRow[];
@@ -14,7 +14,7 @@ const { links, class: className = '' } = Astro.props;
   links.length > 0 && (
     <ul class:list={['flex flex-wrap items-center gap-1', className]}>
       {links.map((link) => {
-        const path = PATHS[link.platform.toLowerCase()];
+        const path = PATHS[iconKey(link.platform)];
         return (
           <li>
             <a

@@ -2,6 +2,7 @@
 import { readFormData } from '../../server/read-form';
 import Icon from '../../components/admin/Icon.astro';
 import AdminLayout from '../../layouts/AdminLayout.astro';
+import { hasIcon } from '../../lib/icon-paths';
 import {
   createLink,
   deleteLink,
@@ -47,19 +48,7 @@ const SOCIAL_SUGGESTIONS = [
 ];
 
 /** Icons the site can actually draw, so the form can say so honestly. */
-const HAS_ICON = new Set([
-  'apple',
-  'spotify',
-  'youtube',
-  'overcast',
-  'pocket-casts',
-  'podbean',
-  'linkedin',
-  'twitter',
-  'x',
-  'facebook',
-  'instagram'
-]);
+const HAS_ICON = { has: (platform: string) => hasIcon(platform) };
 
 function validUrl(value: string): string | null {
   try {

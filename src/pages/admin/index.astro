@@ -7,19 +7,23 @@ import { formatBytes } from '../../lib/format';
 import { countUnreadMessages } from '../../server/repo/contact';
 import { getEpisodeCounts, listEpisodesForAdmin } from '../../server/repo/episodes';
 import { getMediaStats } from '../../server/repo/media';
+import { countSubscribers } from '../../server/repo/newsletter';
 import { listPeople } from '../../server/repo/people';
+import { listSeries } from '../../server/repo/series';
 
 // Guaranteed by middleware; asserted here so the page is not silently
 // renderable without a user if the middleware is ever changed.
 const user = Astro.locals.user!;
 
-const [counts, recent, media, guests, hosts, unread] = await Promise.all([
+const [counts, recent, media, guests, hosts, unread, subscribers, series] = await Promise.all([
   getEpisodeCounts(),
   listEpisodesForAdmin({ page: 1, perPage: 5 }),
   getMediaStats(),
   listPeople('guest', { includeHidden: true }),
   listPeople('host', { includeHidden: true }),
-  countUnreadMessages()
+  countUnreadMessages(),
+  countSubscribers(),
+  listSeries({ includeHidden: true })
 ]);
 
 const actions: Array<{
@@ -65,6 +69,30 @@ const actions: Array<{
     icon: 'mail',
     title: 'Messages',
     sub: unread > 0 ? `${unread} unread` : 'Nothing new'
+  },
+  {
+    href: '/admin/subscribers',
+    icon: 'users',
+    title: 'Subscribers',
+    sub: `${subscribers} on the newsletter list`
+  },
+  {
+    href: '/admin/series',
+    icon: 'mic',
+    title: 'Series',
+    sub: `${series.length} series`
+  },
+  {
+    href: '/admin/about',
+    icon: 'document',
+    title: 'About & Contact',
+    sub: 'Page copy, email and phone'
+  },
+  {
+    href: '/admin/links',
+    icon: 'link',
+    title: 'Links & Platforms',
+    sub: 'Where to listen, social profiles, extra nav links'
   }
 ];
 

@@ -329,6 +329,8 @@ export const siteSettings = pgTable('site_settings', {
   accent2: text('accent_2').notNull().default('#8f7bff'),
   accent3: text('accent_3').notNull().default('#ff6a3d'),
   accent4: text('accent_4').notNull().default('#23c4b1'),
+  accent5: text('accent_5').notNull().default('#ff5da2'),
+  accent6: text('accent_6').notNull().default('#38b6ff'),
 
   // Announcement banner above the header. Hidden when switched off or empty.
   showBanner: boolean('show_banner').notNull().default(true),

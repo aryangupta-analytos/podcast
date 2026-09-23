@@ -13,6 +13,8 @@ if (Astro.request.method === 'POST') {
 
   await updateSettings({
     aboutTitle: text('aboutTitle') || 'About',
+    aboutHeading: text('aboutHeading') || 'About The Show',
+    teamHeading: text('teamHeading') || 'The Team',
     aboutBody: sanitizeHtml(String(form.get('aboutBody') ?? '')),
     aboutImageUrl: text('aboutImageUrl') || null,
     contactHeading: text('contactHeading') || 'Contact',
@@ -43,9 +45,21 @@ const settings = await getSettings();
         lists, bold.
       </p>
 
-      <div class="admin-field">
-        <label for="aboutTitle">Page title</label>
-        <input id="aboutTitle" name="aboutTitle" type="text" value={settings.aboutTitle} />
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="aboutTitle">Page title</label>
+          <input id="aboutTitle" name="aboutTitle" type="text" value={settings.aboutTitle} />
+        </div>
+        <div class="admin-field">
+          <label for="aboutHeading">Short heading</label>
+          <input id="aboutHeading" name="aboutHeading" type="text" value={settings.aboutHeading} />
+          <p class="help">Used on the homepage call-to-action when it has no heading of its own.</p>
+        </div>
+        <div class="admin-field">
+          <label for="teamHeading">Team section heading</label>
+          <input id="teamHeading" name="teamHeading" type="text" value={settings.teamHeading} />
+          <p class="help">Above the team grid on the About page.</p>
+        </div>
       </div>
 
       <div class="admin-field">

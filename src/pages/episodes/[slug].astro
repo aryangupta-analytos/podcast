@@ -14,6 +14,7 @@ import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
 import { introFrom } from '../../lib/episode-intro';
 import { topicsFrom } from '../../lib/episode-topics';
 import { prettifyLinks } from '../../lib/prettify-links';
+import { iconKey } from '../../lib/icon-paths';
 import { youtubeId } from '../../lib/youtube';
 import { getEpisodeBySlug, getLatestEpisodes } from '../../server/repo/episodes';
 import { getPeopleByIds, listPeople } from '../../server/repo/people';
@@ -43,7 +44,12 @@ const [show, hosts, showPlatforms, more, guestRows] = await Promise.all([
   getPeopleByIds(episode.guests.map((g) => g.id))
 ]);
 
-const guests = episode.guests.map((guest) => guestRows.find((row) => row.id === guest.id) ?? guest);
+// A host typed into the guest picker matches the existing host record; do not
+// show them a second time as a guest.
+const hostIds = new Set(hosts.map((h) => h.id));
+const guests = episode.guests
+  .filter((guest) => !hostIds.has(guest.id))
+  .map((guest) => guestRows.find((row) => row.id === guest.id) ?? guest);
 
 // Host first, then guests — the row of colour cards under the player.
 const people = [
@@ -98,7 +104,7 @@ const sameHost = (a: string, b: string) => {
     return false;
   }
 };
-const key = (platform: string) => platform.toLowerCase().replace(/[^a-z]/g, '');
+const key = iconKey;
 const showLink = (name: string) => showPlatforms.find((p) => key(p.platform) === name);
 const heroPlatforms = [
   { platform: 'youtube', label: 'YouTube', url: episode.links.youtube ?? showLink('youtube')?.url },

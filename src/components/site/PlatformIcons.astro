@@ -1,5 +1,5 @@
 ---
-import { ICON_PATHS } from '../../lib/icon-paths';
+import { ICON_PATHS, iconKey } from '../../lib/icon-paths';
 import type { LinkRow } from '../../server/db/schema';
 
 export interface Props {
@@ -22,7 +22,7 @@ const {
   class: className = ''
 } = Astro.props;
 
-const key = (platform: string) => platform.toLowerCase().replace(/[^a-z]/g, '');
+const key = iconKey;
 
 // Real brand colours so the platform marks read as the actual logos, not a
 // flat green. Anything unlisted keeps the inherited colour.

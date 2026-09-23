@@ -20,8 +20,28 @@ export interface Props {
 const { title, user, back, description, wide = false } = Astro.props;
 const { pathname } = Astro.url;
 
-const isActive = (href: string) =>
-  href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
+// The most specific matching item wins, so "Add Episode" does not also light
+// up "Manage Episodes".
+const NAV_HREFS = [
+  '/admin/episodes/new',
+  '/admin/episodes',
+  '/admin/homepage',
+  '/admin/about',
+  '/admin/series',
+  '/admin/people',
+  '/admin/links',
+  '/admin/media',
+  '/admin/messages',
+  '/admin/subscribers',
+  '/admin/account'
+];
+const activeHref =
+  pathname === '/admin'
+    ? '/admin'
+    : [...NAV_HREFS]
+        .sort((a, b) => b.length - a.length)
+        .find((href) => pathname === href || pathname.startsWith(href + '/'));
+const isActive = (href: string) => href === activeHref;
 
 const NAV: Array<{
   label: string;
@@ -44,9 +64,8 @@ const NAV: Array<{
       { href: '/admin/homepage', label: 'Edit Homepage', icon: 'home' },
       { href: '/admin/about', label: 'Edit About', icon: 'document' },
       { href: '/admin/series', label: 'Series', icon: 'mic' },
-      { href: '/admin/series', label: 'Series', icon: 'mic' },
       { href: '/admin/people', label: 'Hosts & Guests', icon: 'users' },
-      { href: '/admin/links', label: 'Social Links', icon: 'link' }
+      { href: '/admin/links', label: 'Links & Platforms', icon: 'link' }
     ]
   },
   {

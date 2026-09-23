@@ -209,8 +209,9 @@ export async function findOrCreateGuest(
     .limit(1);
 
   if (existing[0]) {
-    // Fill in a photo the owner has now supplied, but never overwrite one.
-    if (extra.imageUrl && !existing[0].imageUrl) {
+    // A photo supplied from the episode form is a deliberate choice: use it,
+    // replacing any older one.
+    if (extra.imageUrl && extra.imageUrl !== existing[0].imageUrl) {
       return (await updatePerson(existing[0].id, { imageUrl: extra.imageUrl }))!;
     }
     return existing[0];

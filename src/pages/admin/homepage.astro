@@ -2,8 +2,7 @@
 import { readFormData } from '../../server/read-form';
 import FileUpload from '../../components/admin/FileUpload';
 import AdminLayout from '../../layouts/AdminLayout.astro';
-import { sanitizeHtml } from '../../server/sanitize';
-import { listEpisodesForAdmin } from '../../server/repo/episodes';
+import { getEpisodeById, listEpisodesForAdmin } from '../../server/repo/episodes';
 import { getSettings, updateSettings } from '../../server/repo/settings';
 import { normalizeHex } from '../../lib/colors';
 
@@ -25,7 +24,7 @@ if (Astro.request.method === 'POST') {
     errors.push('Show between 1 and 12 latest videos.');
   }
 
-  const accents = (['accent1', 'accent2', 'accent3', 'accent4'] as const).map((key) => {
+  const accents = (['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'] as const).map((key) => {
     const value = normalizeHex(text(key));
     if (!value) errors.push(`Brand colour ${key.slice(-1)} must be a hex colour like #ff6a3d.`);
     return [key, value] as const;
@@ -40,32 +39,15 @@ if (Astro.request.method === 'POST') {
       description: text('description'),
       artworkUrl: text('artworkUrl') || null,
 
-      heroEyebrow: text('heroEyebrow'),
-      heroTitle: text('heroTitle'),
-      heroDescription: text('heroDescription'),
-      heroImageUrl: text('heroImageUrl') || null,
-      heroCtaText: text('heroCtaText'),
-      heroCtaUrl: text('heroCtaUrl'),
-      heroSecondaryCtaText: text('heroSecondaryCtaText'),
-      heroSecondaryCtaUrl: text('heroSecondaryCtaUrl'),
-
       featuredEpisodeId: featured || null,
 
       featuredHeading: text('featuredHeading'),
       latestHeading: text('latestHeading'),
-      teamHeading: text('teamHeading'),
-      guestsHeading: text('guestsHeading'),
-      aboutHeading: text('aboutHeading'),
-      aboutBody: sanitizeHtml(String(form.get('aboutBody') ?? '')),
-      aboutImageUrl: text('aboutImageUrl') || null,
 
       latestEpisodeCount: latestCount,
 
       showHero: checked('showHero'),
       showFeatured: checked('showFeatured'),
-      showAbout: checked('showAbout'),
-      showTeam: checked('showTeam'),
-      showGuests: checked('showGuests'),
 
       showPeople: checked('showPeople'),
       peopleHeading: text('peopleHeading') || 'Guests & Hosts',
@@ -120,6 +102,14 @@ const published = await listEpisodesForAdmin({
   perPage: 100,
   status: 'published'
 });
+
+// The dropdown lists the newest 100 episodes; a pinned episode older than that
+// must still appear, or the form would silently unpin it on save.
+const pinned =
+  settings.featuredEpisodeId && !published.items.some((e) => e.id === settings.featuredEpisodeId)
+    ? await getEpisodeById(settings.featuredEpisodeId)
+    : null;
+const featuredOptions = pinned ? [pinned, ...published.items] : published.items;
 ---
 
 <AdminLayout title="Edit Homepage" user={user}>
@@ -171,111 +161,58 @@ const published = await listEpisodesForAdmin({
     </div>
 
     <div class="admin-card">
-      <h2>Hero section</h2>
-      <p class="hint">The first thing a visitor reads.</p>
+      <h2>Hero carousel</h2>
+      <p class="hint">
+        The big colour cards at the top of the homepage. The first card is the
+        featured episode; the rest are the newest episodes. It advances by itself
+        every two seconds.
+      </p>
 
       <label class="admin-check">
         <input type="checkbox" name="showHero" checked={settings.showHero} />
-        <span>Show the hero section</span>
+        <span>Show the hero carousel</span>
       </label>
-
-      <div class="admin-field">
-        <label for="heroEyebrow">Small label above the title</label>
-        <input id="heroEyebrow" name="heroEyebrow" type="text" value={settings.heroEyebrow} />
-      </div>
-
-      <div class="admin-field">
-        <label for="heroTitle">Hero title</label>
-        <input id="heroTitle" name="heroTitle" type="text" value={settings.heroTitle} />
-      </div>
-
-      <div class="admin-field">
-        <label for="heroDescription">Hero description</label>
-        <textarea id="heroDescription" name="heroDescription" style="min-height:90px">{settings.heroDescription}</textarea>
-      </div>
-
-      <FileUpload
-        client:load
-        name="heroImageUrl"
-        kind="image"
-        label="Hero image"
-        help="Optional. Appears beside the hero text."
-        value={settings.heroImageUrl ?? ''}
-      />
-
-      <div class="admin-row">
-        <div class="admin-field">
-          <label for="heroCtaText">Button text</label>
-          <input id="heroCtaText" name="heroCtaText" type="text" value={settings.heroCtaText} />
-        </div>
-        <div class="admin-field">
-          <label for="heroCtaUrl">Button link</label>
-          <input id="heroCtaUrl" name="heroCtaUrl" type="text" value={settings.heroCtaUrl} placeholder="/episodes" />
-        </div>
-        <div class="admin-field">
-          <label for="heroSecondaryCtaText">Second link text</label>
-          <input
-            id="heroSecondaryCtaText"
-            name="heroSecondaryCtaText"
-            type="text"
-            value={settings.heroSecondaryCtaText}
-          />
-        </div>
-        <div class="admin-field">
-          <label for="heroSecondaryCtaUrl">Second link URL</label>
-          <input
-            id="heroSecondaryCtaUrl"
-            name="heroSecondaryCtaUrl"
-            type="text"
-            value={settings.heroSecondaryCtaUrl}
-            placeholder="/about"
-          />
-        </div>
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <h2>Featured episode</h2>
 
       <label class="admin-check">
         <input type="checkbox" name="showFeatured" checked={settings.showFeatured} />
-        <span>Show a featured episode</span>
+        <span>Lead with a featured episode</span>
       </label>
 
-      <div class="admin-field">
-        <label for="featuredEpisodeId">Which episode</label>
-        <select id="featuredEpisodeId" name="featuredEpisodeId">
-          <option value="">Newest published episode (updates itself)</option>
-          {
-            published.items.map((episode) => (
-              <option value={episode.id} selected={settings.featuredEpisodeId === episode.id}>
-                {episode.episodeNumber ? `${episode.episodeNumber}. ` : ''}
-                {episode.title}
-              </option>
-            ))
-          }
-        </select>
-        <p class="help">
-          Leave on "newest" and the homepage keeps itself current with no work.
-        </p>
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="featuredEpisodeId">Which episode is featured</label>
+          <select id="featuredEpisodeId" name="featuredEpisodeId">
+            <option value="">Automatic — the episode marked featured, else the newest</option>
+            {
+              featuredOptions.map((episode) => (
+                <option value={episode.id} selected={settings.featuredEpisodeId === episode.id}>
+                  {episode.episodeNumber ? `${episode.episodeNumber}. ` : ''}
+                  {episode.title}
+                </option>
+              ))
+            }
+          </select>
+          <p class="help">
+            Leave on automatic and the homepage keeps itself current with no work.
+          </p>
+        </div>
+        <div class="admin-field">
+          <label for="featuredHeading">Label on the featured card</label>
+          <input id="featuredHeading" name="featuredHeading" type="text" value={settings.featuredHeading} placeholder="Featured episode" />
+        </div>
       </div>
     </div>
 
     <div class="admin-card">
-      <h2>Sections</h2>
-      <p class="hint">Headings and what appears on the homepage.</p>
+      <h2>Latest episodes row</h2>
 
       <div class="admin-row">
         <div class="admin-field">
-          <label for="featuredHeading">Featured heading</label>
-          <input id="featuredHeading" name="featuredHeading" type="text" value={settings.featuredHeading} />
-        </div>
-        <div class="admin-field">
-          <label for="latestHeading">Latest episodes heading</label>
+          <label for="latestHeading">Heading</label>
           <input id="latestHeading" name="latestHeading" type="text" value={settings.latestHeading} />
         </div>
         <div class="admin-field">
-          <label for="latestEpisodeCount">How many latest episodes</label>
+          <label for="latestEpisodeCount">How many episodes</label>
           <input
             id="latestEpisodeCount"
             name="latestEpisodeCount"
@@ -286,26 +223,6 @@ const published = await listEpisodesForAdmin({
           />
         </div>
       </div>
-
-      <div class="admin-row">
-        <div class="admin-field">
-          <label for="teamHeading">Team heading</label>
-          <input id="teamHeading" name="teamHeading" type="text" value={settings.teamHeading} />
-        </div>
-        <div class="admin-field">
-          <label for="guestsHeading">Guests heading</label>
-          <input id="guestsHeading" name="guestsHeading" type="text" value={settings.guestsHeading} />
-        </div>
-      </div>
-
-      <label class="admin-check">
-        <input type="checkbox" name="showTeam" checked={settings.showTeam} />
-        <span>Show the team section</span>
-      </label>
-      <label class="admin-check">
-        <input type="checkbox" name="showGuests" checked={settings.showGuests} />
-        <span>Show recent guests</span>
-      </label>
     </div>
 
     <div class="admin-card">
@@ -497,13 +414,14 @@ const published = await listEpisodesForAdmin({
     <div class="admin-card">
       <h2>Brand colours</h2>
       <p class="hint">
-        The four accent colours used for the coloured blocks and people tiles.
-        The navy background and text colours are fixed so everything stays readable.
+        The six accent colours used in turn for the hero cards, episode tiles,
+        people tiles and series. The navy background and text colours are fixed
+        so everything stays readable.
       </p>
 
       <div class="admin-row">
         {
-          (['accent1', 'accent2', 'accent3', 'accent4'] as const).map((key, i) => (
+          (['accent1', 'accent2', 'accent3', 'accent4', 'accent5', 'accent6'] as const).map((key, i) => (
             <div class="admin-field">
               <label for={key}>Accent {i + 1}</label>
               <input id={key} name={key} type="color" value={settings[key]} style="height:44px; padding:4px; width:100%" />
@@ -511,39 +429,6 @@ const published = await listEpisodesForAdmin({
           ))
         }
       </div>
-    </div>
-
-    <div class="admin-card">
-      <h2>About block on the homepage</h2>
-      <p class="hint">A short version of the About page. Basic HTML is allowed.</p>
-
-      <label class="admin-check">
-        <input type="checkbox" name="showAbout" checked={settings.showAbout} />
-        <span>Show the about block</span>
-      </label>
-
-      <div class="admin-field">
-        <label for="aboutHeading">Heading</label>
-        <input id="aboutHeading" name="aboutHeading" type="text" value={settings.aboutHeading} />
-      </div>
-
-      <div class="admin-field">
-        <label for="aboutBody">Text</label>
-        <textarea
-          id="aboutBody"
-          name="aboutBody"
-          style="min-height:180px; font-family:ui-monospace, monospace; font-size:13px">{settings.aboutBody}</textarea
-        >
-      </div>
-
-      <FileUpload
-        client:load
-        name="aboutImageUrl"
-        kind="image"
-        label="About image"
-        help="Optional."
-        value={settings.aboutImageUrl ?? ''}
-      />
     </div>
 
     <div class="admin-card">
