@@ -87,6 +87,14 @@ export const env = {
     return int('MAX_IMAGE_BYTES', 10 * 1024 * 1024);
   },
 
+  /** Google Apps Script web app that copies contact messages into a sheet. */
+  get leadsWebhookUrl() {
+    return read('LEADS_WEBHOOK_URL');
+  },
+  get leadsWebhookSecret() {
+    return read('LEADS_WEBHOOK_SECRET');
+  },
+
   get discordWebhook() {
     return read('DISCORD_WEBHOOK');
   }
