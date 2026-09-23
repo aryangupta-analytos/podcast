@@ -124,9 +124,13 @@ const {
       const targetLeft = (i: number) => {
         const item = items[i];
         if (!item) return 0;
+        // Measured from the first slide, so slide 0 is exactly scrollLeft 0 and
+        // the track's own padding is what shows beside it.
+        const fromFirst = item.offsetLeft - items[0].offsetLeft;
+        const padLeft = parseFloat(getComputedStyle(track).paddingLeft || '0');
         const raw = centered
-          ? item.offsetLeft - (track.clientWidth - item.offsetWidth) / 2
-          : item.offsetLeft - parseFloat(getComputedStyle(track).paddingLeft || '0');
+          ? fromFirst + padLeft - (track.clientWidth - item.offsetWidth) / 2
+          : fromFirst;
         return Math.max(0, Math.min(maxScroll(), raw));
       };
 
@@ -197,7 +201,7 @@ const {
         raf = requestAnimationFrame(step);
       };
 
-      const goTo = (i: number, opts?: { velocity?: number; damping?: number }) => {
+      const goTo = (i: number, opts?: { velocity?: number; damping?: number; response?: number }) => {
         const clamped = Math.max(0, Math.min(items.length - 1, i));
         springTo(targetLeft(clamped), opts);
       };
@@ -211,7 +215,7 @@ const {
           dot.type = 'button';
           dot.className = 'carousel-dot';
           dot.setAttribute('aria-label', `Go to slide ${i + 1}`);
-          dot.addEventListener('click', () => goTo(i));
+          dot.addEventListener('click', () => goTo(i, { response: 0.9 }));
           dotsHost.appendChild(dot);
           dots.push(dot);
         });
@@ -238,8 +242,8 @@ const {
         }
       };
 
-      prev.addEventListener('click', () => goTo(atStart ? items.length - 1 : current() - 1));
-      next.addEventListener('click', () => goTo(atEnd ? 0 : current() + 1));
+      prev.addEventListener('click', () => goTo(atStart ? items.length - 1 : current() - 1, { response: 0.9 }));
+      next.addEventListener('click', () => goTo(atEnd ? 0 : current() + 1, { response: 0.9 }));
       track.addEventListener('scroll', update, { passive: true });
       window.addEventListener('resize', update);
 
@@ -360,7 +364,7 @@ const {
           // Never fight the user: skip while they hold, hover or focus it.
           if (dragging || hovering || document.hidden || root.contains(document.activeElement)) return;
           const at = current();
-          goTo(at >= items.length - 1 ? 0 : at + 1);
+          goTo(at >= items.length - 1 ? 0 : at + 1, { response: 1.1 });
         };
         const start = () => {
           window.clearInterval(timer);
