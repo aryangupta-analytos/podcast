@@ -25,7 +25,7 @@ export async function subscribe(
     await db.insert(newsletterSubscribers).values({ email: clean, source });
     await sendToLeadsSheet('podcast-newsletter', {
       email: clean,
-      source: `podcast-`,
+      source: `podcast-${source}`,
       page_url: env.siteUrl
     });
     return { created: true };
