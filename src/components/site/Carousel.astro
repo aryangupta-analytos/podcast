@@ -201,9 +201,39 @@ const {
         raf = requestAnimationFrame(step);
       };
 
+      // Arrow, dot and autoplay moves glide on a fixed clock (ease-in-out), so a
+      // switch is always visible as a slide rather than a snap. Drags keep the spring.
+      const glideTo = (target: number, ms: number) => {
+        if (reducedMotion()) {
+          stopSpring();
+          track.scrollLeft = target;
+          update();
+          return;
+        }
+        stopSpring();
+        const from = track.scrollLeft;
+        const t0 = performance.now();
+        track.classList.add('is-animating');
+        const step = (now: number) => {
+          const p = Math.min(1, (now - t0) / ms);
+          const e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+          track.scrollLeft = from + (target - from) * e;
+          if (p < 1) {
+            raf = requestAnimationFrame(step);
+            return;
+          }
+          raf = 0;
+          springVelocity = 0;
+          track.classList.remove('is-animating');
+          update();
+        };
+        raf = requestAnimationFrame(step);
+      };
+
       const goTo = (i: number, opts?: { velocity?: number; damping?: number; response?: number }) => {
         const clamped = Math.max(0, Math.min(items.length - 1, i));
-        springTo(targetLeft(clamped), opts);
+        if (opts?.response) glideTo(targetLeft(clamped), opts.response * 1000);
+        else springTo(targetLeft(clamped), opts);
       };
 
       /* ── Dots and arrows ───────────────────────────────────────────────── */
