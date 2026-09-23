@@ -55,6 +55,10 @@ async function main() {
     }
   }
 
+  // Interleaved so neighbouring episodes never share a similar colour.
+  const order = ['yellow', 'blue', 'grid-red', 'grid-white', 'cyan', 'grid-purple', 'white', 'grid-teal', 'grid-yellow', 'grid-blue'];
+  urls.sort((a, b) => order.findIndex((n) => a.endsWith(`/${n}.webp`)) - order.findIndex((n) => b.endsWith(`/${n}.webp`)));
+
   const db = getDb();
   const rows = await db.select({ id: episodes.id }).from(episodes).orderBy(asc(episodes.publishDate));
   for (const [i, row] of rows.entries()) {

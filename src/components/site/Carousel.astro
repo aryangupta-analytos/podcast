@@ -217,15 +217,19 @@ const {
         });
       }
 
+      // Arrows wrap at the ends instead of going dead, so the last slide's
+      // "next" returns to the first.
+      let atStart = true;
+      let atEnd = false;
       const update = () => {
         const max = maxScroll() - 2;
         if (centered) {
           const active = current();
-          prev.disabled = active <= 0;
-          next.disabled = active >= items.length - 1;
+          atStart = active <= 0;
+          atEnd = active >= items.length - 1;
         } else {
-          prev.disabled = track.scrollLeft <= 2;
-          next.disabled = track.scrollLeft >= max;
+          atStart = track.scrollLeft <= 2;
+          atEnd = track.scrollLeft >= max;
         }
         root.classList.toggle('is-static', max <= 4);
         if (dots.length) {
@@ -234,8 +238,8 @@ const {
         }
       };
 
-      prev.addEventListener('click', () => goTo(current() - 1));
-      next.addEventListener('click', () => goTo(current() + 1));
+      prev.addEventListener('click', () => goTo(atStart ? items.length - 1 : current() - 1));
+      next.addEventListener('click', () => goTo(atEnd ? 0 : current() + 1));
       track.addEventListener('scroll', update, { passive: true });
       window.addEventListener('resize', update);
 

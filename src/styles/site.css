@@ -1828,3 +1828,32 @@ header details[open] > nav {
   left: auto !important;
   right: max(0.5rem, calc(50vw - 800px + 0.25rem)) !important;
 }
+
+
+/* ── Tiles: square artwork shown whole, text clamped, Listen on one line ── */
+.episode-tile-media {
+  aspect-ratio: 1;
+}
+.episode-tile-media img {
+  object-position: center;
+}
+.episode-tile-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.episode-tile-guest {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.episode-tile .episode-tile-play {
+  margin-top: auto;
+  padding-top: 0.9rem;
+}
+/* Hero arrows sit under the cards with the dots, never over them. */
+.home-hero .carousel-dots {
+  margin-top: 0.5rem;
+}
