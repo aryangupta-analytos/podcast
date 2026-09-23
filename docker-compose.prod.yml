@@ -1,0 +1,21 @@
+# Self-hosted production: the site behind nginx on the shared EC2 box.
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Secrets come from .env.production on the server (never committed).
+services:
+  web:
+    build: .
+    container_name: svtech-podcast
+    restart: unless-stopped
+    env_file: .env.production
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4321
+      STORAGE_DRIVER: local
+      STORAGE_LOCAL_DIR: /data/uploads
+    ports:
+      - '127.0.0.1:4321:4321'
+    volumes:
+      - svtech_uploads:/data/uploads
+
+volumes:
+  svtech_uploads:

@@ -1,0 +1,12 @@
+node_modules
+dist
+.vercel
+.astro
+.git
+storage
+new-artwork
+output
+*.log
+.env
+.env.*
+!.env.example
