@@ -74,7 +74,6 @@ if (Astro.request.method === 'POST') {
       ctaBody: text('ctaBody'),
       ctaButtonText: text('ctaButtonText'),
       ctaButtonUrl: text('ctaButtonUrl'),
-      ctaImageUrl: text('ctaImageUrl') || null,
 
       showBanner: checked('showBanner'),
       bannerLabel: text('bannerLabel'),
@@ -366,15 +365,6 @@ const featuredOptions = pinned ? [pinned, ...published.items] : published.items;
           <input id="ctaButtonUrl" name="ctaButtonUrl" type="text" value={settings.ctaButtonUrl} placeholder="/about" />
         </div>
       </div>
-
-      <FileUpload
-        client:load
-        name="ctaImageUrl"
-        kind="image"
-        label="Image"
-        help="Optional. Falls back to the About image."
-        value={settings.ctaImageUrl ?? ''}
-      />
     </div>
 
     <div class="admin-card">

@@ -23,7 +23,7 @@ const crew = [...hosts, ...team];
   {
     crew.length > 0 && (
       <section id="team" class="people-block" aria-labelledby="people-team-heading">
-        <h2 id="people-team-heading" class="section-heading people-subheading">
+        <h2 id="people-team-heading" class="display team-heading">
           {labels.team ?? 'Hosts & team'}
         </h2>
         <TeamRoster people={crew} />
