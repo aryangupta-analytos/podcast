@@ -2163,7 +2163,6 @@ li:nth-child(5) > .platform-chip { animation-delay: -5.2s; }
 .show-intro-art img {
   @apply block aspect-square w-full object-cover;
   border-radius: var(--radius-card);
-  border: 2px solid var(--brand-primary);
   box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
 }
 .show-intro-icons {
@@ -2180,6 +2179,21 @@ li:nth-child(5) > .platform-chip { animation-delay: -5.2s; }
 }
 .show-intro-desc {
   @apply text-text mt-4 max-w-2xl text-base leading-relaxed lg:text-lg;
+}
+.show-intro-story {
+  @apply mt-6 max-w-2xl space-y-4 text-base leading-relaxed;
+  color: var(--brand-text);
+}
+.show-intro-story p {
+  color: var(--brand-text);
+}
+.show-intro-story em {
+  @apply font-semibold;
+  color: #fff;
+}
+.show-intro-story a {
+  color: var(--brand-primary);
+  text-decoration: underline;
 }
 .show-intro-actions {
   @apply mt-8 flex flex-wrap gap-3;
