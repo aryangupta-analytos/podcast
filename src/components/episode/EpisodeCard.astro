@@ -11,7 +11,7 @@ export interface Props {
   show: Show;
   /**
    * `hero`: a large colour card for the homepage carousel — copy on the left,
-   *         the guest's photo filling the right.
+   *         the episode artwork on the right.
    * `card`: a photo tile on a colour block with the title underneath.
    * `row`:  a compact horizontal card for lists.
    */
@@ -33,11 +33,9 @@ const {
 
 const href = `/episodes/${episode.episodeSlug}`;
 const accent = (index % 6) + 1;
-const guest = episode.guests[0];
-// The guest's photo is the picture, like the reference; the artwork is the
-// fallback when a guest has none.
-const photo = guest?.imageUrl ?? episode.episodeThumbnail ?? show.image;
-const isPortrait = Boolean(guest?.imageUrl);
+// Episode cards always show the episode's own artwork (the show's when it
+// has none); guest photos belong to the people sections only.
+const photo = episode.episodeThumbnail ?? show.image;
 const guestLine = episode.guests
   .map((g) => (g.title ? `${g.name}, ${g.title}` : g.name))
   .join(' · ');
@@ -71,7 +69,7 @@ const vtStyle = `view-transition-name: var(--should-vt); --vt-name: vt-${dasheri
           )}
         </div>
       </div>
-      <a href={href} class:list={['hero-card-media', isPortrait && 'is-portrait']} aria-hidden="true" tabindex="-1">
+      <a href={href} class="hero-card-media" aria-hidden="true" tabindex="-1">
         <SmartImage
           src={photo}
           alt=""

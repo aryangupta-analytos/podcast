@@ -33,9 +33,8 @@ const slides = episodes.map((episode, index) => {
     episode,
     href: `/episodes/${episode.episodeSlug}`,
     accent: (index % 4) + 1,
-    // The guest's photo when there is one, else the episode's own artwork.
-    photo: guest?.imageUrl ?? episode.episodeThumbnail ?? show.image,
-    isPortrait: Boolean(guest?.imageUrl),
+    // Always the episode's own artwork; guest photos are for the people sections.
+    photo: episode.episodeThumbnail ?? show.image,
     guestName: episode.guests.map((g) => g.name).join(' & '),
     guestTitle: guest?.title ?? '',
     duration: formatDuration(episode.duration),
@@ -65,7 +64,7 @@ const slides = episodes.map((episode, index) => {
       <Carousel label={heading} arrows="below" dots autoplay={7000} itemClass="w-full" class="spot-carousel">
         {slides.map((s, index) => (
           <article class="spot-card" role="listitem" style={`--card-accent: var(--brand-accent-${s.accent})`}>
-            <a href={s.href} class:list={['spot-media', s.isPortrait && 'is-portrait']} aria-hidden="true" tabindex="-1">
+            <a href={s.href} class="spot-media" aria-hidden="true" tabindex="-1">
               <SmartImage
                 src={s.photo}
                 alt=""

@@ -2505,16 +2505,6 @@ h1.display,
 .spot-card:hover .spot-media img {
   transform: scale(1.025);
 }
-/* A guest portrait fills the panel edge to edge. */
-.spot-media.is-portrait {
-  @apply min-h-[300px] p-0;
-}
-.spot-media.is-portrait img {
-  @apply absolute inset-0 h-full max-w-none object-top;
-  border-radius: 0;
-  box-shadow: none;
-}
-
 .spot-copy {
   @apply flex flex-col justify-center p-7 sm:p-10 lg:p-14;
 }
