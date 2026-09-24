@@ -1,0 +1,57 @@
+---
+import type { Person } from '../../server/db/schema';
+import PersonTile from './PersonTile.astro';
+
+/**
+ * Hosts and team members, the way the original site presented them: the few
+ * people who have a photo get a colour tile, everyone else is simply named.
+ *
+ * The photographed people keep the order the owner arranged them in (so the
+ * co-host sits in the middle of three), and the names roster below carries no
+ * links — a name and, where one is set, a role.
+ */
+export interface Props {
+  people: Person[];
+  /** Small label above each photo tile, e.g. "Host" / "Team". */
+  labels?: boolean;
+  class?: string;
+}
+
+const { people, labels = true, class: className = '' } = Astro.props;
+
+const pictured = people.filter((p) => p.imageUrl);
+const named = people.filter((p) => !p.imageUrl);
+const roleLabel = (p: Person) => (p.kind === 'host' ? 'Host' : 'Team');
+---
+
+<div class:list={['team-roster', className]}>
+  {
+    pictured.length > 0 && (
+      <ul class:list={['team-roster-tiles', `has-${Math.min(pictured.length, 4)}`]} role="list">
+        {pictured.map((person, index) => (
+          <li>
+            <PersonTile
+              person={person}
+              index={index}
+              eyebrow={labels ? roleLabel(person) : undefined}
+              loading={index < 3 ? 'eager' : 'lazy'}
+            />
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  {
+    named.length > 0 && (
+      <ul class="team-roster-names" role="list">
+        {named.map((person) => (
+          <li class="team-roster-name">
+            <span class="team-roster-name-text">{person.name}</span>
+            {person.title && <span class="team-roster-name-role">{person.title}</span>}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</div>

@@ -1,7 +1,6 @@
 ---
 import NewsletterBand from '../components/home/NewsletterBand.astro';
-import HostCard from '../components/people/HostCard.astro';
-import PersonTile from '../components/people/PersonTile.astro';
+import TeamRoster from '../components/people/TeamRoster.astro';
 import Container from '../components/site/Container.astro';
 import PlatformIcons from '../components/site/PlatformIcons.astro';
 import SmartImage from '../components/SmartImage.astro';
@@ -26,6 +25,11 @@ const artwork = settings.aboutImageUrl ?? show.image;
 const ctaHeading = settings.ctaHeading || settings.aboutHeading;
 const ctaBody = settings.ctaBody || settings.description;
 
+// Hosts and team are one roster: the people with a photo get a tile, the
+// rest are named. The host cards this page used to open with are gone — the
+// same three photos now lead the roster instead.
+const crew = [...hosts, ...team];
+
 const hasContact = Boolean(settings.contactEmail || settings.contactPhone || settings.contactBody);
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
@@ -45,7 +49,7 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
     </Container>
   </section>
 
-  <!-- The show: artwork beside the owner's About copy, on the brand colour -->
+  <!-- The show: artwork beside the owner's About copy, on the navy panel -->
   <section class="about-section" aria-labelledby="about-show">
     <Container>
       <div class="about-band">
@@ -74,17 +78,15 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
     </Container>
   </section>
 
-  <!-- Hosts -->
+  <!-- Team -->
   {
-    hosts.length > 0 && (
-      <section class="about-section" aria-labelledby="hosts-heading">
+    crew.length > 0 && (
+      <section class="about-section" aria-labelledby="team-heading">
         <Container>
-          <h2 id="hosts-heading" class="sr-only">Meet the hosts</h2>
-          <div class="grid gap-8 lg:grid-cols-2 lg:gap-10">
-            {hosts.map((host, index) => (
-              <HostCard person={host} index={index} />
-            ))}
-          </div>
+          <h2 id="team-heading" class="section-heading people-subheading">
+            {settings.teamHeading}
+          </h2>
+          <TeamRoster people={crew} />
         </Container>
       </section>
     )
@@ -122,26 +124,6 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
       </div>
     </Container>
   </section>
-
-  <!-- Team -->
-  {
-    team.length > 0 && (
-      <section class="about-section" aria-labelledby="team-heading">
-        <Container>
-          <h2 id="team-heading" class="section-heading text-heading mb-8">
-            {settings.teamHeading}
-          </h2>
-          <ul class="people-grid" role="list">
-            {team.map((member, index) => (
-              <li>
-                <PersonTile person={member} index={index + hosts.length} eyebrow="Team" />
-              </li>
-            ))}
-          </ul>
-        </Container>
-      </section>
-    )
-  }
 
   <!-- Contact: minimal and spacious -->
   {

@@ -41,6 +41,11 @@ if (Astro.request.method === 'POST') {
 
       featuredEpisodeId: featured || null,
 
+      heroTitle: text('heroTitle'),
+      heroDescription: text('heroDescription'),
+      heroCtaText: text('heroCtaText'),
+      heroCtaUrl: text('heroCtaUrl'),
+
       featuredHeading: text('featuredHeading'),
       latestHeading: text('latestHeading'),
 
@@ -161,11 +166,42 @@ const featuredOptions = pinned ? [pinned, ...published.items] : published.items;
     </div>
 
     <div class="admin-card">
-      <h2>Hero carousel</h2>
+      <h2>Show introduction</h2>
       <p class="hint">
-        The big colour cards at the top of the homepage. The first card is the
-        featured episode; the rest are the newest episodes. It advances by itself
-        every two seconds.
+        The opening of the homepage: the artwork, the show's name, what it is
+        about and a button to start listening. Leave a field empty to reuse the
+        podcast name and description from Show identity above.
+      </p>
+
+      <div class="admin-field">
+        <label for="heroTitle">Headline</label>
+        <input id="heroTitle" name="heroTitle" type="text" value={settings.heroTitle} placeholder={settings.showTitle} />
+      </div>
+
+      <div class="admin-field">
+        <label for="heroDescription">Introduction</label>
+        <textarea id="heroDescription" name="heroDescription" style="min-height:90px" placeholder={settings.description}>{settings.heroDescription}</textarea>
+        <p class="help">Two or three sentences on what the show is and who it is for.</p>
+      </div>
+
+      <div class="admin-row">
+        <div class="admin-field">
+          <label for="heroCtaText">Button text</label>
+          <input id="heroCtaText" name="heroCtaText" type="text" value={settings.heroCtaText} placeholder={settings.latestHeading} />
+        </div>
+        <div class="admin-field">
+          <label for="heroCtaUrl">Button link</label>
+          <input id="heroCtaUrl" name="heroCtaUrl" type="text" value={settings.heroCtaUrl} placeholder="/episodes" />
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h2>Featured episodes carousel</h2>
+      <p class="hint">
+        The colour cards under the introduction. The first card is the featured
+        episode; the rest are the newest episodes. It advances by itself every
+        five seconds.
       </p>
 
       <label class="admin-check">
@@ -197,14 +233,14 @@ const featuredOptions = pinned ? [pinned, ...published.items] : published.items;
           </p>
         </div>
         <div class="admin-field">
-          <label for="featuredHeading">Label on the featured card</label>
-          <input id="featuredHeading" name="featuredHeading" type="text" value={settings.featuredHeading} placeholder="Featured episode" />
+          <label for="featuredHeading">Heading above the carousel</label>
+          <input id="featuredHeading" name="featuredHeading" type="text" value={settings.featuredHeading} placeholder="Featured episodes" />
         </div>
       </div>
     </div>
 
     <div class="admin-card">
-      <h2>Latest episodes row</h2>
+      <h2>Latest episodes grid</h2>
 
       <div class="admin-row">
         <div class="admin-field">

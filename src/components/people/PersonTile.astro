@@ -1,6 +1,14 @@
 ---
 import Avatar from '../Avatar.astro';
 
+/**
+ * One person in a grid.
+ *
+ * With a photo: the picture on a colour block, name and role underneath —
+ * the reference site's guest tile. Without one: the same colour block, but
+ * carrying the name and role in type instead of an empty placeholder, so a
+ * guest we have no picture of still gets a designed card rather than a blank.
+ */
 export interface Props {
   person: {
     slug: string;
@@ -30,26 +38,38 @@ const {
 } = Astro.props;
 
 const accent = (index % 6) + 1;
+const hasPhoto = Boolean(person.imageUrl);
 ---
 
 <a
-  class:list={['person-tile group block', className]}
+  class:list={['person-tile group block', hasPhoto ? 'has-photo' : 'is-text', className]}
   href={`/people/${person.slug}`}
   style={`--tile-bg: var(--brand-accent-${accent})`}
 >
-  <div class="person-tile-media">
-    <span class="person-tile-mark" aria-hidden="true" />
-    <Avatar
-      name={person.name}
-      imageUrl={person.imageUrl}
-      placeholder={(person.placeholder ?? 'monogram') as 'monogram'}
-      size={size}
-      loading={loading}
-    />
-  </div>
-  {eyebrow && <p class="section-heading text-text-muted mt-4">{eyebrow}</p>}
-  <p class:list={['font-display text-heading text-lg leading-snug font-semibold group-hover:underline', eyebrow ? 'mt-1' : 'mt-4']}>
-    {person.name}
-  </p>
-  {person.title && <p class="text-text-muted mt-1 text-sm">{person.title}</p>}
+  {
+    hasPhoto ? (
+      <Fragment>
+        <div class="person-tile-media">
+          <span class="person-tile-mark" aria-hidden="true" />
+          <Avatar
+            name={person.name}
+            imageUrl={person.imageUrl}
+            placeholder={(person.placeholder ?? 'monogram') as 'monogram'}
+            size={size}
+            loading={loading}
+          />
+        </div>
+        {eyebrow && <p class="person-tile-eyebrow section-heading">{eyebrow}</p>}
+        <p class="person-tile-name font-display">{person.name}</p>
+        {person.title && <p class="person-tile-role">{person.title}</p>}
+      </Fragment>
+    ) : (
+      <div class="person-tile-plate">
+        {eyebrow && <p class="person-tile-eyebrow section-heading">{eyebrow}</p>}
+        <p class="person-tile-name font-display">{person.name}</p>
+        {person.title && <p class="person-tile-role">{person.title}</p>}
+        <span class="person-tile-more" aria-hidden="true">Episodes →</span>
+      </div>
+    )
+  }
 </a>

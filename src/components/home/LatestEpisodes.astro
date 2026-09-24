@@ -2,9 +2,12 @@
 import type { Episode, Show } from '../../lib/types';
 import EmptyState from '../EmptyState.astro';
 import EpisodeCard from '../episode/EpisodeCard.astro';
-import Carousel from '../site/Carousel.astro';
 import Section from '../site/Section.astro';
 
+/**
+ * The newest episodes as a proper grid — three across on a desktop, two on a
+ * tablet — rather than a row of small cards squeezed into a carousel.
+ */
 export interface Props {
   episodes: Episode[];
   show: Show;
@@ -20,11 +23,13 @@ const { episodes, show, heading, id = 'latest' } = Astro.props;
     episodes.length === 0 ? (
       <EmptyState message="No episodes yet. Check back soon!" />
     ) : (
-      <Carousel label={heading} arrows="below" itemClass="w-[58vw] sm:w-52 lg:w-60">
+      <ul class="latest-grid" role="list">
         {episodes.map((episode, index) => (
-          <EpisodeCard episode={episode} show={show} variant="card" index={index} />
+          <li>
+            <EpisodeCard episode={episode} show={show} variant="card" index={index} />
+          </li>
         ))}
-      </Carousel>
+      </ul>
     )
   }
 </Section>

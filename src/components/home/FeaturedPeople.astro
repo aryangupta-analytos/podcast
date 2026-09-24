@@ -1,26 +1,39 @@
 ---
 import type { Person } from '../../server/db/schema';
 import PersonTile from '../people/PersonTile.astro';
+import TeamRoster from '../people/TeamRoster.astro';
 import Section from '../site/Section.astro';
 
+/**
+ * Homepage people band: the hosts and team first (photo tiles for those who
+ * have one, names for the rest), then the most recent guests.
+ */
 export interface Props {
-  people: Person[];
+  team: Person[];
+  guests: Person[];
   heading: string;
 }
 
-const { people, heading } = Astro.props;
+const { team, guests, heading } = Astro.props;
 ---
 
 {
-  people.length > 0 && (
+  (team.length > 0 || guests.length > 0) && (
     <Section id="people" heading={heading} moreHref="/people" moreLabel="See everyone">
-      <ul class="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 lg:gap-8" role="list">
-        {people.map((person, index) => (
-          <li>
-            <PersonTile person={person} index={index} />
-          </li>
-        ))}
-      </ul>
+      {team.length > 0 && <TeamRoster people={team} />}
+
+      {guests.length > 0 && (
+        <div class:list={[team.length > 0 && 'mt-14 lg:mt-16']}>
+          <h3 class="section-heading people-subheading">Recent guests</h3>
+          <ul class="guest-grid" role="list">
+            {guests.map((person, index) => (
+              <li>
+                <PersonTile person={person} index={index + 3} eyebrow="Guest" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Section>
   )
 }

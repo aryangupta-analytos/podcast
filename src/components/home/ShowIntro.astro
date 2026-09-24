@@ -1,0 +1,77 @@
+---
+import type { LinkRow, SiteSettings } from '../../server/db/schema';
+import type { Show } from '../../lib/types';
+import Container from '../site/Container.astro';
+import PlatformIcons from '../site/PlatformIcons.astro';
+import SmartImage from '../SmartImage.astro';
+
+/**
+ * The opening of the homepage: who the show is before what it just published.
+ *
+ * Artwork on the left with the listening platforms under it; the show's name,
+ * tagline and description on the right with the two things a new visitor
+ * does next — listen, or read about the show. Mirrors the reference site's
+ * podcast overview, which leads with the show rather than an episode.
+ */
+export interface Props {
+  settings: SiteSettings;
+  show: Show;
+  platforms: LinkRow[];
+}
+
+const { settings, show, platforms } = Astro.props;
+
+const title = settings.heroTitle || show.title;
+const body = settings.heroDescription || show.description;
+const ctaText = settings.heroCtaText || settings.latestHeading;
+const ctaUrl = settings.heroCtaUrl || '/episodes';
+const hasArtwork = show.image && !show.image.endsWith('artwork-placeholder.svg');
+---
+
+<section class="show-intro" aria-labelledby="show-intro-title">
+  <Container>
+    <div class:list={['show-intro-grid', !hasArtwork && 'is-text-only']}>
+      {
+        hasArtwork && (
+          <div class="show-intro-art">
+            <SmartImage
+              src={show.image}
+              alt={`${show.title} artwork`}
+              width={480}
+              height={480}
+              sizes="(min-width: 1024px) 420px, (min-width: 640px) 60vw, 84vw"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <PlatformIcons
+              platforms={platforms}
+              showTitle={show.title}
+              size="lg"
+              class="show-intro-icons"
+            />
+          </div>
+        )
+      }
+
+      <div class="show-intro-copy">
+        <p class="section-heading text-primary">Podcast</p>
+        <h1 id="show-intro-title" class="display show-intro-title">{title}</h1>
+        {settings.tagline && <p class="show-intro-tagline">{settings.tagline}</p>}
+        {body && <p class="show-intro-desc">{body}</p>}
+        <div class="show-intro-actions">
+          <a class="pill pill-primary" href={ctaUrl}>
+            {ctaText}
+          </a>
+          <a class="pill pill-ghost" href="/about">
+            {settings.aboutTitle || 'About the show'}
+          </a>
+        </div>
+        {
+          !hasArtwork && (
+            <PlatformIcons platforms={platforms} showTitle={show.title} size="lg" class="show-intro-icons" />
+          )
+        }
+      </div>
+    </div>
+  </Container>
+</section>

@@ -2,46 +2,70 @@
 import Section from '../site/Section.astro';
 import SmartImage from '../SmartImage.astro';
 
+/**
+ * The closing colour band: the owner's call-to-action headline and copy, the
+ * show's headline numbers, and a button through to the About page.
+ */
 export interface Props {
   heading: string;
   body?: string;
   buttonText?: string;
   buttonUrl?: string;
   imageUrl?: string | null;
+  stats?: { episodes: number; guests: number; since: number | null };
   tone?: 'accent-1' | 'accent-2' | 'accent-3' | 'accent-4';
 }
 
-const { heading, body, buttonText, buttonUrl, imageUrl, tone = 'accent-3' } = Astro.props;
+const { heading, body, buttonText, buttonUrl, imageUrl, stats, tone = 'accent-3' } = Astro.props;
 const hasButton = Boolean(buttonText && buttonUrl);
+
+const figures = stats
+  ? [
+      stats.episodes > 0 && { value: String(stats.episodes), label: stats.episodes === 1 ? 'episode' : 'episodes' },
+      stats.guests > 0 && { value: String(stats.guests), label: stats.guests === 1 ? 'guest' : 'guests' },
+      stats.since && { value: String(stats.since), label: 'on air since' }
+    ].filter((f): f is { value: string; label: string } => Boolean(f))
+  : [];
 ---
 
 <Section id="cta" tone={tone}>
-  <div class="grid items-center gap-8 lg:grid-cols-12 lg:gap-12">
-    <div class:list={[imageUrl ? 'lg:col-span-5' : 'lg:col-span-6']}>
-      <h2 class="display text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">{heading}</h2>
-    </div>
-    <div class:list={['flex flex-col gap-6', imageUrl ? 'lg:col-span-4' : 'lg:col-span-6']}>
-      {body && <p class="text-base text-pretty opacity-90 lg:text-lg">{body}</p>}
+  <div class="cta-grid">
+    <div class="cta-copy">
+      <h2 class="display cta-title">{heading}</h2>
+      {body && <p class="cta-body">{body}</p>}
       {
         hasButton && (
-          <a class="pill pill-ink self-start" href={buttonUrl}>
+          <a class="pill pill-ink cta-button" href={buttonUrl}>
             {buttonText}
           </a>
         )
       }
     </div>
-    {
-      imageUrl && (
-        <div class="lg:col-span-3">
+
+    <div class="cta-side">
+      {
+        figures.length > 0 && (
+          <dl class="cta-stats">
+            {figures.map((f) => (
+              <div class="cta-stat">
+                <dt class="cta-stat-label">{f.label}</dt>
+                <dd class="cta-stat-value">{f.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+      {
+        imageUrl && (
           <SmartImage
-            class="mx-auto aspect-square w-48 rounded-3xl object-cover shadow-2xl lg:w-full"
+            class="cta-art"
             src={imageUrl}
             alt=""
             width={280}
             height={280}
           />
-        </div>
-      )
-    }
+        )
+      }
+    </div>
   </div>
 </Section>

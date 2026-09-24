@@ -3,6 +3,7 @@ import type { Episode, Show } from '../../lib/types';
 import type { SiteSettings } from '../../server/db/schema';
 import EpisodeCard from '../episode/EpisodeCard.astro';
 import Carousel from '../site/Carousel.astro';
+import Container from '../site/Container.astro';
 
 export interface Props {
   settings: SiteSettings;
@@ -19,31 +20,44 @@ const seen = new Set<string>();
 const cards = [featured, ...latest]
   .filter((e): e is Episode => Boolean(e) && !seen.has(e!.id) && Boolean(seen.add(e!.id)))
   .slice(0, 5);
+
+const heading = settings.featuredHeading || 'Featured episodes';
 ---
 
 {
   cards.length > 0 && (
-    <section class="home-hero" aria-label="Featured episodes">
+    <section class="home-hero" aria-labelledby="home-hero-heading">
+      <Container>
+        <div class="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <h2 id="home-hero-heading" class="section-heading text-sm">
+            {heading}
+          </h2>
+          <a class="text-primary inline-flex items-center gap-1 text-sm font-bold hover:underline" href="/episodes">
+            See all episodes
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
+            </svg>
+          </a>
+        </div>
+      </Container>
 
-        <Carousel
-          label="Featured episodes"
-          arrows="below"
-          dots
-          autoplay={5000}
-          itemClass="w-[86vw] sm:w-[560px] lg:w-[760px] xl:w-[820px]"
-        >
-          {cards.map((episode, index) => (
-            <EpisodeCard
-              episode={episode}
-              show={show}
-              variant="hero"
-              index={index}
-              eyebrow={index === 0 ? settings.featuredHeading || undefined : undefined}
-              loading={index === 0 ? 'eager' : 'lazy'}
-            />
-          ))}
-        </Carousel>
-
+      <Carousel
+        label={heading}
+        arrows="below"
+        dots
+        autoplay={5000}
+        itemClass="w-[86vw] sm:w-[560px] lg:w-[760px] xl:w-[820px]"
+      >
+        {cards.map((episode, index) => (
+          <EpisodeCard
+            episode={episode}
+            show={show}
+            variant="hero"
+            index={index}
+            loading="lazy"
+          />
+        ))}
+      </Carousel>
     </section>
   )
 }

@@ -6,15 +6,17 @@ import LatestEpisodes from '../components/home/LatestEpisodes.astro';
 import LatestVideos from '../components/home/LatestVideos.astro';
 import NewsletterBand from '../components/home/NewsletterBand.astro';
 import SeriesBand from '../components/home/SeriesBand.astro';
+import ShowIntro from '../components/home/ShowIntro.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import {
   getFeaturedEpisode,
   getLatestEpisodes,
-  getLatestVideos
+  getLatestVideos,
+  getShowStats
 } from '../server/repo/episodes';
 import { listRecentGuests, listTeam } from '../server/repo/people';
-import { getSettings, getShowInfo } from '../server/repo/settings';
+import { getLinks, getSettings, getShowInfo } from '../server/repo/settings';
 import { countEpisodesBySeries, listSeries } from '../server/repo/series';
 
 const settings = await getSettings();
@@ -24,23 +26,21 @@ const show = await getShowInfo();
 // never pay for a query whose results are not rendered.
 const featured = settings.showFeatured ? await getFeaturedEpisode() : null;
 
-const [latest, team, guests, videos, allSeries, seriesCounts] = await Promise.all([
+const ctaHeading = settings.ctaHeading || settings.aboutHeading;
+const ctaBody = settings.ctaBody || settings.tagline;
+const showCta = settings.showCta && Boolean(ctaHeading);
+
+const [latest, platforms, team, guests, videos, allSeries, seriesCounts, stats] = await Promise.all([
   // Only the configured number of episodes — never the whole archive.
   getLatestEpisodes(settings.latestEpisodeCount),
+  getLinks('platform'),
   settings.showPeople ? listTeam() : Promise.resolve([]),
   settings.showPeople ? listRecentGuests(8) : Promise.resolve([]),
   settings.showVideos ? getLatestVideos(settings.latestVideoCount) : Promise.resolve([]),
   settings.showSeries ? listSeries() : Promise.resolve([]),
-  settings.showSeries ? countEpisodesBySeries() : Promise.resolve(new Map<string, number>())
+  settings.showSeries ? countEpisodesBySeries() : Promise.resolve(new Map<string, number>()),
+  showCta ? getShowStats() : Promise.resolve(undefined)
 ]);
-
-// Hosts and team first, then recent guests, without repeats.
-const seen = new Set<string>();
-const people = [...team, ...guests].filter((p) => !seen.has(p.id) && seen.add(p.id));
-
-const ctaHeading = settings.ctaHeading || settings.aboutHeading;
-const ctaBody = settings.ctaBody || settings.tagline;
-const showCta = settings.showCta && Boolean(ctaHeading);
 
 const title = settings.metaTitle || `${show.title} — ${settings.tagline}`;
 
@@ -48,6 +48,9 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
 
 <Layout title={title} description={settings.metaDescription || settings.description} hideBreadcrumbs>
+  <!-- The show first: artwork, name, what it is about, where to listen. -->
+  <ShowIntro settings={settings} show={show} platforms={platforms} />
+
   {
     settings.showHero && (
       <HomeHero settings={settings} show={show} featured={featured} latest={latest} />
@@ -58,7 +61,7 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 
   {settings.showSeries && <SeriesBand series={allSeries} counts={seriesCounts} heading={settings.seriesHeading} />}
 
-  {settings.showPeople && <FeaturedPeople people={people} heading={settings.peopleHeading} />}
+  {settings.showPeople && <FeaturedPeople team={team} guests={guests} heading={settings.peopleHeading} />}
 
   {settings.showVideos && <LatestVideos episodes={videos} heading={settings.videosHeading} />}
 
@@ -81,6 +84,7 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
         buttonText={settings.ctaButtonText || 'Learn more about us'}
         buttonUrl={settings.ctaButtonUrl || '/about'}
         imageUrl={settings.ctaImageUrl ?? settings.aboutImageUrl}
+        stats={stats}
       />
     )
   }

@@ -610,3 +610,40 @@ async function setEpisodeGuests(episodeId: string, personIds: string[]): Promise
     }))
   );
 }
+
+/**
+ * Headline numbers for the homepage: how many episodes are live, how many
+ * different guests have appeared on them, and the year of the first one.
+ * Three aggregate queries, none of which touch a row's content.
+ */
+export async function getShowStats(): Promise<{
+  episodes: number;
+  guests: number;
+  since: number | null;
+}> {
+  const db = getDb();
+  const live = and(eq(episodes.status, 'published'), sql`${episodes.publishDate} <= now()`);
+
+  const [[episodeRow], [guestRow]] = await Promise.all([
+    db
+      .select({
+        count: sql<number>`count(*)::int`,
+        first: sql<Date | null>`min(${episodes.publishDate})`
+      })
+      .from(episodes)
+      .where(live),
+    db
+      .select({ count: sql<number>`count(distinct ${episodePeople.personId})::int` })
+      .from(episodePeople)
+      .innerJoin(episodes, eq(episodes.id, episodePeople.episodeId))
+      .innerJoin(people, eq(people.id, episodePeople.personId))
+      .where(and(live, eq(people.kind, 'guest')))
+  ]);
+
+  const first = episodeRow?.first ? new Date(episodeRow.first) : null;
+  return {
+    episodes: episodeRow?.count ?? 0,
+    guests: guestRow?.count ?? 0,
+    since: first && !Number.isNaN(first.getTime()) ? first.getUTCFullYear() : null
+  };
+}

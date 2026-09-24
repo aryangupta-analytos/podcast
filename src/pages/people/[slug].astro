@@ -25,12 +25,17 @@ const [show, episodes] = await Promise.all([
 const roleLabel =
   person.kind === 'host' ? 'Host' : person.kind === 'team' ? 'Team' : 'Guest';
 
-const socials = [
-  { label: 'LinkedIn', url: person.linkedin },
-  { label: 'Website', url: person.website },
-  { label: 'X / Twitter', url: person.twitter },
-  { label: 'GitHub', url: person.github }
-].filter((link): link is { label: string; url: string } => Boolean(link.url));
+// Guests link out to where they can be found. The show's own hosts and team
+// are presented as part of the show, without personal profile links.
+const socials =
+  person.kind === 'guest'
+    ? [
+        { label: 'LinkedIn', url: person.linkedin },
+        { label: 'Website', url: person.website },
+        { label: 'X / Twitter', url: person.twitter },
+        { label: 'GitHub', url: person.github }
+      ].filter((link): link is { label: string; url: string } => Boolean(link.url))
+    : [];
 
 // With no bio of their own, a guest's profile opens with the introduction the
 // show already published about them in their episode's notes.

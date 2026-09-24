@@ -33,6 +33,11 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
   </section>
 
   <Container class="pb-20 lg:pb-28">
-    <PeopleDirectory hosts={hosts} team={team} guests={guests} />
+    <PeopleDirectory
+      hosts={hosts}
+      team={team}
+      guests={guests}
+      labels={{ team: settings.teamHeading || 'Hosts & team', guests: 'Guests' }}
+    />
   </Container>
 </Layout>
