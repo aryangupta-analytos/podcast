@@ -1,0 +1,45 @@
+---
+/**
+ * Scroll reveal for any element marked `data-reveal`: blocks below the fold
+ * rise and fade in as they are scrolled to. Include once per page.
+ *
+ * Nothing is hidden by the server, so without JavaScript — or with reduced
+ * motion — everything is simply visible. Anything already on screen when the
+ * page loads is left alone rather than flashed away and back. An optional
+ * `--reveal-delay` on the element staggers siblings.
+ *
+ * Bundled once, so it re-runs on `astro:page-load` and marks what it has
+ * handled with `data-ready`, like the carousels.
+ */
+---
+
+<script>
+  function init() {
+    const pending = Array.from(document.querySelectorAll<HTMLElement>('[data-reveal]:not([data-ready])'));
+    if (pending.length === 0) return;
+    pending.forEach((el) => (el.dataset.ready = '1'));
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!('IntersectionObserver' in window)) return;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.remove('is-hidden');
+          io.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -6% 0px' }
+    );
+
+    pending.forEach((el) => {
+      if (el.getBoundingClientRect().top < window.innerHeight) return;
+      el.classList.add('is-hidden');
+      io.observe(el);
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

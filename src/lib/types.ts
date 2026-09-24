@@ -57,6 +57,8 @@ export interface Episode {
   status: 'draft' | 'published' | 'unpublished';
   isFeatured: boolean;
   seriesId?: string;
+  /** Topic tags for the archive filter, e.g. "Leadership". */
+  tags: string[];
 }
 
 export interface Paginated<T> {

@@ -38,6 +38,10 @@ dark/light mode. What that changed relative to the vendored v1.1.0 files:
   `player/Slider/styles.css`, `ContactForm.tsx`, and all of `src/styles`.
   Design tokens now live in `src/styles/theme.css`; `tailwind.css` only bridges
   them. The old OKLCH `--color-dark-*` / `--color-light-*` tokens are gone.
+- **Typography:** Inter and Fraunces were replaced by Manrope for every
+  role (headings, body, navigation); Oswald remains for the header wordmark.
+- **`FullPlayButton.tsx`:** gained an optional `label` prop (the featured
+  card's "Listen to episode"); default wording unchanged.
 - **Added (not vendored):** `components/site/*`, `components/episode/EpisodeCard.astro`,
   `components/episode/PlatformButtons.astro`, `components/people/*`,
   `components/video/*`, `components/home/*`, `components/EmptyState.astro`.

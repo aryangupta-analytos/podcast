@@ -52,27 +52,16 @@ export default defineConfig({
   },
   fonts: [
     {
+      // One family for the whole site: headings, body, navigation. Variable
+      // weight, so a 400 paragraph and an 800 hero headline share one file.
       provider: fontProviders.google(),
-      name: 'Inter',
-      cssVariable: '--astro-font-inter',
+      name: 'Manrope',
+      cssVariable: '--astro-font-manrope',
       formats: ['woff2'],
       styles: ['normal'],
       subsets: ['latin'],
-      weights: ['300 900'],
-      options: { experimental: { variableAxis: { opsz: ['14..32'] } } }
-    },
-    {
-      // Display serif for headlines. Variable weight and optical size so the
-      // same file serves a 14px card title and a 72px hero headline.
-      provider: fontProviders.google(),
-      name: 'Fraunces',
-      cssVariable: '--astro-font-fraunces',
-      formats: ['woff2'],
-      styles: ['normal', 'italic'],
-      subsets: ['latin'],
-      weights: ['300 900'],
-      fallbacks: ['Georgia', 'serif'],
-      options: { experimental: { variableAxis: { opsz: ['9..144'] } } }
+      weights: ['200 800'],
+      fallbacks: ['ui-sans-serif', 'system-ui', 'sans-serif']
     },
     {
       // Condensed, heavy face for the header wordmark only.

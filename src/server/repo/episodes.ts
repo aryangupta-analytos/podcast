@@ -55,7 +55,8 @@ export function toEpisode(row: EpisodeRow, guests: EpisodeGuest[] = []): Episode
     },
     status: row.status,
     isFeatured: row.isFeatured,
-    seriesId: row.seriesId ?? undefined
+    seriesId: row.seriesId ?? undefined,
+    tags: row.tags ?? []
   };
 }
 
@@ -164,6 +165,113 @@ export async function getPublishedEpisodes({
     total: count,
     totalPages: Math.max(1, Math.ceil(count / perPage))
   };
+}
+
+/**
+ * One page of the archive with multi-part interviews folded together: the
+ * episodes that share exactly the same guests form one group (Part 1, Part 2,
+ * a teaser), newest group first, each group's episodes oldest first. An
+ * episode with no guests is a group of its own.
+ *
+ * `limit` / `offset` count groups, not episodes, so a page never splits an
+ * interview across a boundary. Two grouped queries, one row fetch and one
+ * batched guest lookup — the cost is set by the page size, not the archive.
+ */
+export async function getEpisodeGroups({
+  limit = 6,
+  offset = 0,
+  tag,
+  query
+}: {
+  limit?: number;
+  offset?: number;
+  /** A tag's display name; only episodes carrying it are listed. */
+  tag?: string;
+  /** Free text matched against titles, descriptions and guest names. */
+  query?: string;
+} = {}): Promise<{ groups: Episode[][]; total: number }> {
+  const db = getDb();
+
+  const filters: SQL[] = [sql`e.status = 'published'`, sql`e.publish_date <= now()`];
+  if (tag) filters.push(sql`${tag} = any(e.tags)`);
+  const trimmed = query?.trim() ?? '';
+  if (trimmed.length >= 2) {
+    const pattern = `%${trimmed.replace(/[%_\\]/g, '\\$&')}%`;
+    filters.push(sql`(
+      e.title ilike ${pattern}
+      or e.description ilike ${pattern}
+      or exists (
+        select 1 from episode_people ep join people p on p.id = ep.person_id
+        where ep.episode_id = e.id and p.name ilike ${pattern}
+      )
+    )`);
+  }
+
+  // Each live episode with its group key: its guests' ids, sorted, or its own
+  // id when it has none.
+  const live = sql`
+    select e.id, e.publish_date,
+      coalesce(
+        (select string_agg(ep.person_id::text, ',' order by ep.person_id)
+           from episode_people ep
+          where ep.episode_id = e.id and ep.role = 'guest'),
+        e.id::text
+      ) as gkey
+    from episodes e
+    where ${sql.join(filters, sql` and `)}`;
+
+  const [groupRows, countRows] = await Promise.all([
+    db.execute<{ ids: string[] }>(sql`
+      with live as (${live})
+      select array_agg(id::text order by publish_date asc) as ids
+        from live
+       group by gkey
+       order by max(publish_date) desc
+       limit ${limit} offset ${offset}`),
+    db.execute<{ count: number }>(sql`
+      with live as (${live})
+      select count(distinct gkey)::int as count from live`)
+  ]);
+
+  const idLists = Array.from(groupRows, (row) => row.ids);
+  const ids = idLists.flat();
+  if (ids.length === 0) return { groups: [], total: countRows[0]?.count ?? 0 };
+
+  const [rows, guests] = await Promise.all([
+    db.select().from(episodes).where(inArray(episodes.id, ids)),
+    guestsFor(ids)
+  ]);
+  const byId = new Map(rows.map((row) => [row.id, toEpisode(row, guests.get(row.id) ?? [])]));
+
+  return {
+    groups: idLists
+      .map((list) => list.map((id) => byId.get(id)).filter((e): e is Episode => Boolean(e)))
+      .filter((group) => group.length > 0),
+    total: countRows[0]?.count ?? 0
+  };
+}
+
+/** How many episodes are live — the archive's headline count. */
+export async function countLiveEpisodes(): Promise<number> {
+  const [row] = await getDb()
+    .select({ count: sql<number>`count(*)::int` })
+    .from(episodes)
+    .where(LIVE);
+  return row?.count ?? 0;
+}
+
+/**
+ * The tags on live episodes with how many episodes carry each, most used
+ * first. Bounded by the owner's tag vocabulary, not by the archive.
+ */
+export async function listEpisodeTags(): Promise<Array<{ tag: string; count: number }>> {
+  const rows = await getDb().execute<{ tag: string; count: number }>(sql`
+    select t.tag, count(*)::int as count
+      from episodes e, unnest(e.tags) as t(tag)
+     where e.status = 'published' and e.publish_date <= now()
+     group by t.tag
+     order by count(*) desc, t.tag asc`);
+  return Array.from(rows, (row) => ({ tag: row.tag, count: row.count }));
 }
 
 /** The N most recent published episodes, for the homepage. */
@@ -438,6 +546,7 @@ export interface EpisodeInput {
   isFeatured?: boolean;
   guestIds?: string[];
   seriesId?: string | null;
+  tags?: string[];
 }
 
 export async function createEpisode(input: EpisodeInput): Promise<Episode> {
@@ -466,7 +575,8 @@ export async function createEpisode(input: EpisodeInput): Promise<Episode> {
     otherUrl: input.otherUrl ?? null,
     status: input.status ?? 'draft',
     isFeatured: input.isFeatured ?? false,
-    seriesId: input.seriesId ?? null
+    seriesId: input.seriesId ?? null,
+    tags: input.tags ?? []
   };
 
   const [row] = await db.insert(episodes).values(values).returning();
@@ -505,6 +615,7 @@ export async function updateEpisode(
   if (input.status !== undefined) patch.status = input.status;
   if (input.isFeatured !== undefined) patch.isFeatured = input.isFeatured;
   if (input.seriesId !== undefined) patch.seriesId = input.seriesId;
+  if (input.tags !== undefined) patch.tags = input.tags;
 
   // Changing the slug breaks existing links, so it only changes when the owner
   // edits the field explicitly — never as a side effect of retitling.

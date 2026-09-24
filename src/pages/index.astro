@@ -7,6 +7,7 @@ import LatestVideos from '../components/home/LatestVideos.astro';
 import NewsletterBand from '../components/home/NewsletterBand.astro';
 import SeriesBand from '../components/home/SeriesBand.astro';
 import ShowIntro from '../components/home/ShowIntro.astro';
+import Reveal from '../components/site/Reveal.astro';
 import Layout from '../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../lib/cache';
 import {
@@ -53,38 +54,66 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 
   {
     settings.showHero && (
-      <HomeHero settings={settings} show={show} featured={featured} latest={latest} />
+      <div data-reveal>
+        <HomeHero settings={settings} show={show} featured={featured} latest={latest} />
+      </div>
     )
   }
 
-  <LatestEpisodes episodes={latest} show={show} heading={settings.latestHeading} />
+  <div data-reveal>
+    <LatestEpisodes episodes={latest} show={show} heading={settings.latestHeading} layout="spotlight" />
+  </div>
 
-  {settings.showSeries && <SeriesBand series={allSeries} counts={seriesCounts} heading={settings.seriesHeading} />}
+  {
+    settings.showSeries && (
+      <div data-reveal>
+        <SeriesBand series={allSeries} counts={seriesCounts} heading={settings.seriesHeading} />
+      </div>
+    )
+  }
 
-  {settings.showPeople && <FeaturedPeople team={team} guests={guests} heading={settings.peopleHeading} />}
+  {
+    settings.showPeople && (
+      <div data-reveal>
+        <FeaturedPeople team={team} guests={guests} heading={settings.peopleHeading} />
+      </div>
+    )
+  }
 
-  {settings.showVideos && <LatestVideos episodes={videos} heading={settings.videosHeading} />}
+  {
+    settings.showVideos && (
+      <div data-reveal>
+        <LatestVideos episodes={videos} heading={settings.videosHeading} />
+      </div>
+    )
+  }
 
   {
     settings.showNewsletter && (
-      <NewsletterBand
-        heading={settings.newsletterHeading}
-        body={settings.newsletterBody}
-        buttonText={settings.newsletterButtonText || "Subscribe"}
-        showTitle={show.title}
-      />
+      <div data-reveal>
+        <NewsletterBand
+          heading={settings.newsletterHeading}
+          body={settings.newsletterBody}
+          buttonText={settings.newsletterButtonText || "Subscribe"}
+          showTitle={show.title}
+        />
+      </div>
     )
   }
 
   {
     showCta && (
-      <AboutCta
-        heading={ctaHeading}
-        body={ctaBody}
-        buttonText={settings.ctaButtonText || 'Learn more about us'}
-        buttonUrl={settings.ctaButtonUrl || '/about'}
-        stats={stats}
-      />
+      <div data-reveal>
+        <AboutCta
+          heading={ctaHeading}
+          body={ctaBody}
+          buttonText={settings.ctaButtonText || 'Learn more about us'}
+          buttonUrl={settings.ctaButtonUrl || '/about'}
+          stats={stats}
+        />
+      </div>
     )
   }
+
+  <Reveal />
 </Layout>

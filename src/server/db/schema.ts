@@ -181,6 +181,12 @@ export const episodes = pgTable(
     sortOrder: integer('sort_order'),
     /** The series this episode belongs to, if any. */
     seriesId: uuid('series_id').references(() => series.id, { onDelete: 'set null' }),
+    /**
+     * Topic tags for the archive's filter row, e.g. "Leadership". Display
+     * names as the owner typed them; the filter matches them by slug. Not to
+     * be confused with the "topics discussed" read from the show notes.
+     */
+    tags: text('tags').array().notNull().default([]),
 
     createdAt,
     updatedAt

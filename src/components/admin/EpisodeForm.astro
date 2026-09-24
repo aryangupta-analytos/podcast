@@ -288,6 +288,22 @@ const publishDate = episode
       <p class="help">Series are managed under Series in the menu.</p>
     </div>
 
+    <div class="admin-field">
+      <label for="tags">Topics</label>
+      <input
+        id="tags"
+        name="tags"
+        type="text"
+        value={episode?.tags.join(', ') ?? ''}
+        placeholder="Leadership, Technology"
+        maxlength="300"
+      />
+      <p class="help">
+        Separate with commas, up to six. Each topic becomes a filter on the
+        Episodes page; reuse the same spelling so episodes land under one filter.
+      </p>
+    </div>
+
     <label class="admin-check">
       <input type="checkbox" name="isFeatured" checked={episode?.isFeatured} />
       <span>

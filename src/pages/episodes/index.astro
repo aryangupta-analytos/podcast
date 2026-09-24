@@ -1,38 +1,70 @@
 ---
 import EmptyState from '../../components/EmptyState.astro';
-import EpisodeCard from '../../components/episode/EpisodeCard.astro';
+import EpisodeGroupCard from '../../components/episode/EpisodeGroupCard.astro';
 import Container from '../../components/site/Container.astro';
 import Layout from '../../layouts/Layout.astro';
 import { CACHE_PUBLIC_PAGE } from '../../lib/cache';
-import { getPublishedEpisodes } from '../../server/repo/episodes';
+import { tagSlug } from '../../lib/episode-groups';
+import {
+  countLiveEpisodes,
+  getEpisodeGroups,
+  listEpisodeTags
+} from '../../server/repo/episodes';
 import { getSettings, getShowInfo } from '../../server/repo/settings';
 
-const PER_PAGE = 12;
+/*
+  The archive: a topic filter row and a search box, then six cards at a time
+  with "Load more" underneath. Multi-part interviews are one card.
 
-// Pagination keeps the archive at a constant cost no matter how long the show
-// runs: page 40 loads exactly as many rows as page 1.
-const requested = Number.parseInt(Astro.url.searchParams.get('page') ?? '1', 10);
-const page = Number.isFinite(requested) && requested > 0 ? requested : 1;
+  `?page=N` is cumulative — it shows the first N × 6 cards — so the Load more
+  link works as a plain link without JavaScript, and with it the script below
+  fetches that page and appends only the new cards.
+*/
+const PER_PAGE = 6;
+const MAX_PAGE = 20;
 
-const [settings, show, episodes] = await Promise.all([
+const params = Astro.url.searchParams;
+const requested = Number.parseInt(params.get('page') ?? '1', 10);
+const page = Number.isFinite(requested) ? Math.min(MAX_PAGE, Math.max(1, requested)) : 1;
+const query = (params.get('q') ?? '').trim().slice(0, 100);
+const tagParam = params.get('tag') ?? '';
+
+const [settings, show, tags, episodeCount] = await Promise.all([
   getSettings(),
   getShowInfo(),
-  getPublishedEpisodes({ page, perPage: PER_PAGE })
+  listEpisodeTags(),
+  countLiveEpisodes()
 ]);
 
-// A page past the end is a 404, not an empty list — otherwise crawlers index
-// endless blank pages.
-if (page > episodes.totalPages && episodes.total > 0) {
-  return Astro.redirect('/episodes', 302);
-}
+// The URL carries a tag's slug; the filter needs its display name.
+const activeTag = tags.find((t) => tagSlug(t.tag) === tagParam)?.tag;
+if (tagParam && !activeTag) return Astro.redirect('/episodes', 302);
+
+const { groups, total } = await getEpisodeGroups({
+  limit: page * PER_PAGE,
+  tag: activeTag,
+  query
+});
+
+const hrefFor = (next: { tag?: string; q?: string; page?: number }) => {
+  const url = new URLSearchParams();
+  if (next.tag) url.set('tag', next.tag);
+  if (next.q) url.set('q', next.q);
+  if (next.page && next.page > 1) url.set('page', String(next.page));
+  const qs = url.toString();
+  return qs ? `/episodes?${qs}` : '/episodes';
+};
+
+const activeSlug = activeTag ? tagSlug(activeTag) : undefined;
+const hasMore = groups.length < total && page < MAX_PAGE;
+const moreHref = `${hrefFor({ tag: activeSlug, q: query, page: page + 1 })}#ep-${groups.length + 1}`;
+
+const listHeading = query
+  ? `Results for “${query}”`
+  : activeTag ?? (settings.latestHeading || 'Latest episodes');
 
 const title = `Episodes — ${show.title}`;
-const canonicalURL = new URL(
-  page > 1 ? `/episodes?page=${page}` : '/episodes',
-  Astro.site
-);
-const prevHref = page === 2 ? '/episodes' : `/episodes?page=${page - 1}`;
-const nextHref = `/episodes?page=${page + 1}`;
+const canonicalURL = new URL(activeSlug ? `/episodes?tag=${activeSlug}` : '/episodes', Astro.site);
 
 Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
 ---
@@ -43,61 +75,150 @@ Astro.response.headers.set('Cache-Control', CACHE_PUBLIC_PAGE);
   canonicalURL={canonicalURL}
 >
   <Fragment slot="head">
-    {page > 1 && <link rel="prev" href={prevHref} />}
-    {page < episodes.totalPages && <link rel="next" href={nextHref} />}
+    {query && <meta name="robots" content="noindex" />}
   </Fragment>
 
-  <Container class="pt-10 pb-16 lg:pt-14">
-    <div class="max-w-3xl">
-      <p class="section-heading text-primary mb-3">Podcast</p>
-      <h1 class="display text-5xl lg:text-6xl">{settings.episodesHeading || 'Episodes'}</h1>
-      {settings.episodesIntro && <p class="text-text mt-4 text-lg">{settings.episodesIntro}</p>}
-      <p class="text-text-muted mt-4">
-        {episodes.total} episode{episodes.total === 1 ? '' : 's'}
-        {episodes.totalPages > 1 && ` · page ${page} of ${episodes.totalPages}`}
-      </p>
+  <Container class="pt-10 pb-20 lg:pt-14">
+    <div class="archive">
+      <header class="archive-head">
+        <p class="section-heading text-primary">Podcast</p>
+        <h1 class="display archive-title">{settings.episodesHeading || 'Episodes'}</h1>
+        {settings.episodesIntro && <p class="archive-intro">{settings.episodesIntro}</p>}
+        <p class="archive-count">
+          {episodeCount} episode{episodeCount === 1 ? '' : 's'}
+        </p>
+      </header>
+
+      <div class="archive-tools">
+        {
+          tags.length > 0 && (
+            <nav class="archive-filters" aria-label="Filter episodes by topic">
+              <a class:list={['archive-chip', !activeTag && 'is-active']} href={hrefFor({ q: query })} aria-current={!activeTag ? 'true' : undefined}>
+                All
+              </a>
+              {tags.map((t) => (
+                <a
+                  class:list={['archive-chip', activeTag === t.tag && 'is-active']}
+                  href={hrefFor({ tag: tagSlug(t.tag), q: query })}
+                  aria-current={activeTag === t.tag ? 'true' : undefined}
+                >
+                  {t.tag}
+                </a>
+              ))}
+            </nav>
+          )
+        }
+
+        <form class="archive-search" action="/episodes" method="get" role="search">
+          {activeSlug && <input type="hidden" name="tag" value={activeSlug} />}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="m20 20-3.5-3.5" />
+          </svg>
+          <label class="sr-only" for="archive-q">Search episodes</label>
+          <input id="archive-q" name="q" type="search" value={query} placeholder="Search episodes or guests" autocomplete="off" />
+        </form>
+      </div>
+
+      <div class="archive-list-head">
+        <h2 class="section-heading text-sm">{listHeading}</h2>
+        {
+          (query || activeTag) && (
+            <a class="archive-clear" href="/episodes">
+              Clear
+            </a>
+          )
+        }
+      </div>
+
+      {
+        groups.length === 0 ? (
+          <EmptyState message={query ? `No episodes match “${query}”.` : 'No episodes yet. Check back soon!'} />
+        ) : (
+          <ul class="archive-grid" role="list" data-archive-grid>
+            {groups.map((group, index) => (
+              <li id={`ep-${index + 1}`}>
+                <EpisodeGroupCard episodes={group} show={show} loading={index < 3 ? 'eager' : 'lazy'} />
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      {
+        hasMore && (
+          <div class="archive-more" data-load-more-wrap>
+            <a class="pill pill-ghost" href={moreHref} data-load-more rel="nofollow">
+              Load more episodes →
+            </a>
+          </div>
+        )
+      }
     </div>
-
-    {
-      episodes.items.length === 0 ? (
-        <EmptyState message="No episodes yet. Check back soon!" />
-      ) : (
-        <ul class="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
-          {episodes.items.map((episode, index) => (
-            <li>
-              <EpisodeCard
-                episode={episode}
-                show={show}
-                variant="card"
-                index={index}
-                loading={index < 3 ? 'eager' : 'lazy'}
-              />
-            </li>
-          ))}
-        </ul>
-      )
-    }
-
-    {
-      episodes.totalPages > 1 && (
-        <nav class="flex items-center justify-between gap-4 py-12" aria-label="Episode pages">
-          {page > 1 ? (
-            <a class="pill pill-ghost" href={prevHref} rel="prev">
-              ← Newer episodes
-            </a>
-          ) : (
-            <span />
-          )}
-
-          {page < episodes.totalPages ? (
-            <a class="pill pill-ghost" href={nextHref} rel="next">
-              Older episodes →
-            </a>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )
-    }
   </Container>
 </Layout>
+
+<script>
+  /*
+    "Load more" without a page change: fetch the next cumulative page and
+    append only the cards this page does not have yet.
+
+    The server renders a plain link, which works on its own. Here it becomes a
+    <button>: a link click would be seen by the navigation fallback in
+    Layout.astro, which reloads the page when the router does not take a click
+    — and marks the router broken for the session.
+  */
+  function init() {
+    const link = document.querySelector<HTMLAnchorElement>('a[data-load-more]');
+    if (!link) return;
+
+    let nextHref = link.getAttribute('href') ?? '';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = link.className;
+    button.textContent = link.textContent;
+    button.dataset.loadMore = '';
+    link.replaceWith(button);
+
+    button.addEventListener('click', async () => {
+      if (button.getAttribute('aria-busy') === 'true') return;
+      button.setAttribute('aria-busy', 'true');
+      try {
+        const res = await fetch(nextHref, { headers: { Accept: 'text/html' } });
+        if (!res.ok) throw new Error(String(res.status));
+        const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+        const grid = document.querySelector('[data-archive-grid]');
+        const incoming = doc.querySelector('[data-archive-grid]');
+        if (!grid || !incoming) throw new Error('no grid');
+
+        const have = grid.children.length;
+        Array.from(incoming.children)
+          .slice(have)
+          .forEach((item) => {
+            const node = document.importNode(item, true) as HTMLElement;
+            node.classList.add('is-new');
+            grid.append(node);
+          });
+        // Keyboard users continue from the first new card.
+        (grid.children[have]?.querySelector('a[href]:not([tabindex="-1"])') as HTMLElement | null)?.focus({
+          preventScroll: true
+        });
+
+        const url = new URL(res.url);
+        history.replaceState(history.state, '', url.pathname + url.search);
+
+        const next = doc.querySelector('[data-load-more]')?.getAttribute('href');
+        if (next) nextHref = next;
+        else button.closest('[data-load-more-wrap]')?.remove();
+      } catch (error) {
+        console.error('Load more failed; loading the page instead.', error);
+        window.location.href = nextHref;
+      } finally {
+        button.removeAttribute('aria-busy');
+      }
+    });
+  }
+
+  init();
+  document.addEventListener('astro:page-load', init);
+</script>

@@ -14,6 +14,8 @@ type Props = {
   tone?: 'primary' | 'dark' | 'light';
   /** Shorter label for tight cards. */
   compact?: boolean;
+  /** Label while not playing; overrides the `compact` wording. */
+  label?: string;
   class?: string;
 };
 
@@ -45,6 +47,7 @@ export default function FullPlayButton({
   href,
   tone = 'primary',
   compact = false,
+  label,
   class: className = ''
 }: Props) {
   if (!episode) {
@@ -71,7 +74,7 @@ export default function FullPlayButton({
           ? renderIcon(PauseIcon, 'pause')
           : renderIcon(PlayIcon, 'play')}
       </span>
-      {showPauseIcon ? 'Pause' : compact ? 'Listen' : 'Play episode'}
+      {showPauseIcon ? 'Pause' : (label ?? (compact ? 'Listen' : 'Play episode'))}
       <span class="sr-only">
         (press to {showPauseIcon ? 'pause' : 'play'})
       </span>

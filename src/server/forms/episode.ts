@@ -1,3 +1,4 @@
+import { parseTags } from '../../lib/episode-groups';
 import type { EpisodeInput } from '../repo/episodes';
 import { findOrCreateGuest } from '../repo/people';
 import { sanitizeHtml } from '../sanitize';
@@ -133,6 +134,7 @@ export async function parseEpisodeForm(form: FormData): Promise<ParsedEpisodeFor
   const input: EpisodeInput = {
     title,
     seriesId: seriesId && /^[0-9a-f-]{36}$/i.test(seriesId) ? seriesId : null,
+    tags: parseTags(String(form.get('tags') ?? '')),
     slug: optionalStr(form, 'slug') ?? undefined,
     description,
     // Show notes are owner-authored HTML, sanitized so a pasted snippet can

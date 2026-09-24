@@ -36,8 +36,9 @@
   --color-accent-3: var(--brand-accent-3);
   --color-accent-4: var(--brand-accent-4);
 
-  --font-inter: var(--astro-font-inter);
-  --font-display: var(--astro-font-fraunces);
+  /* Manrope for everything; the fallback stack comes with the variable. */
+  --font-sans: var(--astro-font-manrope);
+  --font-display: var(--astro-font-manrope);
 
   --radius-card: 20px;
 }

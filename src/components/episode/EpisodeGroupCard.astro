@@ -1,0 +1,86 @@
+---
+import { groupSummary, leadIndex, partLabel } from '../../lib/episode-groups';
+import { formatDuration } from '../../lib/format';
+import type { Episode, Show } from '../../lib/types';
+import SmartImage from '../SmartImage.astro';
+
+/**
+ * One card in the Episodes archive: a single episode, or a multi-part
+ * interview (Part 1, Part 2, a teaser) folded into one card with a link to
+ * each part.
+ *
+ * Every card is the same dark card showing the lead episode's own artwork
+ * (the show's artwork when an episode has none). Listen is a plain `#play`
+ * link: the episode page starts playback on arrival, so no
+ * island is needed here and "Load more" can append cards as plain HTML.
+ */
+export interface Props {
+  /** The group's episodes, oldest first. */
+  episodes: Episode[];
+  show: Show;
+  loading?: 'lazy' | 'eager';
+}
+
+const { episodes, show, loading = 'lazy' } = Astro.props;
+
+const titles = episodes.map((e) => e.title);
+const lead = episodes[leadIndex(titles)] ?? episodes[0];
+const multi = episodes.length > 1;
+const href = `/episodes/${lead.episodeSlug}`;
+const guest = lead.guests[0];
+
+// "an American Film Producer" reads as "American Film Producer" on a card.
+const role = guest?.title
+  ?.replace(/^(an?|the)\s+/i, '')
+  .replace(/^./, (c) => c.toUpperCase());
+
+const seconds = episodes.reduce((sum, e) => sum + (e.duration || 0), 0);
+const eyebrow = [
+  multi ? groupSummary(titles) : lead.episodeNumber ? `Episode ${lead.episodeNumber}` : 'Episode',
+  formatDuration(seconds)
+]
+  .filter(Boolean)
+  .join(' · ');
+---
+
+<article class="arc-card">
+  <a href={href} class="arc-card-art" aria-hidden="true" tabindex="-1">
+    <SmartImage
+      src={lead.episodeThumbnail ?? show.image}
+      alt=""
+      width={420}
+      height={420}
+      sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 90vw"
+      loading={loading}
+    />
+  </a>
+
+  <div class="arc-card-body">
+    <p class="arc-card-eyebrow">{eyebrow}</p>
+    <h3 class="arc-card-name">
+      <a href={href}>{guest ? episodes[0].guests.map((g) => g.name).join(' & ') : lead.title}</a>
+    </h3>
+    {role && <p class="arc-card-role">{role}</p>}
+    {lead.description && <p class="arc-card-desc">{lead.description}</p>}
+
+    {
+      multi && (
+        <ul class="arc-card-parts" aria-label="Episodes in this interview">
+          {episodes.map((e) => (
+            <li>
+              <a href={`/episodes/${e.episodeSlug}`}>{partLabel(e.title, e.episodeNumber)}</a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <a class="arc-card-listen" href={lead.audio.src ? `${href}#play` : href}>
+      <span aria-hidden="true">
+        <svg viewBox="0 0 11 14" fill="currentColor"><path d="M0 .6v12.8c0 .5.5.8.9.5l9.9-6.4c.4-.2.4-.8 0-1L.9.1C.5-.2 0 .1 0 .6z" /></svg>
+      </span>
+      {multi ? 'Listen to interview' : 'Listen'}
+      {multi && <span class="arc-card-arrow" aria-hidden="true">→</span>}
+    </a>
+  </div>
+</article>

@@ -1565,7 +1565,7 @@ body.admin {
 /* ── Site-matched polish: type, colour accents and motion ─────────────────── */
 
 body.admin {
-  font-family: var(--astro-font-inter), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--astro-font-manrope), ui-sans-serif, system-ui, sans-serif;
   background:
     radial-gradient(900px 480px at 85% -10%, rgba(143, 123, 255, 0.16), transparent 60%),
     radial-gradient(700px 420px at -5% 105%, rgba(61, 220, 10, 0.08), transparent 60%),
@@ -1575,9 +1575,9 @@ body.admin {
 
 .admin-header h1,
 .admin-login-card h1 {
-  font-family: var(--astro-font-fraunces), Georgia, serif;
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-family: var(--astro-font-manrope), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 .admin-card h2 {
   text-transform: uppercase;

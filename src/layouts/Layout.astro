@@ -130,8 +130,7 @@ const onVercel = Boolean(
     <meta content={description} name="twitter:description" />
     <meta content={absoluteOgImage} name="twitter:image" />
 
-    <Font cssVariable="--astro-font-inter" preload />
-    <Font cssVariable="--astro-font-fraunces" preload />
+    <Font cssVariable="--astro-font-manrope" preload />
     <Font cssVariable="--astro-font-oswald" />
 
     <Schema
@@ -161,7 +160,7 @@ const onVercel = Boolean(
     <slot name="head" />
     <ClientRouter />
   </head>
-  <body class="font-inter bg-ink text-text min-h-screen antialiased">
+  <body class="font-sans bg-ink text-text min-h-screen antialiased">
     <!-- Ambient aurora: slow-drifting colour fields behind everything. Pure
          transform animation on blurred blobs, so it stays on the compositor. -->
     <div class="site-aurora" aria-hidden="true">

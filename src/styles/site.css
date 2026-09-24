@@ -15,11 +15,9 @@
   @apply prose-strong:text-heading prose-p:text-text prose-li:text-text;
 }
 
-/* Display headlines. Fraunces is a variable font; keep the weight moderate so
-   large sizes stay crisp rather than heavy. */
+/* Display headlines. */
 .display {
-  @apply font-display text-heading font-semibold tracking-tight text-balance;
-  font-variation-settings: 'opsz' 96;
+  @apply font-display text-heading font-bold tracking-tight text-balance;
 }
 
 /* Full-bleed colour blocks (hero cards, newsletter, CTA). */
@@ -358,7 +356,6 @@ a.card:hover {
 .episode-hero-title {
   @apply font-display mt-4 text-4xl leading-[1.02] font-semibold tracking-tight text-balance sm:text-5xl lg:text-6xl;
   color: #fff;
-  font-variation-settings: 'opsz' 120;
 }
 .episode-hero-guest {
   @apply mt-4 text-lg font-semibold;
@@ -584,7 +581,6 @@ main section h2.section-heading {
 }
 .hero-card-title {
   @apply font-display mt-3 text-3xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-4xl lg:text-5xl;
-  font-variation-settings: 'opsz' 120;
 }
 .hero-card-title a:hover {
   text-decoration: underline;
@@ -726,9 +722,9 @@ main section h2.section-heading {
   color: var(--brand-primary);
 }
 
-/* Person tiles: name bold, no serif, like the reference's guest grid. */
+/* Person tiles: name bold, like the reference's guest grid. */
 .person-tile p.font-display {
-  font-family: var(--font-inter);
+  font-family: var(--font-sans);
   font-size: 1rem;
 }
 
@@ -1614,7 +1610,7 @@ header details[open] > nav {
 
 /* ── Batch 9: episode page colour cards, topics + notes panel, bare tiles ── */
 
-/* Host / guest card: colour block, serif name, photo standing on the right. */
+/* Host / guest card: colour block, bold name, photo standing on the right. */
 .person-card {
   --card-accent: var(--brand-accent-2);
   @apply relative grid overflow-hidden;
@@ -2289,7 +2285,7 @@ li:nth-child(5) > .platform-chip { animation-delay: -5.2s; }
   @apply text-text-muted mt-1 block text-sm;
 }
 
-/* Person tile captions: name in the serif, role clamped to two lines. */
+/* Person tile captions: name in the display face, role clamped to two lines. */
 .person-tile p.person-tile-eyebrow {
   @apply mt-4 text-[0.7rem];
   color: var(--brand-primary);
@@ -2450,4 +2446,426 @@ li:nth-child(5) > .platform-chip { animation-delay: -5.2s; }
 .cta-stat-label {
   @apply mt-2 text-xs font-bold tracking-wide uppercase;
   opacity: 0.8;
+}
+
+
+/* ── Manrope: one modern sans for headings, body and navigation ─────────── */
+
+.font-display,
+.display,
+.cms-prose :is(h1, h2, h3, h4),
+.hero-card-title,
+.episode-hero-title,
+.series-hero-title,
+.series-card-name,
+.person-card-name,
+.profile-panel-name,
+.person-tile p.person-tile-name,
+.team-roster-name-text,
+.cta-stat-value {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+h1.display,
+.show-intro-title {
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+.nav-link {
+  font-weight: 600;
+}
+
+/* ── Latest episodes: one large horizontal card at a time ───────────────── */
+
+.spot-carousel .carousel-track {
+  gap: 1.5rem;
+  padding-block: 4px;
+}
+.spot-card {
+  --card-accent: var(--brand-accent-1);
+  @apply relative grid overflow-hidden md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)];
+  border: 1px solid var(--brand-line);
+  border-radius: 28px;
+  background:
+    radial-gradient(520px 320px at 100% 0%, color-mix(in srgb, var(--card-accent) 18%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--brand-surface), var(--brand-ink-2));
+}
+
+/* The picture on the accent colour. */
+.spot-media {
+  @apply relative grid place-items-center overflow-hidden p-8 sm:p-10;
+  background: var(--card-accent);
+}
+.spot-media img {
+  @apply block aspect-square w-full max-w-[420px] object-cover;
+  border-radius: 20px;
+  box-shadow: 0 24px 50px rgb(7 11 43 / 0.45);
+  transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.spot-card:hover .spot-media img {
+  transform: scale(1.025);
+}
+/* A guest portrait fills the panel edge to edge. */
+.spot-media.is-portrait {
+  @apply min-h-[300px] p-0;
+}
+.spot-media.is-portrait img {
+  @apply absolute inset-0 h-full max-w-none object-top;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.spot-copy {
+  @apply flex flex-col justify-center p-7 sm:p-10 lg:p-14;
+}
+.spot-eyebrow {
+  @apply flex flex-wrap items-center gap-2 text-xs font-extrabold tracking-[0.14em] uppercase;
+  color: var(--card-accent);
+}
+.spot-num {
+  @apply text-text-muted;
+}
+.spot-title {
+  @apply text-heading mt-4 line-clamp-3 text-3xl leading-[1.08] font-extrabold text-balance sm:text-4xl lg:text-[2.75rem];
+  letter-spacing: -0.03em;
+}
+.spot-title a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+.spot-guest {
+  @apply mt-5 flex flex-col gap-0.5;
+}
+.spot-guest strong {
+  @apply text-heading text-lg font-bold;
+}
+.spot-guest span {
+  @apply text-text-muted text-base;
+}
+.spot-meta {
+  @apply text-text mt-4 flex flex-wrap items-center gap-2 text-sm font-semibold;
+}
+.spot-meta > span {
+  @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1;
+  background: rgb(255 255 255 / 0.07);
+}
+.spot-meta svg {
+  @apply h-4 w-4;
+  color: var(--card-accent);
+}
+.spot-desc {
+  @apply text-text mt-5 line-clamp-2 max-w-xl text-base leading-relaxed;
+}
+.spot-actions {
+  @apply mt-8 flex flex-wrap items-center gap-3;
+}
+.spot-card .pill-primary {
+  background: var(--card-accent);
+  color: var(--brand-ink);
+}
+.spot-card .pill-primary:hover {
+  background: #fff;
+  color: var(--brand-ink);
+}
+.spot-card .pill-primary > span:first-child {
+  background: rgb(7 11 43 / 0.18);
+}
+
+.spot-carousel .carousel-dots {
+  @apply mt-6;
+}
+.spot-carousel .carousel-dot {
+  transition:
+    width 0.3s ease,
+    background-color 0.3s ease;
+}
+.spot-carousel .carousel-dot.is-active {
+  width: 1.75rem;
+  background: var(--brand-primary);
+}
+
+/* ── Motion: a calm entrance for the intro, then sections rise on scroll ─── */
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: scale(0.965);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.show-intro-art {
+  animation: settle-in 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.show-intro-copy > * {
+  animation: rise-in 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.show-intro-copy > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+.show-intro-copy > :nth-child(3) {
+  animation-delay: 0.16s;
+}
+.show-intro-copy > :nth-child(4) {
+  animation-delay: 0.24s;
+}
+.show-intro-copy > :nth-child(n + 5) {
+  animation-delay: 0.32s;
+}
+
+/* Blocks below the fold rise in as they are scrolled to (see Reveal.astro). */
+[data-reveal] {
+  transition:
+    opacity 0.8s ease,
+    transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-reveal].is-hidden {
+  opacity: 0;
+  transform: translateY(28px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .show-intro-art,
+  .show-intro-copy > * {
+    animation: none;
+  }
+}
+
+/* ── People: rows that line up ──────────────────────────────────────────── */
+
+/* The names roster wraps as centred rows, so a short last row sits in the
+   middle of the panel instead of hanging off the left edge. */
+.team-roster-names {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 2rem;
+}
+.team-roster-name {
+  flex: 0 0 100%;
+}
+@media (min-width: 640px) {
+  .team-roster-name {
+    flex-basis: calc((100% - 2rem) / 2);
+  }
+}
+@media (min-width: 1024px) {
+  .team-roster-name {
+    flex-basis: calc((100% - 3 * 2rem) / 4);
+  }
+}
+
+/* Guests share the team's centred column, so the whole people section has
+   one left edge instead of the guests stretching wider than the team. */
+.people-subheading,
+.guest-grid {
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+/* Guest tiles without a photo: the role always takes two lines, so every
+   name in a row sits on the same baseline whether its title wraps or not. */
+.person-tile.is-text .person-tile-plate p.person-tile-role {
+  min-height: calc(2em * 1.375);
+}
+/* In the narrower column a full name must fit on one line to stay aligned. */
+.guest-grid .person-tile.is-text .person-tile-plate p.person-tile-name {
+  font-size: 1.25rem;
+}
+
+/* ── Episodes archive: filters, search, one consistent card ─────────────── */
+
+.archive {
+  @apply mx-auto max-w-6xl;
+}
+.archive-title {
+  @apply mt-3 text-5xl lg:text-6xl;
+}
+.archive-intro {
+  @apply text-text mt-4 max-w-2xl text-lg;
+}
+.archive-count {
+  @apply text-text-muted mt-3 text-base font-semibold;
+}
+.archive-tools {
+  @apply mt-10 flex flex-col gap-4 pb-6 lg:flex-row lg:items-center lg:justify-between;
+  border-bottom: 1px solid var(--brand-line);
+}
+.archive-filters {
+  @apply flex flex-wrap gap-2;
+}
+.archive-chip {
+  @apply text-heading rounded-full px-4 py-2 text-sm font-bold;
+  border: 1px solid var(--brand-line);
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.archive-chip:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+.archive-chip.is-active {
+  background: var(--brand-primary);
+  border-color: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.archive-search {
+  @apply relative w-full lg:w-80;
+}
+.archive-search svg {
+  @apply text-text-muted pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2;
+}
+.archive-search input {
+  @apply text-heading w-full rounded-full py-2.5 pr-4 pl-11 text-sm;
+  background: var(--brand-surface);
+  border: 1px solid var(--brand-line);
+}
+.archive-search input::placeholder {
+  color: var(--brand-text-muted);
+}
+.archive-search input:focus {
+  border-color: var(--brand-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(61 220 10 / 0.18);
+}
+.archive-list-head {
+  @apply mt-10 mb-6 flex items-center justify-between gap-4;
+}
+.archive-list-head h2 {
+  color: #fff;
+}
+.archive-clear {
+  @apply text-sm font-bold;
+  color: var(--brand-primary);
+}
+.archive-clear:hover {
+  text-decoration: underline;
+}
+.archive-grid {
+  @apply grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8;
+}
+.archive-grid > li {
+  display: flex;
+  scroll-margin-top: 7rem;
+}
+.archive-grid > li.is-new {
+  animation: rise-in 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.archive-more {
+  @apply mt-12 flex justify-center;
+}
+.archive-more [aria-busy='true'] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.arc-card {
+  @apply flex w-full flex-col overflow-hidden;
+  border: 1px solid var(--brand-line);
+  border-radius: 20px;
+  background: var(--brand-surface);
+  transition:
+    transform 0.35s cubic-bezier(0.2, 0.7, 0.2, 1),
+    border-color 0.25s ease,
+    box-shadow 0.35s ease;
+}
+.arc-card:hover {
+  transform: translateY(-4px);
+  border-color: rgb(61 220 10 / 0.4);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.35);
+}
+.arc-card-art {
+  @apply block aspect-square overflow-hidden;
+}
+.arc-card-art img {
+  @apply h-full w-full object-cover;
+  transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.arc-card:hover .arc-card-art img {
+  transform: scale(1.03);
+}
+.arc-card-body {
+  @apply flex flex-1 flex-col p-6;
+}
+.arc-card-eyebrow {
+  @apply text-xs font-bold tracking-[0.12em] uppercase;
+  color: var(--brand-primary);
+}
+.arc-card-name {
+  @apply text-heading mt-2 text-xl leading-snug font-bold;
+  letter-spacing: -0.02em;
+}
+.arc-card-name a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.arc-card-role {
+  @apply text-text-muted mt-1 line-clamp-2 text-sm;
+}
+.arc-card-desc {
+  @apply text-text mt-3 line-clamp-3 text-sm leading-relaxed;
+}
+.arc-card-parts {
+  @apply mt-4 flex flex-wrap gap-2;
+}
+.arc-card-parts a {
+  @apply text-heading inline-block rounded-full px-3 py-1 text-xs font-bold;
+  background: rgb(255 255 255 / 0.08);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.arc-card-parts a:hover {
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+}
+.arc-card-listen {
+  @apply mt-auto inline-flex items-center gap-2.5 self-start pt-5 text-sm font-bold;
+  color: var(--brand-primary);
+}
+.arc-card-listen > span:first-child {
+  @apply inline-flex h-8 w-8 items-center justify-center rounded-full;
+  background: var(--brand-primary);
+  color: var(--brand-on-primary);
+  transition: transform 0.2s ease;
+}
+.arc-card-listen svg {
+  @apply ml-0.5 h-3 w-3;
+}
+.arc-card-listen:hover > span:first-child {
+  transform: scale(1.08);
+}
+.arc-card-arrow {
+  transition: transform 0.2s ease;
+}
+.arc-card-listen:hover .arc-card-arrow {
+  transform: translateX(3px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .arc-card,
+  .arc-card-art img,
+  .archive-grid > li.is-new {
+    transition: none;
+    animation: none;
+  }
+  .arc-card:hover,
+  .arc-card:hover .arc-card-art img {
+    transform: none;
+  }
 }

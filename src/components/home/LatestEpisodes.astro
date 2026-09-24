@@ -1,28 +1,59 @@
 ---
 import type { Episode, Show } from '../../lib/types';
+import { formatDuration } from '../../lib/format';
 import EmptyState from '../EmptyState.astro';
 import EpisodeCard from '../episode/EpisodeCard.astro';
+import FormattedDate from '../FormattedDate';
+import FullPlayButton from '../FullPlayButton';
+import SmartImage from '../SmartImage.astro';
+import Carousel from '../site/Carousel.astro';
 import Section from '../site/Section.astro';
 
 /**
- * The newest episodes as a proper grid — three across on a desktop, two on a
- * tablet — rather than a row of small cards squeezed into a carousel.
+ * The newest episodes, in one of two layouts:
+ *   · `spotlight` (the homepage) — one large horizontal card at a time, the
+ *     picture on the accent colour to the left and the episode to the right,
+ *     with dots and the green arrow pair underneath, as in the featured row.
+ *   · `grid` (the "more episodes" list under an episode) — tiles, three or
+ *     four across, for browsing.
  */
 export interface Props {
   episodes: Episode[];
   show: Show;
   heading: string;
   id?: string;
+  layout?: 'spotlight' | 'grid';
 }
 
-const { episodes, show, heading, id = 'latest' } = Astro.props;
+const { episodes, show, heading, id = 'latest', layout = 'grid' } = Astro.props;
+
+const slides = episodes.map((episode, index) => {
+  const guest = episode.guests[0];
+  return {
+    episode,
+    href: `/episodes/${episode.episodeSlug}`,
+    accent: (index % 4) + 1,
+    // The guest's photo when there is one, else the episode's own artwork.
+    photo: guest?.imageUrl ?? episode.episodeThumbnail ?? show.image,
+    isPortrait: Boolean(guest?.imageUrl),
+    guestName: episode.guests.map((g) => g.name).join(' & '),
+    guestTitle: guest?.title ?? '',
+    duration: formatDuration(episode.duration),
+    player: {
+      audio: episode.audio,
+      episodeNumber: episode.episodeNumber,
+      id: episode.id,
+      title: episode.title
+    }
+  };
+});
 ---
 
 <Section id={id} heading={heading} moreHref="/episodes" moreLabel="See all episodes">
   {
-    episodes.length === 0 ? (
+    slides.length === 0 ? (
       <EmptyState message="No episodes yet. Check back soon!" />
-    ) : (
+    ) : layout === 'grid' ? (
       <ul class="latest-grid" role="list">
         {episodes.map((episode, index) => (
           <li>
@@ -30,6 +61,62 @@ const { episodes, show, heading, id = 'latest' } = Astro.props;
           </li>
         ))}
       </ul>
+    ) : (
+      <Carousel label={heading} arrows="below" dots autoplay={7000} itemClass="w-full" class="spot-carousel">
+        {slides.map((s, index) => (
+          <article class="spot-card" role="listitem" style={`--card-accent: var(--brand-accent-${s.accent})`}>
+            <a href={s.href} class:list={['spot-media', s.isPortrait && 'is-portrait']} aria-hidden="true" tabindex="-1">
+              <SmartImage
+                src={s.photo}
+                alt=""
+                width={560}
+                height={560}
+                sizes="(min-width: 1024px) 520px, 90vw"
+                loading="lazy"
+              />
+            </a>
+
+            <div class="spot-copy">
+              <p class="spot-eyebrow">
+                {index === 0 ? 'Latest episode' : 'Recent episode'}
+                {s.episode.episodeNumber && <span class="spot-num">· Episode {s.episode.episodeNumber}</span>}
+              </p>
+              <h3 class="spot-title">
+                <a href={s.href}>{s.episode.title}</a>
+              </h3>
+              {(s.guestName || s.guestTitle) && (
+                <p class="spot-guest">
+                  {s.guestName && <strong>{s.guestName}</strong>}
+                  {s.guestTitle && <span>{s.guestTitle}</span>}
+                </p>
+              )}
+              <p class="spot-meta">
+                {s.duration && (
+                  <span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </svg>
+                    {s.duration}
+                  </span>
+                )}
+                <span>
+                  <FormattedDate date={new Date(s.episode.published)} />
+                </span>
+              </p>
+              {s.episode.description && <p class="spot-desc">{s.episode.description}</p>}
+              <div class="spot-actions">
+                {s.episode.audio.src && (
+                  <FullPlayButton client:visible episode={s.player} href={s.href} label="Listen to episode" />
+                )}
+                <a class="pill pill-ghost" href={s.href}>
+                  Episode details
+                </a>
+              </div>
+            </div>
+          </article>
+        ))}
+      </Carousel>
     )
   }
 </Section>
