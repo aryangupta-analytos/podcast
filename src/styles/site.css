@@ -3010,3 +3010,43 @@ h1.display,
 .site-logo-mark {
   box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
 }
+
+/* A lone team member: the photo tile beside their bio, as wide as the names
+   panel, instead of one small tile with empty space either side. */
+.team-feature {
+  @apply mx-auto grid items-center gap-8 md:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:gap-14;
+  max-width: 64rem;
+}
+.team-feature-tile {
+  @apply mx-auto w-full max-w-[20rem];
+}
+.team-feature-copy {
+  @apply min-w-0;
+}
+.team-feature-bio {
+  @apply text-base leading-relaxed;
+  color: var(--brand-text);
+}
+.team-feature-bio ul {
+  @apply m-0 grid gap-2.5 p-0;
+  list-style: none;
+}
+.team-feature-bio li {
+  @apply rounded-xl px-4 py-3 text-[0.95rem] leading-snug;
+  color: var(--brand-heading);
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid var(--brand-line);
+}
+.team-feature-bio p + p {
+  @apply mt-3;
+}
+.team-feature-more {
+  @apply mt-6 inline-flex items-center gap-1.5 text-sm font-bold;
+  color: var(--brand-primary);
+}
+.team-feature-more span {
+  transition: transform 0.2s ease;
+}
+.team-feature-more:hover span {
+  transform: translateX(3px);
+}

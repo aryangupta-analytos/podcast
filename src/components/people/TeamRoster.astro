@@ -9,6 +9,10 @@ import PersonTile from './PersonTile.astro';
  * The photographed people keep the order the owner arranged them in (so the
  * co-host sits in the middle of three), and the names roster below carries no
  * links — a name and, where one is set, a role.
+ *
+ * A lone photographed person gets a wide feature instead of one small tile
+ * adrift in the middle of the page: the tile on the left, their bio (the
+ * owner's sanitized HTML) on the right, as wide as the names panel below.
  */
 export interface Props {
   people: Person[];
@@ -22,11 +26,33 @@ const { people, labels = true, class: className = '' } = Astro.props;
 const pictured = people.filter((p) => p.imageUrl);
 const named = people.filter((p) => !p.imageUrl);
 const roleLabel = (p: Person) => (p.kind === 'host' ? 'Host' : 'Team');
+const feature = pictured.length === 1 ? pictured[0] : null;
 ---
 
 <div class:list={['team-roster', className]}>
   {
-    pictured.length > 0 && (
+    feature && (
+      <div class="team-feature">
+        <div class="team-feature-tile">
+          <PersonTile person={feature} index={0} eyebrow={labels ? roleLabel(feature) : undefined} loading="eager" />
+        </div>
+        <div class="team-feature-copy">
+          {feature.bio ? (
+            <div class="team-feature-bio" set:html={feature.bio} />
+          ) : (
+            feature.title && <p class="team-feature-bio">{feature.title}</p>
+          )}
+          <a class="team-feature-more" href={`/people/${feature.slug}`}>
+            Full bio
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    pictured.length > 1 && (
       <ul class:list={['team-roster-tiles', `has-${Math.min(pictured.length, 4)}`]} role="list">
         {pictured.map((person, index) => (
           <li>
