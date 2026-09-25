@@ -59,11 +59,11 @@ const hasArtwork = logoSrc && !logoSrc.endsWith('artwork-placeholder.svg');
         {
           hasArtwork && (
             <SmartImage
-              class="h-9 w-9 shrink-0 rounded-full object-cover"
+              class="site-logo-mark h-11 w-11 shrink-0 rounded-md object-cover lg:h-14 lg:w-14"
               src={logoSrc}
               alt=""
-              width={36}
-              height={36}
+              width={56}
+              height={56}
               loading="eager"
               fetchpriority="high"
             />

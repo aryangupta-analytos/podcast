@@ -2867,34 +2867,19 @@ h1.display,
   letter-spacing: -0.02em;
 }
 .show-intro-story.is-intro ul {
-  @apply my-6 max-w-xl p-0;
+  @apply my-5 grid gap-2.5 p-0 sm:grid-cols-2;
   list-style: none;
-  counter-reset: intro-point;
-  border-top: 1px solid var(--brand-line);
 }
 .show-intro-story.is-intro li {
-  @apply flex items-baseline gap-4 py-3 text-base leading-snug;
-  counter-increment: intro-point;
+  @apply rounded-xl px-4 py-2.5 text-[0.95rem] leading-snug;
   color: var(--brand-heading);
-  border-bottom: 1px solid var(--brand-line);
-}
-.show-intro-story.is-intro li::before {
-  content: counter(intro-point, decimal-leading-zero);
-  flex: none;
-  width: 1.75rem;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  font-variant-numeric: tabular-nums;
-  color: var(--brand-text-muted);
+  background: rgb(255 255 255 / 0.05);
+  border: 1px solid var(--brand-line);
 }
 .show-intro-story.is-intro > p:last-child {
   @apply text-heading font-semibold;
 }
 @media (max-width: 1023px) {
-  .show-intro-story.is-intro ul {
-    margin-inline: auto;
-  }
   .show-intro-story.is-intro li {
     text-align: left;
   }
@@ -3019,4 +3004,9 @@ h1.display,
   .contact-method:hover {
     transform: none;
   }
+}
+
+/* The header logo: the square artwork, whole and uncropped. */
+.site-logo-mark {
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.12);
 }
