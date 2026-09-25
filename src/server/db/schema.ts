@@ -265,6 +265,12 @@ export const siteSettings = pgTable('site_settings', {
   heroEyebrow: text('hero_eyebrow').notNull().default(''),
   heroTitle: text('hero_title').notNull().default(''),
   heroDescription: text('hero_description').notNull().default(''),
+  /**
+   * The homepage intro's longer text, as sanitized HTML. When set it replaces
+   * the one-line description and the About text in the intro, so the About
+   * page's story is not repeated on the homepage.
+   */
+  introBody: text('intro_body').notNull().default(''),
   heroImageUrl: text('hero_image_url'),
   heroCtaText: text('hero_cta_text').notNull().default(''),
   heroCtaUrl: text('hero_cta_url').notNull().default(''),

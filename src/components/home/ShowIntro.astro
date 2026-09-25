@@ -12,7 +12,9 @@ import SmartImage from '../SmartImage.astro';
  * tagline, one-line description and the owner's About story on the right,
  * then the two things a new visitor does next — listen, or read about the
  * show. Mirrors the reference site's podcast overview, which leads with the
- * show rather than an episode. The story is the sanitized `aboutBody` HTML.
+ * show rather than an episode. The copy is the sanitized `introBody` HTML
+ * when the owner has written one; otherwise the one-line description and the
+ * About page's `aboutBody` story.
  */
 export interface Props {
   settings: SiteSettings;
@@ -58,10 +60,14 @@ const hasArtwork = show.image && !show.image.endsWith('artwork-placeholder.svg')
         <p class="section-heading text-primary">Podcast</p>
         <h1 id="show-intro-title" class="display show-intro-title">{title}</h1>
         {settings.tagline && <p class="show-intro-tagline">{settings.tagline}</p>}
-        {body && <p class="show-intro-desc">{body}</p>}
         {
-          settings.aboutBody && (
-            <div class="show-intro-story" set:html={settings.aboutBody} />
+          settings.introBody ? (
+            <div class="show-intro-story is-intro" set:html={settings.introBody} />
+          ) : (
+            <Fragment>
+              {body && <p class="show-intro-desc">{body}</p>}
+              {settings.aboutBody && <div class="show-intro-story" set:html={settings.aboutBody} />}
+            </Fragment>
           )
         }
         <div class="show-intro-actions">

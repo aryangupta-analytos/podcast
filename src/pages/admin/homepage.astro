@@ -1,5 +1,6 @@
 ---
 import { readFormData } from '../../server/read-form';
+import { sanitizeHtml } from '../../server/sanitize';
 import FileUpload from '../../components/admin/FileUpload';
 import AdminLayout from '../../layouts/AdminLayout.astro';
 import { getEpisodeById, listEpisodesForAdmin } from '../../server/repo/episodes';
@@ -43,6 +44,8 @@ if (Astro.request.method === 'POST') {
 
       heroTitle: text('heroTitle'),
       heroDescription: text('heroDescription'),
+      // Owner-authored HTML: sanitized on write, never on render.
+      introBody: sanitizeHtml(String(form.get('introBody') ?? '')),
       heroCtaText: text('heroCtaText'),
       heroCtaUrl: text('heroCtaUrl'),
 
@@ -181,6 +184,20 @@ const featuredOptions = pinned ? [pinned, ...published.items] : published.items;
         <label for="heroDescription">Introduction</label>
         <textarea id="heroDescription" name="heroDescription" style="min-height:90px" placeholder={settings.description}>{settings.heroDescription}</textarea>
         <p class="help">Two or three sentences on what the show is and who it is for.</p>
+      </div>
+
+      <div class="admin-field">
+        <label for="introBody">Introduction text</label>
+        <textarea
+          id="introBody"
+          name="introBody"
+          style="min-height:260px; font-family:ui-monospace, monospace; font-size:13px">{settings.introBody}</textarea
+        >
+        <p class="help">
+          The longer text under the headline, in HTML (paragraphs, a list, bold).
+          When filled in it is shown instead of the Introduction above and the
+          About page text, so the About story is not repeated on the homepage.
+        </p>
       </div>
 
       <div class="admin-row">
