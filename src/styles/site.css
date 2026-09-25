@@ -2867,30 +2867,34 @@ h1.display,
   letter-spacing: -0.02em;
 }
 .show-intro-story.is-intro ul {
-  @apply my-5 grid gap-2.5 p-0 sm:grid-cols-2;
+  @apply my-6 max-w-xl p-0;
   list-style: none;
+  counter-reset: intro-point;
+  border-top: 1px solid var(--brand-line);
 }
 .show-intro-story.is-intro li {
-  @apply relative rounded-xl py-2.5 pr-3 pl-9 text-[0.95rem] leading-snug;
+  @apply flex items-baseline gap-4 py-3 text-base leading-snug;
+  counter-increment: intro-point;
   color: var(--brand-heading);
-  background: rgb(255 255 255 / 0.05);
-  border: 1px solid var(--brand-line);
+  border-bottom: 1px solid var(--brand-line);
 }
 .show-intro-story.is-intro li::before {
-  content: '';
-  position: absolute;
-  left: 0.9rem;
-  top: 50%;
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: var(--brand-primary);
-  transform: translateY(-50%);
+  content: counter(intro-point, decimal-leading-zero);
+  flex: none;
+  width: 1.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand-text-muted);
 }
 .show-intro-story.is-intro > p:last-child {
   @apply text-heading font-semibold;
 }
 @media (max-width: 1023px) {
+  .show-intro-story.is-intro ul {
+    margin-inline: auto;
+  }
   .show-intro-story.is-intro li {
     text-align: left;
   }
