@@ -39,6 +39,7 @@ if (Astro.request.method === 'POST') {
       tagline: text('tagline'),
       description: text('description'),
       artworkUrl: text('artworkUrl') || null,
+      logoUrl: text('logoUrl') || null,
 
       featuredEpisodeId: featured || null,
 
@@ -162,8 +163,17 @@ const featuredOptions = pinned ? [pinned, ...published.items] : published.items;
         name="artworkUrl"
         kind="image"
         label="Show artwork"
-        help="The square cover art. Used in the header, the RSS feed and social previews."
+        help="The square cover art. Used on the homepage, in the RSS feed and social previews, and in the header when no logo is set."
         value={settings.artworkUrl ?? ''}
+      />
+
+      <FileUpload
+        client:load
+        name="logoUrl"
+        kind="image"
+        label="Header logo"
+        help="The small round mark beside the show name in the header. Square images work best."
+        value={settings.logoUrl ?? ''}
       />
     </div>
 

@@ -260,6 +260,8 @@ export const siteSettings = pgTable('site_settings', {
   tagline: text('tagline').notNull().default(''),
   description: text('description').notNull().default(''),
   artworkUrl: text('artwork_url'),
+  /** The small round mark in the site header; falls back to the artwork. */
+  logoUrl: text('logo_url'),
 
   // Hero
   heroEyebrow: text('hero_eyebrow').notNull().default(''),

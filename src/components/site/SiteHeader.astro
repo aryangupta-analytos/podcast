@@ -8,6 +8,8 @@ import PlatformIcons from './PlatformIcons.astro';
 
 export interface Props {
   show: Show;
+  /** The header mark; the show artwork when none is set. */
+  logo?: string;
   platforms: LinkRow[];
   /** Extra navigation links managed from the admin panel. */
   navLinks?: LinkRow[];
@@ -15,7 +17,7 @@ export interface Props {
   hasVideos?: boolean;
 }
 
-const { show, platforms, navLinks = [], hasVideos = false } = Astro.props;
+const { show, logo, platforms, navLinks = [], hasVideos = false } = Astro.props;
 const { pathname } = Astro.url;
 
 // The admin panel is deliberately absent here — it is never linked from any
@@ -38,7 +40,8 @@ const builtIn = [
 const isActive = (href: string) =>
   href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/');
 
-const hasArtwork = show.image && !show.image.endsWith('artwork-placeholder.svg');
+const logoSrc = logo || show.image;
+const hasArtwork = logoSrc && !logoSrc.endsWith('artwork-placeholder.svg');
 ---
 
 <header class="site-header sticky top-0 z-40">
@@ -57,7 +60,7 @@ const hasArtwork = show.image && !show.image.endsWith('artwork-placeholder.svg')
           hasArtwork && (
             <SmartImage
               class="site-logo-mark h-9 w-9 shrink-0 rounded-full object-cover"
-              src={show.image}
+              src={logoSrc}
               alt=""
               width={36}
               height={36}
