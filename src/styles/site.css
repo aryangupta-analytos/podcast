@@ -2896,12 +2896,6 @@ h1.display,
   }
 }
 
-/* The header logo: Sunil's photo in a yellow ring. */
-.site-logo-mark {
-  outline: 2px solid var(--brand-accent-1);
-  outline-offset: 2px;
-}
-
 /* ── Contact page ───────────────────────────────────────────────────────── */
 
 .contact {
